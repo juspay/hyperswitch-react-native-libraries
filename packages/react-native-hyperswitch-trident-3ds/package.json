@@ -54,7 +54,7 @@
   },
   "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries/tree/main/packages/react-native-hyperswitch-trident-3ds#readme",
   "author": "Hyperswitch",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/compat": "^1.2.7",

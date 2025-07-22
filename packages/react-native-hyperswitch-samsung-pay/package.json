@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries/tree/main/packages/react-native-hyperswitch-samsung-pay#readme",
   "author": "Hyperswitch",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@arkweid/lefthook": "^0.7.7",
     "@babel/eslint-parser": "^7.18.2",
