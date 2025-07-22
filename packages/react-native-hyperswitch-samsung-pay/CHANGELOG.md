@@ -5,4 +5,4 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 0.1.1 (2025-07-22)
 
-**Note:** Version bump only for package react-native-hyperswitch-netcetera-3ds-test
+**Note:** Version bump only for package react-native-hyperswitch-samsung-pay-test
