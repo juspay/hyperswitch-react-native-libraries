@@ -1,5 +1,5 @@
 {
-  "name": "react-native-hyperswitch-trident-3ds",
+  "name": "react-native-hyperswitch-trident-3ds-test",
   "version": "0.1.0",
   "description": "React Native Hyperswitch Trident 3DS",
   "source": "./src/index.tsx",

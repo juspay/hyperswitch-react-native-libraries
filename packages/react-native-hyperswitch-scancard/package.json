@@ -1,5 +1,5 @@
 {
-  "name": "react-native-hyperswitch-scancard",
+  "name": "react-native-hyperswitch-scancard-test",
   "version": "0.1.0",
   "description": "React Native Hyperswitch ScanCard",
   "main": "lib/commonjs/index",
