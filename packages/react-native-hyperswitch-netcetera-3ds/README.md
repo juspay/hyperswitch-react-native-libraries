@@ -3,7 +3,7 @@ React Native library for netcetera
 ## Installation
 
 ```sh
-npm install react-native-hyperswitch-netcetera-3ds
+npm install react-native-hyperswitch-netcetera-3ds-test
 ```
 
 ## Contributing
