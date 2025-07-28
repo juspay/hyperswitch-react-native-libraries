@@ -1,4 +1,4 @@
-import { isAvailable } from 'react-native-hyperswitch-trident-3ds';
+import { isAvailable } from '@juspay-tech/react-native-hyperswitch-trident-3ds';
 import { Text, View, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 

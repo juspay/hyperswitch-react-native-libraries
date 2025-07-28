@@ -1,24 +1,12 @@
-# react-native-hyperswitch-trident-3ds
+# react-native-hyperswitch-scancard
 
-hyperswitch integration for trident 3ds
+React Native Hyperswitch ScanCard
 
 ## Installation
 
 ```sh
-npm install @juspay-tech/react-native-hyperswitch-trident-3ds
+npm install @juspay-tech/react-native-hyperswitch-scancard
 ```
-
-## Usage
-
-
-```js
-import { multiply } from 'react-native-hyperswitch-trident-3ds';
-
-// ...
-
-const result = await multiply(3, 7);
-```
-
 
 ## Contributing
 
@@ -26,7 +14,7 @@ See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the 
 
 ## License
 
-MIT
+Apache-2.0
 
 ---
 

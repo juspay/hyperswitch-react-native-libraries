@@ -7,7 +7,7 @@ import {
   generateAReqParams,
   recieveChallengeParamsFromRN,
   generateChallenge,
-} from 'react-native-hyperswitch-netcetera-3ds';
+} from '@juspay-tech/react-native-hyperswitch-netcetera-3ds';
 
 export default function App() {
   const [result, setResult] = React.useState<number | undefined>();

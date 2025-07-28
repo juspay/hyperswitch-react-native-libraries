@@ -1,6 +1,6 @@
 {
-  "name": "react-native-hyperswitch-trident-3ds",
-  "version": "0.1.0",
+  "name": "@juspay-tech/react-native-hyperswitch-trident-3ds",
+  "version": "0.0.0",
   "description": "React Native Hyperswitch Trident 3DS",
   "source": "./src/index.tsx",
   "main": "./lib/module/index.js",
@@ -54,7 +54,7 @@
   },
   "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries/tree/main/packages/react-native-hyperswitch-trident-3ds#readme",
   "author": "Hyperswitch",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/compat": "^1.2.7",
@@ -111,5 +111,8 @@
         }
       ]
     ]
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

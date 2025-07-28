@@ -4,7 +4,7 @@ import { StyleSheet, View, Button } from 'react-native';
 import {
   checkSamsungPayValidity,
   presentSamsungPayPaymentSheet,
-} from 'react-native-hyperswitch-samsung-pay';
+} from '@juspay-tech/react-native-hyperswitch-samsung-pay';
 
 const Space = () => <View style={{ marginTop: 10 }} />;
 export default function App() {

@@ -6,7 +6,7 @@ import {
   ScanCardReturnType,
   isAvailable,
   launchScanCard
-} from 'react-native-hyperswitch-scancard';
+} from '@juspay-tech/react-native-hyperswitch-scancard';
 
 export default function App() {
   const [result, setResult] = React.useState<ScanCardReturnType | null>(null);

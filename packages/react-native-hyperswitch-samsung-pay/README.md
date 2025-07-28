@@ -5,7 +5,7 @@ hyperswitch samsung pay
 ## Installation
 
 ```sh
-npm install react-native-hyperswitch-samsung-pay
+npm install @juspay-tech/react-native-hyperswitch-samsung-pay
 ```
 
 ## License

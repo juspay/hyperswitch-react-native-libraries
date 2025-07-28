@@ -1,6 +1,6 @@
 {
-  "name": "react-native-hyperswitch-netcetera-3ds",
-  "version": "0.1.0",
+  "name": "@juspay-tech/react-native-hyperswitch-netcetera-3ds",
+  "version": "0.0.0",
   "description": "React Native Hyperswitch Netcetera 3DS",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries/tree/main/packages/react-native-hyperswitch-netcetera-3ds#readme",
   "author": "Hyperswitch",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@arkweid/lefthook": "^0.7.7",
     "@babel/eslint-parser": "^7.18.2",
@@ -94,5 +94,8 @@
         }
       ]
     ]
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
