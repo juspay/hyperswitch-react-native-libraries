@@ -18666,8 +18666,15 @@
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/transaction\/challenge\/challengeVC\/ChallengeUIHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 515,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/transaction\/challenge\/challengeVC\/ChallengeUIHandler.swift",
       "kind": "StringLiteral",
-      "offset": 507,
+      "offset": 556,
       "length": 13,
       "value": "\"challengeVC\""
     },
@@ -19493,14 +19500,14 @@
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/transaction\/challenge\/challengeVC\/processingViews\/textZoneView\/ProcessingZoneTextView.swift",
       "kind": "IntegerLiteral",
-      "offset": 4892,
+      "offset": 4888,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/transaction\/challenge\/challengeVC\/processingViews\/textZoneView\/ProcessingZoneTextView.swift",
       "kind": "IntegerLiteral",
-      "offset": 4912,
+      "offset": 4908,
       "length": 1,
       "value": "1"
     },
@@ -20886,147 +20893,154 @@
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 2822,
+      "offset": 2804,
+      "length": 5,
+      "value": "\"522\""
+    },
+    {
+      "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
+      "kind": "StringLiteral",
+      "offset": 2888,
       "length": 5,
       "value": "\"601\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 2863,
+      "offset": 2929,
       "length": 5,
       "value": "\"602\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 2903,
+      "offset": 2969,
       "length": 5,
       "value": "\"603\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 2945,
+      "offset": 3011,
       "length": 5,
       "value": "\"604\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 2987,
+      "offset": 3053,
       "length": 5,
       "value": "\"605\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3026,
+      "offset": 3092,
       "length": 5,
       "value": "\"606\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3071,
+      "offset": 3137,
       "length": 5,
       "value": "\"607\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3111,
+      "offset": 3177,
       "length": 5,
       "value": "\"608\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3204,
+      "offset": 3270,
       "length": 5,
       "value": "\"701\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3250,
+      "offset": 3316,
       "length": 5,
       "value": "\"702\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3289,
+      "offset": 3355,
       "length": 5,
       "value": "\"703\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3324,
+      "offset": 3390,
       "length": 5,
       "value": "\"704\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3364,
+      "offset": 3430,
       "length": 5,
       "value": "\"705\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3404,
+      "offset": 3470,
       "length": 5,
       "value": "\"706\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3452,
+      "offset": 3518,
       "length": 5,
       "value": "\"707\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3494,
+      "offset": 3560,
       "length": 5,
       "value": "\"708\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3543,
+      "offset": 3609,
       "length": 5,
       "value": "\"709\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3590,
+      "offset": 3656,
       "length": 5,
       "value": "\"710\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3633,
+      "offset": 3699,
       "length": 5,
       "value": "\"711\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3675,
+      "offset": 3741,
       "length": 5,
       "value": "\"712\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/utils\/error\/SDKError.swift",
       "kind": "StringLiteral",
-      "offset": 3722,
+      "offset": 3788,
       "length": 5,
       "value": "\"713\""
     },
@@ -21314,8 +21328,15 @@
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/encryption\/DefaultDSValues.swift",
       "kind": "StringLiteral",
       "offset": 23944,
-      "length": 1678,
-      "value": "\"MIIE5DCCA8ygAwIBAgIFRVOQdGYwDQYJKoZIhvcNAQELBQAwWDELMAkGA1UEBhMCQ04xMDAuBgNVBAoMJ0NoaW5hIEZpbmFuY2lhbCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEXMBUGA1UEAwwOQ0ZDQSBBQ1MgT0NBMzEwHhcNMjIwNzA4MDc1NTQwWhcNMjUwNzA4MDc1NTQwWjCBkjELMAkGA1UEBhMCQ04xFzAVBgNVBAoMDkNGQ0EgQUNTIE9DQTMxMRMwEQYDVQQLDApDRkNBIE9DQTMxMRkwFwYDVQQLDBBPcmdhbml6YXRpb25hbC0xMTowOAYDVQQDDDFDRkNBQFVuaW9uUGF5IEludGVybmF0aW9uYWxATjkxMzEwMDAwMDU0NTU4NzhYNkAxMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwuRlVZUwD6W730Te77RvLKf8fqY\/bSVmw2OKZQcfLiH1VDoPFRes5Z2WmAhA2JnGnnZ+WYRjC4n+CvaKHPGhH4LRVLXBDjNbY7vjN9DWJnji5DTM\/DLkCaggt4819mJz06oHIKOCgXUSIVVLWsOYjkot1kmU6ln5kQgROJ2WPmcu0Ks3FSdb\/FRGINoFOw6c\/LM+JxFNcLOaq5l9bd3ScRbzf\/sZgpY2BZtEK\/GCKaBCup\/aLCxQiPd2YHg4DwGA6ntpFf\/OUxaUqRbgsacoWkfYaQb6mJiInvpRulmQNJ7L\/EVLhefs4aBSL30jPplG58GI48wfnnn7DGFECN1txQIDAQABo4IBeDCCAXQwbAYIKwYBBQUHAQEEYDBeMCgGCCsGAQUFBzABhhxodHRwOi8vb2NzcC5jZmNhLmNvbS5jbi9vY3NwMDIGCCsGAQUFBzAChiZodHRwOi8vY3JsLmNmY2EuY29tLmNuL29jYTMxL29jYTMxLmNlcjAfBgNVHSMEGDAWgBTitAnLzWGhc0p5f\/GKgwvdtH6MHTAMBgNVHRMBAf8EAjAAMEgGA1UdIARBMD8wPQYIYIEchu8qAQQwMTAvBggrBgEFBQcCARYjaHR0cDovL3d3dy5jZmNhLmNvbS5jbi91cy91cy0xNC5odG0wPQYDVR0fBDYwNDAyoDCgLoYsaHR0cDovL2NybC5jZmNhLmNvbS5jbi9vY2EzMS9SU0EvY3JsMzY0NS5jcmwwDgYDVR0PAQH\/BAQDAgbAMB0GA1UdDgQWBBRrdk+U\/3RQ6UypCMhaDf6I9xfXEDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwDQYJKoZIhvcNAQELBQADggEBABCH0cZGmphfzI9qa3afdIN0poPLP3krYnDkcjWgm18pxrnKtpP00VpyGDmsBv0YJnqpqoT1+x7hWFaT2Ks9CUulnAGYIjhIqKMJIgMN+IfiHCZ+XpUk\/P941Jod0FxSKhe3uybx+WORVml5umKApFlQzfzqHzs34CO7c+z2EfK7cpGiFY\/dj+vXp1rdIYPyZmYzamUsi1oL5B0NHvVWm6jFWzU65IvM8RaWyDqsufYaQC\/kxvaBwL6aHSsuwhfd4UdDHmegSmXD06GRIJk0s6HVSLB1n3yw+emFh7bQiWgskDmIiek653xJpu0LClaypFBJNzHTqCqH7x8zY3NIVeM=\""
+      "length": 1682,
+      "value": "\"MIIE5jCCA86gAwIBAgIFSSAxFBMwDQYJKoZIhvcNAQELBQAwWDELMAkGA1UEBhMCQ04xMDAuBgNVBAoMJ0NoaW5hIEZpbmFuY2lhbCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEXMBUGA1UEAwwOQ0ZDQSBBQ1MgT0NBMzEwHhcNMjUwNDE4MDY0MDU4WhcNMzAwNDE4MDY0MDU4WjCBlDELMAkGA1UEBhMCQ04xFzAVBgNVBAoMDkNGQ0EgQUNTIE9DQTMxMRMwEQYDVQQLDApDRkNBIE9DQTMxMRkwFwYDVQQLDBBPcmdhbml6YXRpb25hbC0xMTwwOgYDVQQDDDNDRkNBQOmTtuiBlOWbvemZheaciemZkOWFrOWPuEBOOTEzMTAwMDAwNTQ1NTg3OFg2QDYwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDGExgwrs7wx36f6RHHWHpcn20\/1f2KHY5QYxEsXP+PnR9rRyefEl1mqUeAn+0PCy76X6L6rOVP2aV4fUXrEj48aQxlaHKxwAiQEbWWyo8pMZfKXdesYsE2fZ2lPDr031hJJzr7Hfx0GTldajjzSXXtKKRo5HoxYPxXAbhZ9SymaxoF5TbA9Vf0dAuUXwPAH4BezT7pcYTP1gUi0fTL8V4j0xLHFtGm\/4hL93EfDglTH2qYx3ooIINZ+SRMnoGYOv2EKjevCHZdFOOHCKKzs3YH9aMzKaMu7uNI3j2Nx6A3MweJARDTN0OG98eS3yD+bSQArvUsq4e5Fq7IgQEQZ04hAgMBAAGjggF4MIIBdDBsBggrBgEFBQcBAQRgMF4wKAYIKwYBBQUHMAGGHGh0dHA6Ly9vY3NwLmNmY2EuY29tLmNuL29jc3AwMgYIKwYBBQUHMAKGJmh0dHA6Ly9jcmwuY2ZjYS5jb20uY24vb2NhMzEvb2NhMzEuY2VyMB8GA1UdIwQYMBaAFOK0CcvNYaFzSnl\/8YqDC920fowdMAwGA1UdEwEB\/wQCMAAwSAYDVR0gBEEwPzA9BghggRyG7yoBBDAxMC8GCCsGAQUFBwIBFiNodHRwOi8vd3d3LmNmY2EuY29tLmNuL3VzL3VzLTE0Lmh0bTA9BgNVHR8ENjA0MDKgMKAuhixodHRwOi8vY3JsLmNmY2EuY29tLmNuL29jYTMxL1JTQS9jcmw0OTk3LmNybDAOBgNVHQ8BAf8EBAMCBsAwHQYDVR0OBBYEFBSEeXnGB0W7LsLieE\/ImVyOzTbsMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDANBgkqhkiG9w0BAQsFAAOCAQEALfYqErq5LwHEhl6MIuEl9GlSfaWGxElL5SLyfcXgF+m8L4yrA2Zo\/XPl5umYk22YPQFmBH6fr\/k1+LDCw8ZY0Kp9jvMJjJswZduU\/6InBkOzvtOngS4iahfAduS0gvX5pwzVrE4XdlghkZ8DeccO7Wg86\/wvPWfgWkEwqlTk2HthERlkc9MNs\/kbV3SsixP83bZBxCACJwttyJ4omfOwKPKe2GpOg5\/fgZR59AeT+6X3LrNSVUsK1+wdPZBktN\/MUeZA1GhgNA5WqRFEw2qqjCFAaN8Zx6IVYCHLU7dNiLED9NypV0Zudk277ZwclScmDOgabsNOFhdwnb9rDEHiug==\""
+    },
+    {
+      "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/encryption\/DefaultDSValues.swift",
+      "kind": "StringLiteral",
+      "offset": 25666,
+      "length": 42,
+      "value": "\"14847979c60745bb2ec2e2784fc8995c8ecd36ec\""
     },
     {
       "filePath": "\/Users\/hanastas\/Documents\/3ds-sdk\/ios-3ds-skd\/src\/main\/uiCustomization\/emvCustomization\/uiElementsCustomization\/LabelCustomization.swift",
