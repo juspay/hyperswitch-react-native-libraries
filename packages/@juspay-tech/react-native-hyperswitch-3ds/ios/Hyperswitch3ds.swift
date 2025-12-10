@@ -36,7 +36,7 @@ class Hyperswitch3ds: NSObject {
                 publishableKey: _publishableKey
             )
             
-            let _provider: ThreeDSProviderType? = switch configuration["provider"] as? String {
+            let _provider: ThreeDSProviderType? = switch configuration["threeDSProvider"] as? String {
             case "cardinal":
                     .cardinal
             case "netcetera":
@@ -47,14 +47,7 @@ class Hyperswitch3ds: NSObject {
                 nil
             }
             
-            let _apiKey: String? = switch _provider {
-            case .cardinal:
-                configuration["jwtToken"] as? String
-            case .netcetera:
-                configuration["netceteraSdkApiKey"] as? String
-            default:
-                nil
-            }
+            let _apiKey: String? = configuration["threeDSProviderApiKey"] as? String
             
             let _env: EnvironmentType = switch hsSDKEnvironment.uppercased() {
             case "SANDBOX", "INTEG":

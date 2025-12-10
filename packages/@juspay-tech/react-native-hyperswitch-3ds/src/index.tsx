@@ -12,9 +12,8 @@ export enum threeDSProvider {
 type Configuration = {
   publishableKey: string;
   authIntentClientSecret?: string, 
-  provider?: threeDSProvider;
-  jwtToken?: string;
-  netceteraSdkApiKey?: string;
+  threeDSProvider?: threeDSProvider;
+  threeDSProviderApiKey?: string;
 }
 
 function initializeThreeDS(
