@@ -13,11 +13,11 @@ class HyperswitchScancardModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
   override fun getName(): String {
-    return "HyperswitchScancard"
+    return NAME
   }
 
   @ReactMethod
-  fun launchScanCard(scanCardRequest: String, callBack: Callback) {
+  fun launchScanCard(scanCardRequest: String, callback: Callback) {
     (currentActivity as? FragmentActivity)?.let {
       ScanCardManager.launch(it, object : ScanCardCallback {
         override fun onScanResult(result: Map<String, Any?>) {
@@ -27,16 +27,24 @@ class HyperswitchScancardModule(reactContext: ReactApplicationContext) :
             }
           } ?: mapOf()
           val pan = data["pan"] ?: ""
+          val expiryMonth = data["expiryMonth"] ?: ""
+          val expiryYear = data["expiryYear"] ?: ""
 
           val dataMap = Arguments.createMap()
           dataMap.putString("pan", pan)
+          dataMap.putString("expiryMonth", expiryMonth)
+          dataMap.putString("expiryYear", expiryYear)
 
           val map = Arguments.createMap()
           map.putString("status", result["status"] as String? ?: "Failed")
           map.putMap("data", dataMap)
-          callBack.invoke(map)
+          callback.invoke(map)
         }
       })
     }
+  }
+
+  companion object {
+    const val NAME = "HyperswitchScancard"
   }
 }

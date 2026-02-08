@@ -1,8 +1,21 @@
 import { NativeModules } from 'react-native';
 
-const HyperswitchScancard = NativeModules.HyperswitchScancard || null;
+// Declare the global type for TurboModule proxy
+declare global {
+  var __turboModuleProxy: unknown;
+}
 
-const isAvailable = HyperswitchScancard && HyperswitchScancard.launchScanCard;
+// Try to get the TurboModule first, fallback to legacy NativeModules
+const isTurboModuleEnabled = global.__turboModuleProxy != null;
+
+const HyperswitchScancardModule = isTurboModuleEnabled
+  ? require('./NativeHyperswitchScancard').default
+  : NativeModules.HyperswitchScancard;
+
+const HyperswitchScancard = HyperswitchScancardModule || null;
+
+const isAvailable =
+  HyperswitchScancard && typeof HyperswitchScancard.launchScanCard === 'function';
 
 export interface ScanCardReturnType {
   status: string;

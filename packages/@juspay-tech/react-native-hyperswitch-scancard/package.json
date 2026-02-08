@@ -144,6 +144,14 @@
       ]
     ]
   },
+  "codegenConfig": {
+    "name": "RNHyperswitchScancardSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.reactnativehyperswitchscancard"
+    }
+  },
   "create-react-native-library": {
     "languages": "kotlin-objc",
     "type": "turbo-module",

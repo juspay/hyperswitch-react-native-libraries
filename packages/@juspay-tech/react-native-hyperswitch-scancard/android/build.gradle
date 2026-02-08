@@ -1,5 +1,4 @@
 buildscript {
-  // Buildscript is evaluated before everything else so we can't use getExtOrDefault
   def kotlin_version = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties['HyperswitchScancard_kotlinVersion']
 
   repositories {
@@ -7,12 +6,9 @@ buildscript {
     mavenCentral()
   }
 
-
   dependencies {
-    classpath 'com.android.tools.build:gradle:3.5.3'
-    // noinspection DifferentKotlinGradleVersion
+    classpath 'com.android.tools.build:gradle:7.4.2'
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0'
   }
 }
 
@@ -22,7 +18,6 @@ def isNewArchitectureEnabled() {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-
 
 if (isNewArchitectureEnabled()) {
   apply plugin: 'com.facebook.react'
@@ -36,7 +31,13 @@ def getExtOrIntegerDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties['HyperswitchScancard_' + name]).toInteger()
 }
 
+def reactNativeArchitectures() {
+  def value = project.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
 android {
+  namespace "com.reactnativehyperswitchscancard"
 
   viewBinding {
     enabled = true
@@ -49,6 +50,11 @@ android {
     targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
   }
+
+  buildFeatures {
+    buildConfig true
+  }
+
   buildTypes {
     release {
       minifyEnabled false
@@ -60,8 +66,25 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+
+  sourceSets {
+    main {
+      if (isNewArchitectureEnabled()) {
+        java.srcDirs += [
+          "src/newarch",
+          "${project.buildDir}/generated/source/codegen/java"
+        ]
+      } else {
+        java.srcDirs += ["src/oldarch"]
+      }
+    }
   }
 }
 
@@ -76,8 +99,7 @@ repositories {
   if (rootProject.ext.has('reactNativeAndroidRoot')) {
     defaultDir = rootProject.ext.get('reactNativeAndroidRoot')
   } else {
-    defaultDir = new File(projectDir,
-      '/../../../node_modules/react-native/android')
+    defaultDir = new File(projectDir, '/../../../node_modules/react-native/android')
   }
 
   if (defaultDir.exists()) {
@@ -85,7 +107,6 @@ repositories {
       url defaultDir.toString()
       name androidSourcesName
     }
-
     logger.info(":${project.name}:reactNativeAndroidRoot ${defaultDir.canonicalPath}")
     found = true
   } else {
@@ -95,18 +116,14 @@ repositories {
       if (found) return true
       parentDir = parentDir.parentFile
 
-      def androidSourcesDir = new File(parentDir,
-        'node_modules/react-native')
-
-      def androidPrebuiltBinaryDir = new File(parentDir,
-        'node_modules/react-native/android')
+      def androidSourcesDir = new File(parentDir, 'node_modules/react-native')
+      def androidPrebuiltBinaryDir = new File(parentDir, 'node_modules/react-native/android')
 
       if (androidPrebuiltBinaryDir.exists()) {
         maven {
           url androidPrebuiltBinaryDir.toString()
           name androidSourcesName
         }
-
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidPrebuiltBinaryDir.canonicalPath}")
         found = true
       } else if (androidSourcesDir.exists()) {
@@ -114,7 +131,6 @@ repositories {
           url androidSourcesDir.toString()
           name androidSourcesName
         }
-
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidSourcesDir.canonicalPath}")
         found = true
       }
@@ -122,15 +138,15 @@ repositories {
   }
 
   if (!found) {
-    throw new GradleException("${project.name}: unable to locate React Native android sources. " + "Ensure you have you installed React Native as a dependency in your project and try again.")
+    throw new GradleException("${project.name}: unable to locate React Native android sources. " +
+      "Ensure you have installed React Native as a dependency in your project and try again.")
   }
 }
 
 def kotlin_version = getExtOrDefault('kotlinVersion')
 
 dependencies {
-  //noinspection GradleDynamicVersion
-  implementation "com.facebook.react:react-native:+"
+  implementation "com.facebook.react:react-android:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "io.hyperswitch:hyperswitch-sdk-android-scancard:1.0.0"
 }
@@ -138,7 +154,7 @@ dependencies {
 if (isNewArchitectureEnabled()) {
   react {
     jsRootDir = file("../src/")
-    libraryName = "HyperswitchScancard"
+    libraryName = "RNHyperswitchScancardSpec"
     codegenJavaPackageName = "com.reactnativehyperswitchscancard"
   }
 }
