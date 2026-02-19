@@ -4,20 +4,20 @@ import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.module.annotations.ReactModule
+import io.hyperswitch.scancard.NativeHyperswitchScancardSpec
 import io.hyperswitch.scancard.ScanCardCallback
 import io.hyperswitch.scancard.ScanCardManager
 
+@ReactModule(name = HyperswitchScancardModule.NAME)
 class HyperswitchScancardModule(reactContext: ReactApplicationContext) :
-    ReactContextBaseJavaModule(reactContext) {
+    NativeHyperswitchScancardSpec(reactContext) {
 
   override fun getName(): String {
     return NAME
   }
 
-  @ReactMethod
-  fun launchScanCard(scanCardRequest: String, callback: Callback) {
+  override fun launchScanCard(scanCardRequest: String, callback: Callback) {
     (currentActivity as? FragmentActivity)?.let {
       ScanCardManager.launch(it, object : ScanCardCallback {
         override fun onScanResult(result: Map<String, Any?>) {
@@ -43,8 +43,7 @@ class HyperswitchScancardModule(reactContext: ReactApplicationContext) :
       })
     }
   }
-
-  companion object {
+  companion object{
     const val NAME = "HyperswitchScancard"
   }
 }

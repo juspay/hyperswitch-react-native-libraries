@@ -1,19 +1,18 @@
-import { NativeModules } from 'react-native';
+// import { NativeModules } from 'react-native';
 
-// Declare the global type for TurboModule proxy
-declare global {
-  var __turboModuleProxy: unknown;
-}
+// // Declare the global type for TurboModule proxy
+// declare global {
+//   var __turboModuleProxy: unknown;
+// }
 
 // Try to get the TurboModule first, fallback to legacy NativeModules
-const isTurboModuleEnabled = global.__turboModuleProxy != null;
-
-const HyperswitchScancardModule = isTurboModuleEnabled
-  ? require('./NativeHyperswitchScancard').default
-  : NativeModules.HyperswitchScancard;
+// const isTurboModuleEnabled = global.__turboModuleProxy != null;
+import NativeHyperswitchScancard from "./NativeHyperswitchScancard";
+const HyperswitchScancardModule = NativeHyperswitchScancard
+  // : NativeModules.HyperswitchScancard;
 
 const HyperswitchScancard = HyperswitchScancardModule || null;
-
+console.log("HyperswitchScancard module:", HyperswitchScancard);
 const isAvailable =
   HyperswitchScancard && typeof HyperswitchScancard.launchScanCard === 'function';
 

@@ -149,7 +149,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.reactnativehyperswitchscancard"
+      "javaPackageName": "io.hyperswitch.scancard"
     }
   },
   "create-react-native-library": {
