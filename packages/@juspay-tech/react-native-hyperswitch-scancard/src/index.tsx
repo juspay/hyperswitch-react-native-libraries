@@ -12,7 +12,6 @@ const HyperswitchScancardModule = NativeHyperswitchScancard
   // : NativeModules.HyperswitchScancard;
 
 const HyperswitchScancard = HyperswitchScancardModule || null;
-console.log("HyperswitchScancard module:", HyperswitchScancard);
 const isAvailable =
   HyperswitchScancard && typeof HyperswitchScancard.launchScanCard === 'function';
 

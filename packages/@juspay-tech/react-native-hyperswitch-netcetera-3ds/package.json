@@ -97,5 +97,13 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "codegenConfig": {
+    "name": "RNHyperswitchNetceteraSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "io.hyperswitch.netcetera3ds"
+    }
   }
 }

@@ -2,15 +2,17 @@ package com.reactnativehyperswitchnetcetera3ds
 
 import android.app.Activity
 import android.app.Application
-import androidx.annotation.Nullable
+import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.module.annotations.ReactModule
+import io.hyperswitch.netcetera3ds.NativeHyperswitchNetceteraSpec
 
+@ReactModule(name = HyperswitchNetcetera3dsModule.NAME)
 class HyperswitchNetcetera3dsModule(reactContext: ReactApplicationContext) :
-  ReactContextBaseJavaModule(reactContext) {
+  NativeHyperswitchNetceteraSpec(reactContext) {
   val hsNetceteraUtils = HsNetceteraUtils()
   val applicationContext = reactApplicationContext.applicationContext as Application
   private fun getActivity(): Activity? {
@@ -21,16 +23,16 @@ class HyperswitchNetcetera3dsModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun initialiseNetceteraSDK(
+  override fun initialiseNetceteraSDK(
     apiKey: String, hsSDKEnvironment: String, callback: Callback
   ) {
-
     try {
       HsNetceteraConfigurator.setConfigParameters(
-        applicationContext, hsNetceteraUtils.hsSdkEnvironmetMapper(hsSDKEnvironment), apiKey
+        applicationContext,
+        hsNetceteraUtils.hsSdkEnvironmetMapper(hsSDKEnvironment),
+        apiKey
       )
       hsNetceteraUtils.intialiseNetceteraSDK(applicationContext, callback)
-
     } catch (err: Exception) {
       val map = Arguments.createMap()
       map.putString("status", "failure")
@@ -39,21 +41,23 @@ class HyperswitchNetcetera3dsModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  //5267648608924299
+
   @ReactMethod
-  fun generateAReqParams(
+  override fun generateAReqParams(
     messageVersion: String, directoryServerId: String, callback: Callback
   ) {
     hsNetceteraUtils.generateAReqParams(getActivity(), messageVersion, directoryServerId, callback)
   }
 
   @ReactMethod
-  fun recieveChallengeParamsFromRN(
+  override fun recieveChallengeParamsFromRN(
     acsSignedContent: String,
     acsRefNumber: String,
     acsTransactionId: String,
-    @Nullable threeDSRequestorAppURL: String?,
     threeDSServerTransId: String,
-    callback: Callback
+    callback: Callback,
+    threeDSRequestorAppURL: String?
   ) {
     val challengeParameters = HsNetceteraConfigurator.getChallengeParams(
       acsRefNumber,
@@ -66,7 +70,11 @@ class HyperswitchNetcetera3dsModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun generateChallenge(callback: Callback) {
+  override fun generateChallenge(callback: Callback) {
+    Log.i("Manideep", "reached here 3")
     hsNetceteraUtils.generateChallenge(getActivity(), 5, callback)
+  }
+  companion object{
+    const val NAME = "HyperswitchNetcetera3ds"
   }
 }

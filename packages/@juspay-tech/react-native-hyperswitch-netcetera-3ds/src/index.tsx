@@ -1,18 +1,22 @@
-import { NativeModules } from 'react-native';
+import NativeHyperswitchNetcetera from './NativeHyperswitchNetcetera';
 
-const HyperswitchNetcetera3ds = NativeModules.HyperswitchNetcetera3ds || null;
-const isAvailable = HyperswitchNetcetera3ds && HyperswitchNetcetera3ds.initialiseNetceteraSDK;
+const HyperswitchNetcetera3ds = NativeHyperswitchNetcetera || null;
+const isAvailable =
+  HyperswitchNetcetera3ds &&
+  typeof HyperswitchNetcetera3ds.initialiseNetceteraSDK === 'function';
 
 function initialiseNetceteraSDK(
   apiKey: string,
   hsSDKEnvironment: string,
   callback: (status: statusType) => void
 ) {
-  return HyperswitchNetcetera3ds.initialiseNetceteraSDK(
-    apiKey,
-    hsSDKEnvironment,
-    callback
-  );
+  if (isAvailable) {
+    return HyperswitchNetcetera3ds.initialiseNetceteraSDK(
+      apiKey,
+      hsSDKEnvironment,
+      callback
+    );
+  }
 }
 
 function generateAReqParams(
@@ -20,32 +24,38 @@ function generateAReqParams(
   directoryServerId: string,
   callback: (aReqParams: AReqParams, status: statusType) => void
 ) {
-  return HyperswitchNetcetera3ds.generateAReqParams(
-    messageVersion,
-    directoryServerId,
-    callback
-  );
+  if (isAvailable) {
+    return HyperswitchNetcetera3ds.generateAReqParams(
+      messageVersion,
+      directoryServerId,
+      callback
+    );
+  }
 }
 
 function recieveChallengeParamsFromRN(
-  acsSignedContent: String,
-  acsRefNumber: String,
-  acsTransactionId: String,
-  threeDSServerTransId: String,
+  acsSignedContent: string,
+  acsRefNumber: string,
+  acsTransactionId: string,
+  threeDSServerTransId: string,
   callback: (status: statusType) => void,
-  threeDSRequestorAppURL?: String
+  threeDSRequestorAppURL?: string
 ) {
-  return HyperswitchNetcetera3ds.recieveChallengeParamsFromRN(
-    acsSignedContent,
-    acsRefNumber,
-    acsTransactionId,
-    threeDSRequestorAppURL,
-    threeDSServerTransId,
-    callback
-  );
+  if (isAvailable) {
+    return HyperswitchNetcetera3ds.recieveChallengeParamsFromRN(
+      acsSignedContent,
+      acsRefNumber,
+      acsTransactionId,
+      threeDSServerTransId,
+      callback,
+      threeDSRequestorAppURL
+    );
+  }
 }
 function generateChallenge(callback: (status: statusType) => void) {
-  return HyperswitchNetcetera3ds.generateChallenge(callback);
+  if (isAvailable) {
+    return HyperswitchNetcetera3ds.generateChallenge(callback);
+  }
 }
 
 export type statusType = {
