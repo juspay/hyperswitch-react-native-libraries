@@ -1,6 +1,5 @@
 package com.hyperswitchsdkreactnative.modules
 
-import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactMethod
@@ -32,6 +31,20 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   override fun launchApplePay(requestObj: String, callback: Callback) {
 //    Log.d(NAME, "launchApplePay called")
     // Implementation for Apple Pay
+    callback.invoke("Apple Pay not implemented")
+  }
+
+  override fun startApplePay(
+    requestObj: String?,
+    callback: Callback
+  ) {
+    callback.invoke("Apple Pay not implemented")
+  }
+
+  override fun presentApplePay(
+    requestObj: String?,
+    callback: Callback
+  ) {
     callback.invoke("Apple Pay not implemented")
   }
 
@@ -162,6 +175,6 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   }
 
   companion object {
-    const val NAME = "HyperModules"
+    const val NAME = "HyperModule"
   }
 }

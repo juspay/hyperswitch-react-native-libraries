@@ -8,7 +8,6 @@ import android.view.View
 import android.webkit.WebSettings
 import android.view.WindowInsets
 import androidx.annotation.RequiresApi
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -16,7 +15,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.internal.ReactFragment
+import com.hyperswitchsdkreactnative.internal.HyperFragment
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -39,7 +38,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
     this.customLogUrl = customLogUrl
     this.customParams = customParams
     try {
-      ReactFragment.initOTAServices(context = activity)
+//      ReactFragment.initOTAServices(context = activity)
     } catch (_: Exception) {
     }
   }
@@ -74,7 +73,8 @@ internal class HyperProvider internal constructor(private val activity: Activity
       }
 
       reactFragment =
-        ReactFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle).build()
+        HyperFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle)
+          .build()
 
       val fragmentManager: FragmentManager = it.supportFragmentManager
       val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -92,7 +92,8 @@ internal class HyperProvider internal constructor(private val activity: Activity
       try {
         if (reactFragment != null) {
           reactFragment!!.unRegisterEventBus()
-          it.supportFragmentManager.beginTransaction().remove(reactFragment!!).commitAllowingStateLoss()
+          it.supportFragmentManager.beginTransaction().remove(reactFragment!!)
+            .commitAllowingStateLoss()
         }
         if (reset) {
           reactFragment = null
@@ -104,7 +105,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
 
   companion object {
     @JvmStatic
-    var reactFragment: ReactFragment? = null
+    var reactFragment: HyperFragment? = null
 
     @JvmStatic
     private var publishableKey: String? = null
