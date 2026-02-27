@@ -15,7 +15,8 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.internal.HyperFragment
+import com.hyperswitchsdkreactnative.react.HyperFragment
+import com.hyperswitchsdkreactnative.react.ReactNativeController
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -38,7 +39,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
     this.customLogUrl = customLogUrl
     this.customParams = customParams
     try {
-//      ReactFragment.initOTAServices(context = activity)
+      ReactNativeController.initialize(activity.application)
     } catch (_: Exception) {
     }
   }

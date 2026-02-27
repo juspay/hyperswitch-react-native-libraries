@@ -1,4 +1,4 @@
-package com.hyperswitchsdkreactnative.views
+package com.hyperswitchsdkreactnative.views.googlepay
 
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.SimpleViewManager

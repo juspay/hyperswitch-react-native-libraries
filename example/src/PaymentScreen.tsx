@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import {
   useHyper,
+  PaymentWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
-  type PresentPaymentSheetResult,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -13,21 +19,27 @@ import {
   getErrorMessage,
 } from './utils';
 import { styles } from './styles';
+import { presentPaymentSheetResult } from '../../packages/@juspay-tech/react-native-hyperswitch/src/modules/NativeHyperswitchSdk.gen';
 
 export default function PaymentScreen() {
   const { initPaymentSession, presentPaymentSheet } = useHyper();
+  // const {initWidget, presentWidget } = useHyperWidget("payment-widget");
+  // const {initWidget as googlePayInit, presentWidget as googlePayPresent} = useHyperWidget("google-pay-widget");
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
-
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+    setClientSecret(data.clientSecret);
     return data.clientSecret;
+
   }, [baseURL]);
+
 
   const setup = useCallback(async (): Promise<void> => {
     const paymentIntent = await createPaymentIntent();
@@ -48,7 +60,7 @@ export default function PaymentScreen() {
 
   const checkout = async (): Promise<void> => {
     try {
-      const { error, paymentResult }: PresentPaymentSheetResult =
+      const { error, paymentResult }: presentPaymentSheetResult =
         await presentPaymentSheet(getCustomisationOptions());
       if (error) {
         console.error('Payment failed:', JSON.stringify(error, null, 2));
@@ -80,7 +92,8 @@ export default function PaymentScreen() {
   }, [setup]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} style={{ flex: 1, width: '100%', height: '100%' }}>
+    {/* <View style={{ flex: 1 }}> */}
       <TextInput
         style={styles.textInput}
         placeholder="Enter base URL"
@@ -93,10 +106,29 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
+      <PaymentWidget
+        widgetId="payment-widget"
+        widgetType={'PAYMENT_SHEET'}
+        clientSecret={clientSecret}
+        style={{
+          width: '100%',
+          height: 500,
+          // flexGrow: 1,
+        }}
+        onPaymentResult={(result) => {
+          console.log(
+            'Payment Result from Widget:',
+            JSON.stringify(result, null, 2)
+          );
+          setStatus(getStatus(result?.paymentResult));
+        }}
+        options={getCustomisationOptions()}
+      />
       <View style={styles.status}>
         <Text style={styles.statusText}>{status}</Text>
         {message && <Text style={styles.messageText}>{message}</Text>}
       </View>
-    </View>
+      {/* </View> */}
+    </ScrollView>
   );
 }

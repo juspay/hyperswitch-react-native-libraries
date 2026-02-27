@@ -108,4 +108,5 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    implementation 'io.hyperswitch:hyperswitch-sdk-android-logger:1.0.4'
 }

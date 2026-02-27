@@ -12,13 +12,13 @@
       "source": "./src/index.tsx",
       "import": {
         "types": "./lib/typescript/src/index.d.ts",
-        "default": "./lib/module/index.bundle.js"
+        "default": "./src/index.tsx"
       },
       "require": {
         "types": "./lib/typescript/src/index.d.ts",
-        "default": "./lib/commonjs/index.bundle.js"
+        "default": "./src/index.tsx"
       },
-      "default": "./lib/module/index.bundle.js"
+      "default": "./src/index.tsx"
     },
     "./package.json": "./package.json"
   },

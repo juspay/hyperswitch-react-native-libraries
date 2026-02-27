@@ -1,4 +1,4 @@
-package com.hyperswitchsdkreactnative.views
+package com.hyperswitchsdkreactnative.views.googlepay
 
 import android.annotation.SuppressLint
 import android.util.Log

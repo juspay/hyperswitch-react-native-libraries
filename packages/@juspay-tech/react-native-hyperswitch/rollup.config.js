@@ -18,7 +18,7 @@ export default [
     plugins: [
       resolve({
         preferBuiltins: false,
-        extensions: ['.tsx', '.ts', '.jsx', '.js'],
+        extensions: ['.tsx', '.ts', '.jsx', '.js', '.res.js'],
       }),
       commonjs(),
       typescript({
@@ -41,7 +41,7 @@ export default [
     plugins: [
       resolve({
         preferBuiltins: false,
-        extensions: ['.tsx', '.ts', '.jsx', '.js'],
+        extensions: ['.tsx', '.ts', '.jsx', '.js', '.res.js'],
       }),
       commonjs(),
       typescript({

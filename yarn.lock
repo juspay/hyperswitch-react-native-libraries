@@ -3388,6 +3388,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@juspay-tech/react-native-hyperswitch@link:../packages/@juspay-tech/react-native-hyperswitch::locator=react-native-hyperswitch-example%40workspace%3Aexample":
+  version: 0.0.0-use.local
+  resolution: "@juspay-tech/react-native-hyperswitch@link:../packages/@juspay-tech/react-native-hyperswitch::locator=react-native-hyperswitch-example%40workspace%3Aexample"
+  languageName: node
+  linkType: soft
+
 "@juspay-tech/react-native-hyperswitch@workspace:packages/@juspay-tech/react-native-hyperswitch":
   version: 0.0.0-use.local
   resolution: "@juspay-tech/react-native-hyperswitch@workspace:packages/@juspay-tech/react-native-hyperswitch"
@@ -18972,6 +18978,7 @@ __metadata:
     "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.25.3
     "@babel/runtime": ^7.25.0
+    "@juspay-tech/react-native-hyperswitch": "link:../packages/@juspay-tech/react-native-hyperswitch"
     "@react-native-community/cli": 18.0.0
     "@react-native-community/cli-platform-android": 18.0.0
     "@react-native-community/cli-platform-ios": 18.0.0
