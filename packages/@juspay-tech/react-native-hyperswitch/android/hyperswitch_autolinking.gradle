@@ -253,12 +253,16 @@ class HyperswitchAutolinking {
               }
             }
         } else {
-          if(nameCleansed != "juspay-tech_react-native-hyperswitch") {
-            if (dependencyConfiguration != null) {
-              add("${dependencyConfiguration}", project.project(":${nameCleansed}"))
-            } else {
-              implementation project.project(":${nameCleansed}")
+          try {
+            if (nameCleansed != "juspay-tech_react-native-hyperswitch") {
+              if (dependencyConfiguration != null) {
+                add("${dependencyConfiguration}", project.project(":${nameCleansed}"))
+              } else {
+                implementation project.project(":${nameCleansed}")
+              }
             }
+          }catch (Exception e) {
+            this.logger.error("${LOG_PREFIX}Failed to add dependency: ${nameCleansed}")
           }
         }
       }

@@ -33,13 +33,18 @@ enum class WidgetType {
 
 typealias Callback = (PaymentSheetResult) -> Unit
 
-class PaymentWidgetView : FrameLayout {
+class PaymentWidgetView : FrameLayout{
   private var configuration: String = ""
-  private var callback: Callback? = { it -> Log.i("Manideep", it.toString()) }
+  private var callback: Callback? = { it -> Log.i("Manideep", "${it.toString()} manideep " )}
   private var publishableKey: String? = null
   private var profileId: String? = null
   private var sessionId = UUID.randomUUID().toString()
   private var clientSecret: String = ""
+
+  // Default minimum height for the widget (300dp)
+  private val defaultMinHeight: Int = (300 * context.resources.displayMetrics.density).toInt()
+  // Flag to track if we've measured at least once
+  private var hasMeasuredOnce = false
 
   fun getClientSecret() :String{
    return  this.clientSecret
@@ -74,11 +79,57 @@ class PaymentWidgetView : FrameLayout {
   }
 
   private fun init() {
-//    fragmentContainer = FrameLayout(context).apply {
-//      id = View.generateViewId()
-//    }
-//    addView(fragmentContainer)
+    // Enable descendant clipping for proper rendering
+//    clipChildren = true
+//    clipToPadding = true
   }
+
+//  override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+//    val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+//    val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+//    val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+//    val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+//
+//    var finalWidth = widthSize
+//    var finalHeight = heightSize
+//
+//    // If width is unspecified (0 or AT_MOST), use available width or default to match parent
+//    if (widthMode == MeasureSpec.UNSPECIFIED || widthMode == MeasureSpec.AT_MOST) {
+//      finalWidth = if (widthSize > 0) widthSize else LayoutParams.MATCH_PARENT
+//    }
+//
+//    // If height is unspecified or is 0, use default minimum height
+//    if (heightMode == MeasureSpec.UNSPECIFIED || heightSize < defaultMinHeight) {
+//      finalHeight = if (heightMode == MeasureSpec.EXACTLY) heightSize else defaultMinHeight
+//    }
+//
+//    // Set the measured dimensions
+//    setMeasuredDimension(finalWidth, finalHeight)
+//
+//    // Measure all children
+//    measureChildren(
+//      MeasureSpec.makeMeasureSpec(finalWidth, if (widthMode == MeasureSpec.EXACTLY) MeasureSpec.EXACTLY else MeasureSpec.AT_MOST),
+//      MeasureSpec.makeMeasureSpec(finalHeight, if (heightMode == MeasureSpec.EXACTLY) MeasureSpec.EXACTLY else MeasureSpec.AT_MOST)
+//    )
+//
+//    hasMeasuredOnce = true
+//  }
+
+//  override fun requestLayout() {
+//    super.requestLayout()
+//    // Force a re-measure after layout request
+//    if (hasMeasuredOnce) {
+//      post {
+//        if (isAttachedToWindow) {
+//          measure(
+//            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+//            MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+//          )
+//          layout(left, top, right, bottom)
+//        }
+//      }
+//    }
+//  }
 
 
 

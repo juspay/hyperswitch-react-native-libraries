@@ -93,7 +93,7 @@ export default function PaymentScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} style={{ flex: 1, width: '100%', height: '100%' }}>
-    {/* <View style={{ flex: 1 }}> */}
+    {/* <View style={{ flex: 1, height: '100%', width: '100%', justifyContent: 'center', alignItems: 'center' }}> */}
       <TextInput
         style={styles.textInput}
         placeholder="Enter base URL"
@@ -106,15 +106,10 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
-      <PaymentWidget
+      <View style={{ width: '100%', height: 500}}>
+        <PaymentWidget
         widgetId="payment-widget"
         widgetType={'PAYMENT_SHEET'}
-        clientSecret={clientSecret}
-        style={{
-          width: '100%',
-          height: 500,
-          // flexGrow: 1,
-        }}
         onPaymentResult={(result) => {
           console.log(
             'Payment Result from Widget:',
@@ -122,13 +117,17 @@ export default function PaymentScreen() {
           );
           setStatus(getStatus(result?.paymentResult));
         }}
-        options={getCustomisationOptions()}
+        clientSecret={clientSecret}
+        options={{...getCustomisationOptions()}}
       />
+      
+      </View>
+  
       <View style={styles.status}>
         <Text style={styles.statusText}>{status}</Text>
         {message && <Text style={styles.messageText}>{message}</Text>}
       </View>
-      {/* </View> */}
     </ScrollView>
+   
   );
 }

@@ -18,7 +18,7 @@ import com.facebook.react.fabric.ComponentFactory
 import com.facebook.react.runtime.ReactHostImpl
 import com.facebook.react.runtime.cxxreactpackage.CxxReactPackage
 import com.facebook.react.runtime.hermes.HermesInstance
-import com.facebook.react.soloader.OpenSourceMergedSoMapping
+//import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import com.hyperswitchsdkreactnative.BuildConfig
 import com.hyperswitchsdkreactnative.R
@@ -133,7 +133,7 @@ object ReactNativeController {
   }
 
   @OptIn(UnstableReactNativeAPI::class)
-  fun createReactHost(application: Application): ReactHost{
+  fun createReactHost(application: Application): ReactHost {
 
     val bundleLoader =
       JSBundleLoader.createAssetLoader(application, "assets://hyperswitch.bundle", true)
@@ -155,12 +155,13 @@ object ReactNativeController {
     DefaultComponentsRegistry.register(componentFactory)
 
     return ReactHostImpl(
-        application.applicationContext,
-        defaultReactHostDelegate,
-        componentFactory,
-        false, /* allowPackagerServerAccess */
-        false,
-      )
+      application.applicationContext,
+      defaultReactHostDelegate,
+      componentFactory,
+      false, /* allowPackagerServerAccess */
+      {},
+      false
+    )
   }
 
   /**
@@ -216,7 +217,9 @@ object ReactNativeController {
 //          CrashHandler(application, BuildConfig.VERSION_NAME)
 //        )
 
-        SoLoader.init(application, OpenSourceMergedSoMapping)
+//        SoLoader.init(application, OpenSourceMergedSoMapping )
+        SoLoader.init(application, false)
+
 
         if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
           DefaultNewArchitectureEntryPoint.load()

@@ -13,13 +13,16 @@ type paymentWidgetProps = {
   clientSecret?: string,
   options?: PaymentSheetConfiguration.options,
   onPaymentResult?: paymentResult => unit,
+   style?: ReactNative.Style.style,
 }
 
 @genType
 type nativePaymentWidgetType = {
-  widgetId?: string,
-  widgetType?: widgetType,
+  ref?: ReactNative.Ref.valueRef<unit>,
+  widgetId?: string, // sessionId
   clientSecret?: string,
-  options?: string,
-  onPaymentResult?: paymentResult => unit,
+  widgetType?: widgetType,
+  options?: string, // apperance and client secret can be passed as options in JSON string format
+  onPaymentResult?: paymentResult => unit, // callback to receive payment result from native code
+  style?: ReactNative.Style.style, // style for the view including min-height
 }

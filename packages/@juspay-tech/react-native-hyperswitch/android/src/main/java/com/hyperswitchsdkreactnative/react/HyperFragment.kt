@@ -1,9 +1,15 @@
 package com.hyperswitchsdkreactnative.react
 
 import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import com.facebook.react.ReactFragment
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeHost
+import com.facebook.react.ReactRootView
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.proyecto26.inappbrowser.ChromeTabsDismissedEvent
 import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
@@ -18,14 +24,31 @@ class HyperFragment : ReactFragment() {
     registerEventBus()
   }
 
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?
+  ): View? {
+    Log.i("HyperFragment", "onCreateView called")
+    val view = super.onCreateView(inflater, container, savedInstanceState)
+    if (view is ReactRootView) {
+      view.layoutParams = FrameLayout.LayoutParams(
+        FrameLayout.LayoutParams.MATCH_PARENT,
+        FrameLayout.LayoutParams.MATCH_PARENT
+      )
+    }
+    Log.i("HyperFragment", "View created: $view")
+    return view
+  }
+
   override fun getReactNativeHost(): ReactNativeHost {
     return ReactNativeController.getReactNativeHost()
   }
 
-   @OptIn(UnstableReactNativeAPI::class)
-   override fun getReactHost(): ReactHost {
-     return ReactNativeController.getReactHost()
-   }
+//   @OptIn(UnstableReactNativeAPI::class)
+//   fun getReactHost(): ReactHost {
+//     return ReactNativeController.getReactHost()
+//   }
 
     override fun onDestroy() {
       super.onDestroy()
@@ -60,7 +83,7 @@ class HyperFragment : ReactFragment() {
     class Builder {
       var mComponentName: String? = null
       var mLaunchOptions: Bundle? = null
-      var mFabricEnabled: Boolean = true
+      var mFabricEnabled: Boolean = false
 
       fun setComponentName(componentName: String?): Builder {
         mComponentName = componentName
