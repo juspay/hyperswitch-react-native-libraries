@@ -28,7 +28,6 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   override fun getName(): String = NAME
   private lateinit var launchOptions: LaunchOptions
   private var context: ReactApplicationContext? = null
-  private var viewOnPaymentResult: ((PaymentSheetResult) -> Unit)? = null
 
   // Track choreographer callbacks per view to allow cleanup
   private val choreographerCallbacks = mutableMapOf<Int, Choreographer.FrameCallback>()
@@ -69,9 +68,9 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
           )
       } catch (e: Exception) {
         Log.e("PaymentWidgetManager", "Failed to send payment result event", e)
+      }finally {
+        removeWidget(view)
       }
-
-      viewOnPaymentResult?.invoke(result)
     })
   }
 
@@ -161,10 +160,14 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   }
 
   private fun removeWidget(view: PaymentWidgetView) {
-    val activity = context?.currentActivity as? FragmentActivity ?: return
-    val tag = "HyperPaymentSheet_${view.id}"
-    HyperFragmentManager.remove(activity, tag)
-    stopLayout(view.id)
+    try {
+      val activity = context?.currentActivity as? FragmentActivity ?: return
+      val tag = "HyperPaymentSheet_${view.id}"
+      HyperFragmentManager.remove(activity, tag)
+      stopLayout(view.id)
+    }catch (_: Exception){
+      // Handle errors
+    }
   }
 
   private fun setupLayout(view: View) {
