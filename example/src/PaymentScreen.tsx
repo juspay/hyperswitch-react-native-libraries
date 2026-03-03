@@ -37,9 +37,7 @@ export default function PaymentScreen() {
     }
     setClientSecret(data.clientSecret);
     return data.clientSecret;
-
   }, [baseURL]);
-
 
   const setup = useCallback(async (): Promise<void> => {
     const paymentIntent = await createPaymentIntent();
@@ -92,8 +90,16 @@ export default function PaymentScreen() {
   }, [setup]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ flex: 1, width: '100%', height: '100%' }}>
-    {/* <View style={{ flex: 1, height: '100%', width: '100%', justifyContent: 'center', alignItems: 'center' }}> */}
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingBottom: 40,
+        padding: 24,
+        gap: 16,
+      }}
+      showsVerticalScrollIndicator
+    >
       <TextInput
         style={styles.textInput}
         placeholder="Enter base URL"
@@ -106,28 +112,28 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
-      <View style={{ width: '100%', height: 500}}>
-        <PaymentWidget
+      <PaymentWidget
         widgetId="payment-widget"
         widgetType={'PAYMENT_SHEET'}
         onPaymentResult={(result) => {
-          console.log(
-            'Payment Result from Widget:',
-            JSON.stringify(result, null, 2)
-          );
-          setStatus(getStatus(result?.paymentResult));
+          console.log('Payment Result from Widget:', result);
+          if (result.errorMessage) {
+            setStatus(`Payment failed: ${result.errorMessage}`);
+            setMessage(null);
+            return;
+          } else {
+            setStatus(getStatus(result?.status));
+            setMessage(result?.status);
+          }
         }}
-        clientSecret={clientSecret}
-        options={{...getCustomisationOptions()}}
+        style={{ width: '100%', height: 600 }}
+        options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
       />
-      
-      </View>
-  
+
       <View style={styles.status}>
         <Text style={styles.statusText}>{status}</Text>
         {message && <Text style={styles.messageText}>{message}</Text>}
       </View>
     </ScrollView>
-   
   );
 }

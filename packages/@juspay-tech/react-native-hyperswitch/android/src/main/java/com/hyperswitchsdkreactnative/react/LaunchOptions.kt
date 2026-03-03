@@ -35,16 +35,15 @@ class LaunchOptions(
         putFloat("rightInset", edgeInsets.right)
         putFloat("bottomInset", edgeInsets.bottom)
       }
-//            configuration?.disableBranding?.let {
-//                putBoolean(
-//                    "disableBranding", it
-//                )
-//            }
-//            configuration?.defaultView?.let {
-//                putBoolean(
-//                    "defaultView", it
-//                )
-//            }
+
+//      configuration?.let { configString ->
+//        try {
+//          val json = JSONObject(configString)
+//          putBoolean("disableBranding", json.optBoolean("disableBranding"))
+//          putBoolean("defaultView", json.optBoolean("defaultView"))
+//        } catch (_: Exception) {
+//        }
+//      }
     }
 
   private fun getHyperParamsMap(map: Map<*, *>): Map<*, *> =
@@ -71,9 +70,9 @@ class LaunchOptions(
     paymentIntentClientSecret: String,
     configuration: String? = null,
     type: String = "payment",
-    sessionId: String = ""
+    widgetId: String = ""
   ): Bundle =
-    context?.let { getBundle(it, paymentIntentClientSecret, configuration, type, sessionId) }
+    context?.let { getBundle(it, paymentIntentClientSecret, configuration, type, widgetId) }
       ?: Bundle()
 
   fun getBundle(
@@ -81,25 +80,44 @@ class LaunchOptions(
     paymentIntentClientSecret: String,
     configuration: String? = null,
     type: String = "payment",
-    sessionId: String = ""
+    widgetId: String = ""
   ): Bundle = Bundle().apply {
     putBundle("props", Bundle().apply {
+      configuration?.let { configString ->
+        try {
+          val json = JSONObject(configString)
+          putBundle("configuration", toBundle(json))
+          val theme = json
+            .optJSONObject("appearance")
+            ?.optString("theme")
+
+          theme?.let {
+            putString("theme", it)
+          }
+        } catch (_ : Exception) {
+        }
+      }
+      putString("paymentIntentClientSecret", paymentIntentClientSecret)
       putString("type", type)
-      putString("sessionId", sessionId)
-            putString(
-                "publishableKey",
-                HyperProvider.publishableKey()
-            )
+      putString("widgetId", widgetId)
+      putString("type", type)
+      putString("widgetId", widgetId)
+      putString(
+        "publishableKey",
+        HyperProvider.publishableKey()
+      )
       putString("clientSecret", paymentIntentClientSecret)
-//            putString(
-//                "customBackendUrl",
-//              HyperProvider
-//            )
-//            putString("customLogUrl", PaymentConfiguration.getInstance(context).customLogUrl)
-//            putString("theme", configuration?.appearance?.theme?.name)
-//            putBundle("customParams", PaymentConfiguration.getInstance(context).customParams)
-      configuration?.let {
-        putBundle("configuration", toBundle(configuration))
+      val customBackendUrl = HyperProvider.customBackendUrl()
+      customBackendUrl?.let {
+        putString(
+          "customBackendUrl", it
+        )
+      }
+      val customLogUrl = HyperProvider.customLogUrl()
+      customLogUrl?.let {
+        putString(
+          "customLogUrl", it
+        )
       }
       putBundle("hyperParams", getHyperParams(configuration))
     })
@@ -110,14 +128,14 @@ class LaunchOptions(
 //            putBundle("hyperParams", getHyperParams())
 //        })
 //    }
-
+//
 //    fun getJson(
 //        paymentIntentClientSecret: String,
 //        configuration: PaymentSheet.Configuration?
 //    ): JSONObject = toJson(getBundle(paymentIntentClientSecret, configuration))
 
-  fun getJson(configurationMap: Map<*, *>): JSONObject =
-    toJson(getMapWithHyperParams(configurationMap))
+//  fun getJson(configurationMap: Map<*, *>): JSONObject =
+//    toJson(getMapWithHyperParams(configurationMap))
 
   private fun getMapWithHyperParams(map: Map<*, *>): Map<*, *> = mapOf(
     "props" to map.apply {
@@ -295,9 +313,9 @@ class LaunchOptions(
     return json
   }
 
-  private fun toJson(map: Map<*, *>): JSONObject {
-    return JSONObject(map)
-  }
+//  private fun toJson(map: Map<*, *>): JSONObject {
+//    return JSONObject(map)
+//  }
 }
 
 

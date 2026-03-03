@@ -22,9 +22,7 @@ import org.json.JSONArray
 
 internal class HyperProvider internal constructor(private val activity: Activity) {
 
-  private var customBackendUrl: String? = null
-  private var customLogUrl: String? = null
-  private var customParams: ReadableMap? = null
+
   private var clientSecret: String? = null
 
 
@@ -35,9 +33,9 @@ internal class HyperProvider internal constructor(private val activity: Activity
     customParams: ReadableMap?
   ) {
     Companion.publishableKey = publishableKey
-    this.customBackendUrl = customBackendUrl
-    this.customLogUrl = customLogUrl
-    this.customParams = customParams
+    Companion.customBackendUrl = customBackendUrl
+    Companion.customLogUrl = customLogUrl
+    Companion.customParams = customParams
     try {
       ReactNativeController.initialize(activity.application)
     } catch (_: Exception) {
@@ -107,13 +105,30 @@ internal class HyperProvider internal constructor(private val activity: Activity
   companion object {
     @JvmStatic
     var reactFragment: HyperFragment? = null
-
     @JvmStatic
     private var publishableKey: String? = null
+    @JvmStatic
+    private var customBackendUrl: String? = null
+    @JvmStatic
+    private var customLogUrl: String? = null
+    @JvmStatic
+    private var customParams: ReadableMap? = null
 
     fun publishableKey(): String {
       return publishableKey ?: ""
     }
+    fun customBackendUrl(): String? {
+      return customBackendUrl
+    }
+
+    fun customLogUrl():String? {
+      return customLogUrl
+    }
+
+    fun customParams(): ReadableMap? {
+      return customParams
+    }
+
 
     fun readableMapToJSON(readableMap: ReadableMap?): JSONObject {
       val json = JSONObject()

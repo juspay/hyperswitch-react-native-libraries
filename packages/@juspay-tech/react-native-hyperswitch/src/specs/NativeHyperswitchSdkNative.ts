@@ -40,7 +40,7 @@ export interface Spec extends TurboModule {
 
   exitCardForm(result: string): void;
 
-  exitWidgetPaymentsheet(rootTag: number, result: string, reset: boolean): void;
+  exitWidgetPaymentsheet(rootTag: number, widgetId: string, result: string, reset: boolean): void;
 
   launchWidgetPaymentSheet(
     requestObj: string,
@@ -53,10 +53,11 @@ export interface Spec extends TurboModule {
 }
 
 /**
+ * 
  * DO NOT use getEnforcing() because you want silent fallback.
  * This allows Turbo → Legacy fallback safely.
  * This allows the TurboModule to be optional, and the app can still run without it without crashing.
  */
-const TurboModule = TurboModuleRegistry.get<Spec>('HyperModule');
+const hyperModule = TurboModuleRegistry.get<Spec>('HyperModule');
 
-export default TurboModule;
+export default hyperModule;

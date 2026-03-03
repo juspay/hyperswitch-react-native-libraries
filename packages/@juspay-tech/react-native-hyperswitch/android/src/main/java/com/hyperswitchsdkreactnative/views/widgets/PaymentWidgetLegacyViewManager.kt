@@ -1,58 +1,85 @@
 package com.hyperswitchsdkreactnative.views.widgets
 
-import android.app.Application
-import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.Choreographer
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.uimanager.annotations.ReactPropGroup
+import com.facebook.react.uimanager.events.RCTEventEmitter
 import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.PaymentSheetResult
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 import com.hyperswitchsdkreactnative.react.HyperFragment
 import com.hyperswitchsdkreactnative.react.LaunchOptions
-import com.hyperswitchsdkreactnative.react.ReactNativeController
+import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
+import org.json.JSONObject
 import java.util.UUID
-import kotlin.text.isEmpty
 
 class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
+
   override fun getName(): String = NAME
   private lateinit var launchOptions: LaunchOptions
-  private var fragment: HyperFragment? = null
   private var context: ReactApplicationContext? = null
+  private var viewOnPaymentResult: ((PaymentSheetResult) -> Unit)? = null
+
+  // Track choreographer callbacks per view to allow cleanup
+  private val choreographerCallbacks = mutableMapOf<Int, Choreographer.FrameCallback>()
 
   override fun createViewInstance(reactContext: ThemedReactContext): PaymentWidgetView {
     launchOptions = LaunchOptions(reactContext.applicationContext, BuildConfig.VERSION_NAME)
     context = reactContext.reactApplicationContext
-    ReactNativeController.initialize(reactContext.applicationContext as Application)
     return PaymentWidgetView(reactContext)
   }
 
   override fun onAfterUpdateTransaction(view: PaymentWidgetView) {
     super.onAfterUpdateTransaction(view)
-    view.initWidget(HyperProvider.publishableKey())
+    // Pass the React context and callback to the view for event dispatching
+    view.onPaymentResult({ result ->
+      // Dispatch the onPaymentResult DirectEvent to React Native
+      val status = when (result) {
+        is PaymentSheetResult.Completed -> "completed"
+        is PaymentSheetResult.Canceled -> "canceled"
+        is PaymentSheetResult.Failed -> "failed"
+      }
+
+      val event = Arguments.createMap().apply {
+        if (result is PaymentSheetResult.Failed) {
+          putString("errorMessage", result.error?.message)
+        }else{
+          putString("status", status)
+        }
+      }
+
+      try {
+        val reactContext = view.context as? ReactContext
+        reactContext
+          ?.getJSModule(RCTEventEmitter::class.java)
+          ?.receiveEvent(
+            view.id,
+            "topPaymentResult",
+            event
+          )
+      } catch (e: Exception) {
+        Log.e("PaymentWidgetManager", "Failed to send payment result event", e)
+      }
+
+      viewOnPaymentResult?.invoke(result)
+    })
   }
 
-
   @ReactProp(name = "widgetId")
-  fun widgetId(view: PaymentWidgetView, widgetId: String?) {
-    val id = if (widgetId.isNullOrBlank()) {
-      UUID.randomUUID().toString()
-    } else {
-      widgetId
-    }
-    view.setSessionId(id)
+  fun widgetId(view: PaymentWidgetView, widgetId: String) {
+    view.setWidgetId(
+      widgetId.ifBlank { UUID.randomUUID().toString() }
+    )
   }
 
   @ReactProp(name = "widgetType")
@@ -60,114 +87,129 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
     view.setWidgetType(WidgetType.from(widgetType))
   }
 
-  @ReactProp(name = "clientSecret")
-  fun clientSecret(view: PaymentWidgetView, clientSecret: String?) {
-    if (!clientSecret.isNullOrEmpty()) {
-      view.setPaymentIntent(clientSecret)
-      showWidgetInternal(view, view.id)
-    }
-  }
-
   @ReactProp(name = "options")
   fun options(view: PaymentWidgetView, options: String?) {
-    options?.let {
-      view.configuration(options)
-    }
+    options ?: return
+    view.configuration(options)
+    val clientSecret = JSONObject(options).optString("clientSecret")
+      .takeIf { it.isNotBlank() && it != "null" } ?: return
+    view.setPaymentIntent(clientSecret)
   }
 
-  override fun getCommandsMap() = mapOf("createView" to COMMAND_CREATE)
+  override fun getCommandsMap() = mapOf(
+    "showWidget" to SHOW_WIDGET,
+    "removeWidget" to REMOVE_WIDGET,
+    "default" to DEFAULT
+  )
 
-
-  override fun receiveCommand(
-    root: PaymentWidgetView, commandId: Int, args: ReadableArray?
-  ) {
+  @Deprecated("Deprecated in Java")
+  override fun receiveCommand(root: PaymentWidgetView, commandId: Int, args: ReadableArray?) {
     super.receiveCommand(root, commandId, args)
-    val reactNativeViewId = requireNotNull(args).getInt(0)
     when (commandId) {
-      COMMAND_CREATE -> {
-        showWidgetInternal(root, reactNativeViewId)
-      }
+      SHOW_WIDGET -> showWidgetInternal(root)
+      REMOVE_WIDGET -> removeWidget(root)
+      DEFAULT -> Unit
     }
   }
 
-  private fun showWidgetInternal(view: PaymentWidgetView, viewId: Int) {
-      val activity = context?.currentActivity as FragmentActivity
-      ?: throw IllegalStateException("PaymentWidget must be attached to a FragmentActivity")
-    if (view.getClientSecret().isEmpty()) {
-      view.post {
-        showWidgetInternal(view, viewId)
-      }
+  override fun getExportedCustomDirectEventTypeConstants() =
+    mapOf(
+      "topPaymentResult" to mapOf(
+        "registrationName" to "onPaymentResult"
+      )
+    )
+
+  private fun showWidgetInternal(view: PaymentWidgetView) {
+    if (view.isClientSecretEmpty()) {
+      view.post { showWidgetInternal(view) }
       return
     }
-    try {
-      if (fragment != null) {
-        return
-      }
-      fragment = null
-    } catch (_: Exception) {
-      fragment = null
+    view.initWidget(HyperProvider.publishableKey())
+
+    val activity = context?.currentActivity as? FragmentActivity
+      ?: throw IllegalStateException("PaymentWidget must be attached to a FragmentActivity")
+
+    if (activity.isFinishing || activity.isDestroyed) return
+
+    val tag = "HyperPaymentSheet_${view.id}"
+    HyperFragmentManager.cancelPending(tag)
+    val fragment = HyperFragment.Builder()
+      .setComponentName("hyperSwitch")
+      .setLaunchOptions(view.getLaunchOptions())
+      .build()
+    val frameLayout = FrameLayout(activity).apply {
+      layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
     }
-
-
-    ReactNativeController.initialize(activity.application)
-
-    fragment = HyperFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(
-      launchOptions.getBundle(
-        paymentIntentClientSecret = view.getClientSecret(),
-        configuration = view.getConfiguration(),
-        type = "widgetPaymentSheet"
-      )
-    ).build()
-
-    val frameLayout = FrameLayout(activity)
-    frameLayout.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-    frameLayout.id = View.generateViewId()
-    view.addView(
-      frameLayout, FrameLayout.LayoutParams(
-        MATCH_PARENT, MATCH_PARENT
-      )
-    )
-    frameLayout.measure(
-      View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
-      View.MeasureSpec.makeMeasureSpec(view.height, View.MeasureSpec.EXACTLY)
-    )
-    frameLayout.layout(0, 0, frameLayout.measuredWidth, frameLayout.measuredHeight)
-    setupLayout(frameLayout)
-    val fragmentManager: FragmentManager = activity.supportFragmentManager
-    val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
-    fragmentTransaction.add(frameLayout.id, fragment!!, "HyperPaymentSheet")
-    fragmentTransaction.addToBackStack("HyperPaymentSheet")
-    fragmentTransaction.commitAllowingStateLoss()
+    view.addView(frameLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
     frameLayout.post {
-      fragment?.view?.requestLayout()
+      frameLayout.measure(
+        View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(view.height, View.MeasureSpec.EXACTLY)
+      )
+      frameLayout.layout(0, 0, frameLayout.measuredWidth, frameLayout.measuredHeight)
+      setupLayout(frameLayout)
+
+      HyperFragmentManager.addOrReplace(
+        activity = activity,
+        container = frameLayout,
+        fragment = fragment,
+        tag = tag
+      )
+
+      frameLayout.post { fragment.view?.requestLayout() }
     }
-    Log.i("PaymentWidget", "Fragment transaction committed")
   }
 
-  fun setupLayout(view: View) {
-    Choreographer.getInstance().postFrameCallback(object: Choreographer.FrameCallback {
+  private fun removeWidget(view: PaymentWidgetView) {
+    val activity = context?.currentActivity as? FragmentActivity ?: return
+    val tag = "HyperPaymentSheet_${view.id}"
+    HyperFragmentManager.remove(activity, tag)
+    stopLayout(view.id)
+  }
+
+  private fun setupLayout(view: View) {
+    val callback = object : Choreographer.FrameCallback {
       override fun doFrame(frameTimeNanos: Long) {
-        manuallyLayoutChildren(view)
-        view.viewTreeObserver.dispatchOnGlobalLayout()
-        Choreographer.getInstance().postFrameCallback(this)
+        if (view.isAttachedToWindow) {
+          manuallyLayoutChildren(view)
+          view.viewTreeObserver.dispatchOnGlobalLayout()
+          Choreographer.getInstance().postFrameCallback(this)
+        } else {
+          choreographerCallbacks.remove(view.id)
+        }
       }
-    })
+    }
+    choreographerCallbacks[view.id] = callback
+    Choreographer.getInstance().postFrameCallback(callback)
+  }
+
+  private fun stopLayout(viewId: Int) {
+    choreographerCallbacks.remove(viewId)?.let {
+      Choreographer.getInstance().removeFrameCallback(it)
+    }
   }
 
   private fun manuallyLayoutChildren(view: View) {
-    val width = requireNotNull(view.width)
-    val height = requireNotNull(view.height)
-
     view.measure(
-      View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-      View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+      View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
+      View.MeasureSpec.makeMeasureSpec(view.height, View.MeasureSpec.EXACTLY)
+    )
+    view.layout(0, 0, view.width, view.height)
+  }
 
-    view.layout(0, 0, width, height)
+  override fun onDropViewInstance(view: PaymentWidgetView) {
+    super.onDropViewInstance(view)
+    val activity = context?.currentActivity as? FragmentActivity
+    val tag = "HyperPaymentSheet_${view.id}"
+    activity?.let { HyperFragmentManager.remove(it, tag) }
+    stopLayout(view.id)
   }
 
 
   companion object {
     const val NAME = "NativePaymentWidget"
-    private const val COMMAND_CREATE = 1
+    private const val SHOW_WIDGET = 1
+    private const val REMOVE_WIDGET = 2
+    private const val DEFAULT = -1
   }
 }

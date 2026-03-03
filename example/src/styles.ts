@@ -2,11 +2,11 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
     padding: 24,
     gap: 16,
+    justifyContent : "flex-start",
+    flexGrow : 1
   },
   textInput: {
     display: 'flex',

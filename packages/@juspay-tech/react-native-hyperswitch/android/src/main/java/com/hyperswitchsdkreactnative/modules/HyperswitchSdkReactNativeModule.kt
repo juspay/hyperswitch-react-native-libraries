@@ -69,6 +69,14 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  override fun handleConfirmationResult(id: String?, result: String?) {
+    TODO("Not yet implemented")
+  }
+
+  override fun handleGoBack(id: String?, result: String?) {
+    TODO("Not yet implemented")
+  }
+
   fun resetView() {
     hyperProvider?.removeSheetView(true)
   }

@@ -1,4 +1,4 @@
-package com.hyperswitchsdkreactnative.react
+package com.hyperswitchsdkreactnative.utils
 
 import com.hyperswitchsdkreactnative.PaymentSheetResult
 import com.hyperswitchsdkreactnative.views.widgets.Callback
