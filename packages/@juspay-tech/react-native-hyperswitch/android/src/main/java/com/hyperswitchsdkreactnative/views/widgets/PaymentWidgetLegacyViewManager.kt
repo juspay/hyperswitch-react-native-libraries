@@ -40,9 +40,7 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
 
   override fun onAfterUpdateTransaction(view: PaymentWidgetView) {
     super.onAfterUpdateTransaction(view)
-    // Pass the React context and callback to the view for event dispatching
     view.onPaymentResult({ result ->
-      // Dispatch the onPaymentResult DirectEvent to React Native
       val status = when (result) {
         is PaymentSheetResult.Completed -> "completed"
         is PaymentSheetResult.Canceled -> "canceled"
@@ -92,7 +90,20 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
     view.configuration(options)
     val clientSecret = JSONObject(options).optString("clientSecret")
       .takeIf { it.isNotBlank() && it != "null" } ?: return
+
+    // Only recreate if clientSecret actually changed
+    if (view.getClientSecret() == clientSecret) return
+
     view.setPaymentIntent(clientSecret)
+
+    // If fragment already exists, tear it down and re-show
+    val tag = "HyperPaymentSheet_${view.id}"
+    val activity = context?.currentActivity as? FragmentActivity ?: return
+    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
+    if (existingFragment != null) {
+      removeWidget(view)
+      view.post { showWidgetInternal(view) }
+    }
   }
 
   override fun getCommandsMap() = mapOf(
@@ -161,11 +172,12 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
 
   private fun removeWidget(view: PaymentWidgetView) {
     try {
+      view.cancelPendingInputEvents()
       val activity = context?.currentActivity as? FragmentActivity ?: return
       val tag = "HyperPaymentSheet_${view.id}"
       HyperFragmentManager.remove(activity, tag)
-      stopLayout(view.id)
-    }catch (_: Exception){
+//      stopLayout(view.id)
+    } catch (_: Exception) {
       // Handle errors
     }
   }

@@ -90,50 +90,53 @@ export default function PaymentScreen() {
   }, [setup]);
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        flexGrow: 1,
-        paddingBottom: 40,
-        padding: 24,
-        gap: 16,
-      }}
-      showsVerticalScrollIndicator
-    >
-      <TextInput
-        style={styles.textInput}
-        placeholder="Enter base URL"
-        value={baseURL}
-        onChangeText={(text) => setBaseURL(text)}
-      />
-      <TouchableOpacity style={styles.button} onPress={setup}>
-        <Text style={styles.buttonText}>Reload client Secret</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={checkout}>
-        <Text style={styles.buttonText}>Checkout</Text>
-      </TouchableOpacity>
-      <PaymentWidget
-        widgetId="payment-widget"
-        widgetType={'PAYMENT_SHEET'}
-        onPaymentResult={(result) => {
-          console.log('Payment Result from Widget:', result);
-          if (result.errorMessage) {
-            setStatus(`Payment failed: ${result.errorMessage}`);
-            setMessage(null);
-            return;
-          } else {
-            setStatus(getStatus(result?.status));
-            setMessage(result?.status);
-          }
+    <SafeAreaView style={{ flex: 1 }} >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: 40,
+          padding: 24,
+          gap: 16,
+          backgroundColor: 'white',
         }}
-        style={{ width: '100%', height: 600 }}
-        options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
-      />
+        showsVerticalScrollIndicator
+      >
+        <TextInput
+          style={styles.textInput}
+          placeholder="Enter base URL"
+          value={baseURL}
+          onChangeText={(text) => setBaseURL(text)}
+        />
+        <TouchableOpacity style={styles.button} onPress={setup}>
+          <Text style={styles.buttonText}>Reload client Secret</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={checkout}>
+          <Text style={styles.buttonText}>Checkout</Text>
+        </TouchableOpacity>
+        <PaymentWidget
+          widgetId="payment-widget"
+          widgetType={'PAYMENT_SHEET'}
+          onPaymentResult={(result) => {
+            console.log('Payment Result from Widget:', result);
+            if (result.errorMessage) {
+              setStatus(`Payment failed: ${result.errorMessage}`);
+              setMessage(null);
+              return;
+            } else {
+              setStatus(getStatus(result?.status));
+              setMessage(result?.status);
+            }
+          }}
+          style={{ width: '100%', height: 600 }}
+          options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
+        />
 
-      <View style={styles.status}>
-        <Text style={styles.statusText}>{status}</Text>
-        {message && <Text style={styles.messageText}>{message}</Text>}
-      </View>
-    </ScrollView>
+        <View style={styles.status}>
+          <Text style={styles.statusText}>{status}</Text>
+          {message && <Text style={styles.messageText}>{message}</Text>}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

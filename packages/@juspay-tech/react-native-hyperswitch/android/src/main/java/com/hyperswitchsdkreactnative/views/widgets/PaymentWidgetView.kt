@@ -51,6 +51,10 @@ class PaymentWidgetView : FrameLayout {
     return this.configuration
   }
 
+  fun getClientSecret():String{
+    return this.clientSecret
+  }
+
   private var widgetType = WidgetType.PAYMENT_SHEET
 
   fun setWidgetId(widgetId: String) {
@@ -132,16 +136,6 @@ class PaymentWidgetView : FrameLayout {
     initWidget(HyperProvider.publishableKey())
   }
 
-  private fun getFragmentActivity(): FragmentActivity? {
-    var ctx = context
-    while (ctx is android.content.ContextWrapper) {
-      if (ctx is FragmentActivity) {
-        return ctx
-      }
-      ctx = ctx.baseContext
-    }
-    return null
-  }
 
   private fun getWidgetType(): String {
     return when (this.widgetType) {
