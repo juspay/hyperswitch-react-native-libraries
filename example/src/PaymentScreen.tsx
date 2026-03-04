@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import {
   useHyper,
+  PaymentWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
-  type PresentPaymentSheetResult,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -13,12 +20,14 @@ import {
   getErrorMessage,
 } from './utils';
 import { styles } from './styles';
-
+import { presentPaymentSheetResult } from '../../packages/@juspay-tech/react-native-hyperswitch/src/modules/NativeHyperswitchSdk.gen';
 export default function PaymentScreen() {
   const { initPaymentSession, presentPaymentSheet } = useHyper();
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [hideWidget, setHideWidget] = useState<boolean>(false); // 👈 new
 
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
@@ -26,6 +35,8 @@ export default function PaymentScreen() {
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+    setHideWidget(false);
+    setClientSecret(data.clientSecret);
     return data.clientSecret;
   }, [baseURL]);
 
@@ -40,6 +51,7 @@ export default function PaymentScreen() {
       if (result.error) {
         throw new Error(result.error);
       } else {
+        setHideWidget(false);
         setStatus('Ready to checkout');
         setMessage(null);
       }
@@ -48,17 +60,15 @@ export default function PaymentScreen() {
 
   const checkout = async (): Promise<void> => {
     try {
-      const { error, paymentResult }: PresentPaymentSheetResult =
+      const { error, paymentResult }: presentPaymentSheetResult =
         await presentPaymentSheet(getCustomisationOptions());
       if (error) {
         console.error('Payment failed:', JSON.stringify(error, null, 2));
         setStatus(`Payment failed: ${error.code}`);
         setMessage(error.message);
       } else {
-        console.log(
-          'Payment completed with status:',
-          JSON.stringify(paymentResult, null, 2)
-        );
+        console.log('Payment completed with status:', JSON.stringify(paymentResult, null, 2));
+        setHideWidget(true);
         setStatus(getStatus(paymentResult?.status));
         setMessage(paymentResult?.message);
       }
@@ -80,23 +90,60 @@ export default function PaymentScreen() {
   }, [setup]);
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.textInput}
-        placeholder="Enter base URL"
-        value={baseURL}
-        onChangeText={(text) => setBaseURL(text)}
-      />
-      <TouchableOpacity style={styles.button} onPress={setup}>
-        <Text style={styles.buttonText}>Reload client Secret</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={checkout}>
-        <Text style={styles.buttonText}>Checkout</Text>
-      </TouchableOpacity>
-      <View style={styles.status}>
-        <Text style={styles.statusText}>{status}</Text>
-        {message && <Text style={styles.messageText}>{message}</Text>}
-      </View>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: 40,
+          padding: 24,
+          gap: 16,
+          backgroundColor: 'white',
+        }}
+        showsVerticalScrollIndicator
+      >
+        <TextInput
+          style={styles.textInput}
+          placeholder="Enter base URL"
+          value={baseURL}
+          onChangeText={(text) => setBaseURL(text)}
+        />
+        <TouchableOpacity style={styles.button} onPress={setup}>
+          <Text style={styles.buttonText}>Reload client Secret</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={checkout}>
+          <Text style={styles.buttonText}>Checkout</Text>
+        </TouchableOpacity>
+
+        {!hideWidget && ( 
+          <ScrollView>
+
+          <PaymentWidget
+            widgetId="payment-widget"
+            widgetType={'PAYMENT_SHEET'}
+            onPaymentResult={(result) => {
+              console.log('Payment Result from Widget:', result);
+              setHideWidget(true)
+              if (result.errorMessage) {
+                setStatus(`Payment failed: ${result.errorMessage}`);
+                setMessage(null);
+              } else {
+
+                setStatus(getStatus(result?.status));
+                setMessage(result?.status);
+              }
+            }}
+            style={{ width: '100%', height: 600 }}
+            options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
+          />
+          </ScrollView>
+        )}
+
+        <View style={styles.status}>
+          <Text style={styles.statusText}>{status}</Text>
+          {message && <Text style={styles.messageText}>{message}</Text>}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

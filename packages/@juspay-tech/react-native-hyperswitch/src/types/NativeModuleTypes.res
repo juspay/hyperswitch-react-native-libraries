@@ -1,0 +1,32 @@
+@genType.as("paymentResultEvent")
+type paymentResult = {
+  status?: string,
+  errorMessage?: string,
+}
+
+@genType.as("widgetType")
+type widgetType = PAYMENT_SHEET | GOOGLE_PAY | CARD | BUTTON_SHEET | EXPRESS_CHECKOUT
+
+type nativeEvent = {
+  nativeEvent: paymentResult,
+}
+@genType.as("paymentWidgetProps")
+type paymentWidgetProps = {
+  widgetId?: string,
+  widgetType?: widgetType,
+  options?: PaymentSheetConfiguration.options,
+  onPaymentResult?: nativeEvent => unit,
+  style?: ReactNative.Style.style,
+}
+
+
+
+@genType.as("paymentWidgetType")
+type nativePaymentWidgetType = {
+  ref?: ReactNative.Ref.valueRef<unit>,
+  widgetId: string, // sessionId
+  widgetType?: widgetType,
+  options?: string, // apperance and client secret can be passed as options in JSON string format
+  onPaymentResult?: nativeEvent => unit, // callback to receive payment result from native code
+  style?: ReactNative.Style.style, // style for the view including min-height
+}

@@ -51,7 +51,7 @@ react {
     // hermesFlags = ["-O", "-output-source-map"]
 
     /* Autolinking */
-    autolinkLibrariesWithApp()
+//    autolinkLibrariesWithApp()
 }
 
 /**
@@ -108,4 +108,9 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    implementation 'io.hyperswitch:hyperswitch-sdk-android-logger:1.0.4'
 }
+
+
+
+apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

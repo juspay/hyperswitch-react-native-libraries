@@ -1,4 +1,4 @@
-package com.hyperswitchsdkreactnative.views
+package com.hyperswitchsdkreactnative.views.googlepay
 
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.SimpleViewManager
@@ -7,7 +7,6 @@ import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.viewmanagers.GooglePayButtonManagerDelegate
 import com.facebook.react.viewmanagers.GooglePayButtonManagerInterface
 import com.google.android.gms.wallet.button.ButtonConstants
-import java.math.BigInteger
 
 @ReactModule(name = GooglePayButtonViewManager.NAME)
 class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),

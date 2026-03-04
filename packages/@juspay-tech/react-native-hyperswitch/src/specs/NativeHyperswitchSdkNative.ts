@@ -1,33 +1,63 @@
-import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import type {TurboModule} from 'react-native';
+import {TurboModuleRegistry} from 'react-native';
 
+/**
+ * All result objects returned from native must be plain JSON objects.
+ * Avoid using `Object` — use Record<string, unknown> for proper typing.
+ */
 export interface Spec extends TurboModule {
-  // Send message to native
   sendMessageToNative(message: string): void;
 
-  // Apple Pay methods
-  launchApplePay(requestObj: string, callback: (result: Object) => void): void;
-  // Google Pay method
-  launchGPay(requestObj: string, callback: (result: Object) => void): void;
+  launchApplePay(
+    requestObj: string,
+    callback: (result: Object) => void,
+  ): void;
 
-  // Exit methods
+  startApplePay(
+    requestObj: string,
+    callback: (result: Object) => void,
+  ): void;
+
+  presentApplePay(
+    requestObj: string,
+    callback: (result: Object) => void,
+  ): void;
+
+  launchGPay(
+    requestObj: string,
+    callback: (result: Object) => void,
+  ): void;
+
   exitPaymentsheet(rootTag: number, result: string, reset: boolean): void;
+
   exitPaymentMethodManagement(
     rootTag: number,
     result: string,
-    reset: boolean
+    reset: boolean,
   ): void;
-  exitWidget(result: string, widgetType: string): void;
-  exitCardForm(result: string): void;
-  exitWidgetPaymentsheet(rootTag: number, result: string, reset: boolean): void;
 
-  // Widget methods
+  exitWidget(result: string, widgetType: string): void;
+
+  exitCardForm(result: string): void;
+
+  exitWidgetPaymentsheet(rootTag: number, widgetId: string, result: string, reset: boolean): void;
+
   launchWidgetPaymentSheet(
     requestObj: string,
-    callback: (result: Object) => void
+    callback: (result: Object) => void,
   ): void;
+
   updateWidgetHeight(height: number): void;
+
   onAddPaymentMethod(data: string): void;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('HyperModules') as Spec;
+/**
+ * 
+ * DO NOT use getEnforcing() because you want silent fallback.
+ * This allows Turbo → Legacy fallback safely.
+ * This allows the TurboModule to be optional, and the app can still run without it without crashing.
+ */
+const hyperModule = TurboModuleRegistry.get<Spec>('HyperModule');
+
+export default hyperModule;
