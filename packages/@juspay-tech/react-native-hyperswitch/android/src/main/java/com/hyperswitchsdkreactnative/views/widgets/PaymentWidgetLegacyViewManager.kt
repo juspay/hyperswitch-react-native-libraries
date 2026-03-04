@@ -50,23 +50,19 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
       val event = Arguments.createMap().apply {
         if (result is PaymentSheetResult.Failed) {
           putString("errorMessage", result.error?.message)
-        }else{
+        } else {
           putString("status", status)
         }
       }
 
       try {
         val reactContext = view.context as? ReactContext
-        reactContext
-          ?.getJSModule(RCTEventEmitter::class.java)
-          ?.receiveEvent(
-            view.id,
-            "topPaymentResult",
-            event
+        reactContext?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
+            view.id, "topPaymentResult", event
           )
       } catch (e: Exception) {
         Log.e("PaymentWidgetManager", "Failed to send payment result event", e)
-      }finally {
+      } finally {
         removeWidget(view)
       }
     })
@@ -75,8 +71,7 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   @ReactProp(name = "widgetId")
   fun widgetId(view: PaymentWidgetView, widgetId: String) {
     view.setWidgetId(
-      widgetId.ifBlank { UUID.randomUUID().toString() }
-    )
+      widgetId.ifBlank { UUID.randomUUID().toString() })
   }
 
   @ReactProp(name = "widgetType")
@@ -88,8 +83,9 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   fun options(view: PaymentWidgetView, options: String?) {
     options ?: return
     view.configuration(options)
-    val clientSecret = JSONObject(options).optString("clientSecret")
-      .takeIf { it.isNotBlank() && it != "null" } ?: return
+    val clientSecret =
+      JSONObject(options).optString("clientSecret").takeIf { it.isNotBlank() && it != "null" }
+        ?: return
 
     // Only recreate if clientSecret actually changed
     if (view.getClientSecret() == clientSecret) return
@@ -107,9 +103,7 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   }
 
   override fun getCommandsMap() = mapOf(
-    "showWidget" to SHOW_WIDGET,
-    "removeWidget" to REMOVE_WIDGET,
-    "default" to DEFAULT
+    "showWidget" to SHOW_WIDGET, "removeWidget" to REMOVE_WIDGET, "default" to DEFAULT
   )
 
   @Deprecated("Deprecated in Java")
@@ -122,12 +116,11 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
     }
   }
 
-  override fun getExportedCustomDirectEventTypeConstants() =
-    mapOf(
-      "topPaymentResult" to mapOf(
-        "registrationName" to "onPaymentResult"
-      )
+  override fun getExportedCustomDirectEventTypeConstants() = mapOf(
+    "topPaymentResult" to mapOf(
+      "registrationName" to "onPaymentResult"
     )
+  )
 
   private fun showWidgetInternal(view: PaymentWidgetView) {
     if (view.isClientSecretEmpty()) {
@@ -143,10 +136,8 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
 
     val tag = "HyperPaymentSheet_${view.id}"
     HyperFragmentManager.cancelPending(tag)
-    val fragment = HyperFragment.Builder()
-      .setComponentName("hyperSwitch")
-      .setLaunchOptions(view.getLaunchOptions())
-      .build()
+    val fragment = HyperFragment.Builder().setComponentName("hyperSwitch")
+      .setLaunchOptions(view.getLaunchOptions()).build()
     val frameLayout = FrameLayout(activity).apply {
       layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
     }
@@ -160,10 +151,7 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
       setupLayout(frameLayout)
 
       HyperFragmentManager.addOrReplace(
-        activity = activity,
-        container = frameLayout,
-        fragment = fragment,
-        tag = tag
+        activity = activity, container = frameLayout, fragment = fragment, tag = tag
       )
 
       frameLayout.post { fragment.view?.requestLayout() }
@@ -173,12 +161,12 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
   private fun removeWidget(view: PaymentWidgetView) {
     try {
       view.cancelPendingInputEvents()
-      val activity = context?.currentActivity as? FragmentActivity ?: return
+      stopLayout(view.id)
+      val activity = context?.currentActivity as? FragmentActivity
       val tag = "HyperPaymentSheet_${view.id}"
-      HyperFragmentManager.remove(activity, tag)
-//      stopLayout(view.id)
+      activity?.let { HyperFragmentManager.remove(it, tag) }
     } catch (_: Exception) {
-      // Handle errors
+      // Handle the errors
     }
   }
 
@@ -214,12 +202,12 @@ class PaymentWidgetLegacyViewManager : SimpleViewManager<PaymentWidgetView>() {
 
   override fun onDropViewInstance(view: PaymentWidgetView) {
     super.onDropViewInstance(view)
+    view.cancelPendingInputEvents()
+    stopLayout(view.id)
     val activity = context?.currentActivity as? FragmentActivity
     val tag = "HyperPaymentSheet_${view.id}"
     activity?.let { HyperFragmentManager.remove(it, tag) }
-    stopLayout(view.id)
   }
-
 
   companion object {
     const val NAME = "NativePaymentWidget"

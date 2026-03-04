@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import {
   useHyper,
@@ -20,21 +21,21 @@ import {
 } from './utils';
 import { styles } from './styles';
 import { presentPaymentSheetResult } from '../../packages/@juspay-tech/react-native-hyperswitch/src/modules/NativeHyperswitchSdk.gen';
-
 export default function PaymentScreen() {
   const { initPaymentSession, presentPaymentSheet } = useHyper();
-  // const {initWidget, presentWidget } = useHyperWidget("payment-widget");
-  // const {initWidget as googlePayInit, presentWidget as googlePayPresent} = useHyperWidget("google-pay-widget");
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [hideWidget, setHideWidget] = useState<boolean>(false); // 👈 new
+
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+    setHideWidget(false);
     setClientSecret(data.clientSecret);
     return data.clientSecret;
   }, [baseURL]);
@@ -50,6 +51,7 @@ export default function PaymentScreen() {
       if (result.error) {
         throw new Error(result.error);
       } else {
+        setHideWidget(false);
         setStatus('Ready to checkout');
         setMessage(null);
       }
@@ -65,10 +67,8 @@ export default function PaymentScreen() {
         setStatus(`Payment failed: ${error.code}`);
         setMessage(error.message);
       } else {
-        console.log(
-          'Payment completed with status:',
-          JSON.stringify(paymentResult, null, 2)
-        );
+        console.log('Payment completed with status:', JSON.stringify(paymentResult, null, 2));
+        setHideWidget(true);
         setStatus(getStatus(paymentResult?.status));
         setMessage(paymentResult?.message);
       }
@@ -90,7 +90,7 @@ export default function PaymentScreen() {
   }, [setup]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} >
+    <SafeAreaView style={{ flex: 1 }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
@@ -114,23 +114,30 @@ export default function PaymentScreen() {
         <TouchableOpacity style={styles.button} onPress={checkout}>
           <Text style={styles.buttonText}>Checkout</Text>
         </TouchableOpacity>
-        <PaymentWidget
-          widgetId="payment-widget"
-          widgetType={'PAYMENT_SHEET'}
-          onPaymentResult={(result) => {
-            console.log('Payment Result from Widget:', result);
-            if (result.errorMessage) {
-              setStatus(`Payment failed: ${result.errorMessage}`);
-              setMessage(null);
-              return;
-            } else {
-              setStatus(getStatus(result?.status));
-              setMessage(result?.status);
-            }
-          }}
-          style={{ width: '100%', height: 600 }}
-          options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
-        />
+
+        {!hideWidget && ( 
+          <ScrollView>
+
+          <PaymentWidget
+            widgetId="payment-widget"
+            widgetType={'PAYMENT_SHEET'}
+            onPaymentResult={(result) => {
+              console.log('Payment Result from Widget:', result);
+              setHideWidget(true)
+              if (result.errorMessage) {
+                setStatus(`Payment failed: ${result.errorMessage}`);
+                setMessage(null);
+              } else {
+
+                setStatus(getStatus(result?.status));
+                setMessage(result?.status);
+              }
+            }}
+            style={{ width: '100%', height: 600 }}
+            options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
+          />
+          </ScrollView>
+        )}
 
         <View style={styles.status}>
           <Text style={styles.statusText}>{status}</Text>
