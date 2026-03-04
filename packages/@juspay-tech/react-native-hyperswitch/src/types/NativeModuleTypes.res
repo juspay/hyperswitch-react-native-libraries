@@ -21,7 +21,7 @@ type paymentWidgetProps = {
 
 
 
-@genType
+@genType.as("paymentWidgetType")
 type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
   widgetId: string, // sessionId

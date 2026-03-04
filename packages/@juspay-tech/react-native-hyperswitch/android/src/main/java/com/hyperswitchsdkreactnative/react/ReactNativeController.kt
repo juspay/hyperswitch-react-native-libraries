@@ -23,6 +23,7 @@ import com.facebook.soloader.SoLoader
 import com.hyperswitchsdkreactnative.BuildConfig
 import com.hyperswitchsdkreactnative.R
 import io.hyperswitch.logs.CrashHandler
+import io.hyperswitch.logs.EventName
 import io.hyperswitch.logs.HSLog
 import io.hyperswitch.logs.HyperLogManager
 import io.hyperswitch.logs.LogCategory
@@ -216,19 +217,24 @@ object ReactNativeController {
 //        Thread.setDefaultUncaughtExceptionHandler(
 //          CrashHandler(application, BuildConfig.VERSION_NAME)
 //        )
-
 //        SoLoader.init(application, OpenSourceMergedSoMapping )
-        SoLoader.init(application, false)
+//        SoLoader.init(application, false)
+//
+//
+//        try {
+//            DefaultNewArchitectureEntryPoint.load()
+//        } catch (e: Exception) {
+//            // SoLoader not ready yet — merchant must call initialize()
+//            // after SoLoader.init() in their Application.onCreate()
+//            throw IllegalStateException(
+//                "Hyperswitch SDK must be initialized after SoLoader.init(). " +
+//                "Call HyperswitchSDK.initialize(app) after SoLoader.init() " +
+//                "in your Application.onCreate()", e
+//            )
+//        }
 
-
-        if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-          DefaultNewArchitectureEntryPoint.load()
-        }
-
-        reactNativeHost =
-          createReactNativeHost(application)
+        reactNativeHost = createReactNativeHost(application)
         reactHost = createReactHost(application)
-
         isInitialized = true
       }
     } catch (e: Exception) {
@@ -237,6 +243,7 @@ object ReactNativeController {
           .value("Failed to initialize Hyperswitch SDK: ${e.message}")
           .category(LogCategory.API)
           .logType("error")
+          .eventName(EventName.HYPER_OTA_EVENT)
           .build()
       )
     }
