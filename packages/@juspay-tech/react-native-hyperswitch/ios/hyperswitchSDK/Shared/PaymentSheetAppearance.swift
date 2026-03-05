@@ -40,28 +40,18 @@ public extension PaymentSheet {
         
         public var theme: Theme?
         
-        public enum Theme {
-            case `default`
-            case light
-            case dark
-            case minimal
-            case flatMinimal
-            
+        public enum Theme: String, Codable {
+            case `default` = "Default"
+            case light = "Light"
+            case dark = "Dark"
+            case minimal = "Minimal"
+            case flatMinimal = "FlatMinimal"
+
             var themeLabel: String {
-                switch self {
-                    case .`default`:
-                        return "Default"
-                    case .light:
-                        return "Light"
-                    case .dark:
-                        return "Dark"
-                    case .minimal:
-                        return "Minimal"
-                    case .flatMinimal:
-                        return "FlatMinimal"
-                }
+                return self.rawValue
             }
         }
+
         
         // MARK: Fonts
 
@@ -262,3 +252,5 @@ public extension PaymentSheet {
     }
 
 }
+
+

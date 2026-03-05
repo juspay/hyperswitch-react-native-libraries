@@ -9,25 +9,24 @@ import UIKit
 import PassKit
 import React
 
-
 @objc(ApplePayViewManager)
 internal class ApplePayViewManager: RCTViewManager {
-
+    
     override func view() -> (ApplePayView) {
         return ApplePayView()
     }
-
+    
     @objc override static func requiresMainQueueSetup() -> Bool {
         return false
     }
 }
 
 internal class ApplePayView : UIView {
-
+    
     private var button: PKPaymentButton?
     private var paymentHandler = ApplePayHandler()
     @objc private var onPaymentResultCallback: RCTDirectEventBlock?
-
+    
     @objc var buttonStyle: String = "" {
         didSet {
             setButton(setButtonType:buttonType, setButtonStyle: buttonStyle, setButtonCornerRadius: cornerRadius)
@@ -48,28 +47,28 @@ internal class ApplePayView : UIView {
             setButton(setButtonType: buttonType, setButtonStyle: buttonStyle, setButtonCornerRadius: cornerRadius)
         }
     }
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
-
+        
         let cornerRadiusValue: CGFloat = 4.0
         let buttonType = "plain"
         let buttonStyle = "black"
         setButton(setButtonType: buttonType, setButtonStyle: buttonStyle, setButtonCornerRadius: cornerRadiusValue)
     }
-
+    
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-
+    
     private func setButton(setButtonType: String?, setButtonStyle: String?, setButtonCornerRadius cornerRadius: CGFloat?) {
         for view in subviews {
             view.removeFromSuperview()
         }
-
+        
         var type: PKPaymentButtonType
         var style: PKPaymentButtonStyle
-
+        
         switch setButtonType {
         case "buy":
             type = .buy
@@ -88,7 +87,7 @@ internal class ApplePayView : UIView {
         default:
             type = .plain
         }
-
+        
         switch setButtonStyle {
         case "white":
             style = .white
@@ -97,25 +96,29 @@ internal class ApplePayView : UIView {
         default:
             style = .black
         }
-
-        button = PKPaymentButton(paymentButtonType: type, paymentButtonStyle: style)
+        
+        if #available(iOS 26.0, *) {  // TODO: temp fix need to clamp corner-radius to be < height/2
+            button = PKPaymentButton(type: type, style: style, disableCardArt: true)
+        } else {
+            button = PKPaymentButton(paymentButtonType: type, paymentButtonStyle: style)
+        }
         button?.addTarget(self, action: #selector(touchUpInside(_:)), for: .touchUpInside)
         if let cornerRadius = cornerRadius {
             button?.cornerRadius = cornerRadius
         }
-
+        
         if let buttonView = button{
             addSubview(buttonView)
         }
     }
-
+    
     @objc private func touchUpInside(_ button: PKPaymentButton) {
         if let onPaymentResultCallback = onPaymentResultCallback {
             onPaymentResultCallback(nil)
         }
 
     }
-
+    
     internal override func layoutSubviews() {
         super.layoutSubviews()
         button?.frame = bounds

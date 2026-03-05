@@ -28,7 +28,6 @@ public class PaymentSession {
 #if canImport(HyperOTA)
         OTAServices.shared.initialize(publishableKey: publishableKey)
         LogManager.initialize(publishableKey: publishableKey)
-        RNFabricManager.sharedInstance.startReactNative()
 #endif
     }
     

@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import React
 import WebKit
+import React
 
 
 @objc(HyperHeadless)
@@ -37,28 +37,6 @@ internal class HyperHeadless: RCTEventEmitter {
     @objc 
     private func confirm(data: [String: Any]) {
         self.sendEvent(withName: "test", body: data)
-    }
-    
-    @objc
-    private func sendMessageToNative(_ rnMessage: String) {}
-    
-    @objc
-    private func initialisePaymentSession (_ rnCallback: @escaping RCTResponseSenderBlock) {
-        DispatchQueue.main.async {
-            if PaymentSession.headlessCompletion != nil, !PaymentSession.isPresented {
-                let hyperParams = HyperParams.getHyperParams()
-                
-                let props: [String: Any] = [
-                    "clientSecret": PaymentSession.paymentIntentClientSecret as Any,
-                    "publishableKey": APIClient.shared.publishableKey as Any,
-                    "hyperParams": hyperParams,
-                    "customBackendUrl": APIClient.shared.customBackendUrl as Any,
-                    "customLogUrl": APIClient.shared.customLogUrl as Any,
-                    "customParams": APIClient.shared.customParams as Any
-                ]
-                rnCallback([props])
-            }
-        }
     }
     
     @objc

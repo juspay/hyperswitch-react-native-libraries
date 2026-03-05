@@ -5,11 +5,12 @@
 //  Created by Kuntimaddi Manideep on 24/01/25.
 //
 
-import Foundation
+#if canImport(HyperOTA)
 import HyperOTA
+import Foundation
 
 private func getHyperOTAPlist(_ key: String) -> String? {
-    guard let path = Bundle(for: RNFabricManager.self).path(forResource: "HyperOTA", ofType: "plist"),
+    guard let path = Bundle(for: RNViewManager.self).path(forResource: "HyperOTA", ofType: "plist"),
           let dict = NSDictionary(contentsOfFile: path),
           let value = dict[key] as? String, !value.isEmpty else {
         return nil
@@ -31,24 +32,24 @@ internal class EventLogger: NSObject, HPJPLoggerDelegate {
             var log = LogBuilder()
                 .setLogType(logLevel)
                 .setValue(jsonString)
-            
+
             switch key {
             case "init_with_local_config_versions":
-                log = log.setEventName(.HYPER_OTA_INIT)
+                log = log.setEventName(.hyperOTAInit)
                 break
             case "init":
-                log = log.setEventName(.HYPER_OTA_INIT)
+                log = log.setEventName(.hyperOTAInit)
                 break
             case "update_end":
-                log = log.setEventName(.HYPER_OTA_FINISH)
+                log = log.setEventName(.hyperOTAFinish)
             case "end":
-                log = log.setEventName(.HYPER_OTA_FINISH)
+                log = log.setEventName(.hyperOTAFinish)
                 break
             default:
-                log = log.setEventName(.HYPER_OTA_EVENT)
+                log = log.setEventName(.hyperOTAEvent)
             }
             LogManager.addLog(log.build())
-            
+
         } catch {
             print("Error serializing event data: \(error.localizedDescription)")
         }
@@ -84,7 +85,7 @@ internal class EventLogger: NSObject, HPJPLoggerDelegate {
             "subcategory": eventSubcategory
         ]
         addLog(eventData: eventData, logLevel: logLevel, key : eventLabel)
-        
+
     }
 }
 
@@ -102,7 +103,7 @@ public final class OTAServices {
                 "forceUpdate": true,
                 "localAssets": (getHyperOTAPlist(configKey) ?? "releaseConfigURL") == "releaseConfigURL",
                 "fileName": getHyperOTAPlist("fileName") ?? "" ,
-                "releaseConfigURL": (getHyperOTAPlist(configKey) ?? "") +  "/mobile-ota/rn/ios/" + SDKVersion.current + "/config.json",
+                "releaseConfigURL": (getHyperOTAPlist(configKey) ?? "") +  "/mobile-ota/ios/" + SDKVersion.current + "/config.json",
             ] as [String: Any]
             self.otaServices = HyperOTAServices(payload: payload, loggerDelegate: logger, baseBundle: Bundle(for: OTAServices.self))
         }
@@ -111,3 +112,4 @@ public final class OTAServices {
         return otaServices?.bundleURL() ?? Bundle(for: OTAServices.self).url(forResource: "hyperswitch", withExtension: "bundle")
     }
 }
+#endif
