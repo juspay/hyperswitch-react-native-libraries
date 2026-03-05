@@ -8,7 +8,6 @@ import android.view.View
 import android.webkit.WebSettings
 import android.view.WindowInsets
 import androidx.annotation.RequiresApi
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -16,7 +15,6 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.internal.ReactFragment
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -38,10 +36,6 @@ internal class HyperProvider internal constructor(private val activity: Activity
     this.customBackendUrl = customBackendUrl
     this.customLogUrl = customLogUrl
     this.customParams = customParams
-    try {
-      ReactFragment.initOTAServices(context = activity)
-    } catch (_: Exception) {
-    }
   }
 
   fun initPaymentSession(clientSecret: String) {
@@ -50,6 +44,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
 
 
   fun presentPaymentSheet(readableMap: ReadableMap) {
+    ReactNativeController.initialize(activity.application)
     val activity = activity as? FragmentActivity
     removeSheetView(true) // remove any existing payment sheet
     activity?.let {
@@ -74,7 +69,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
       }
 
       reactFragment =
-        ReactFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle).build()
+        HyperFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle).setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED).build()
 
       val fragmentManager: FragmentManager = it.supportFragmentManager
       val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -104,7 +99,7 @@ internal class HyperProvider internal constructor(private val activity: Activity
 
   companion object {
     @JvmStatic
-    var reactFragment: ReactFragment? = null
+    var reactFragment: HyperFragment? = null
 
     @JvmStatic
     private var publishableKey: String? = null

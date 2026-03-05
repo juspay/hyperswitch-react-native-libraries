@@ -4,10 +4,10 @@ import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
+import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.viewmanagers.GooglePayButtonManagerDelegate
 import com.facebook.react.viewmanagers.GooglePayButtonManagerInterface
 import com.google.android.gms.wallet.button.ButtonConstants
-import java.math.BigInteger
 
 @ReactModule(name = GooglePayButtonViewManager.NAME)
 class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
@@ -32,6 +32,7 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
     view.addButton()
   }
 
+  @ReactProp(name = "buttonType")
   override fun setButtonType(
     view: GooglePayButtonView?, value: String?
   ) {
@@ -47,6 +48,7 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
     }
   }
 
+  @ReactProp(name = "buttonStyle")
   override fun setButtonStyle(
     view: GooglePayButtonView?, value: String?
   ) {
@@ -56,12 +58,14 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
     }
   }
 
+  @ReactProp(name = "borderRadius", defaultDouble = 0.0)
   override fun setBorderRadius(
     view: GooglePayButtonView?, value: Double
   ) {
     view?.cornerRadius = value.toInt()
   }
 
+  @ReactProp(name = "allowedPaymentMethods")
   override fun setAllowedPaymentMethods(
     view: GooglePayButtonView?, value: String?
   ) {

@@ -1,6 +1,5 @@
 package com.hyperswitchsdkreactnative.modules
 
-import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactMethod

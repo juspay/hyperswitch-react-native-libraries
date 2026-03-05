@@ -1,16 +1,11 @@
 package com.hyperswitchsdkreactnative.modules
 
-
-import android.R.attr.id
-import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
-import io.hyperswitch.react.Utils
-
 @ReactModule(name = HyperswitchSdkReactNativeModule.NAME)
 class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
