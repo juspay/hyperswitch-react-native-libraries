@@ -11,15 +11,6 @@
 @implementation HyperswitchSdkReactNative
 RCT_EXPORT_MODULE()
 
-//- (instancetype)init
-//{
-//  self = [super init];
-//  if (self) {
-//    StripeSdkImpl.shared.emitter = self;
-//  }
-//  return self;
-//}
-
 RCT_EXPORT_METHOD(initialise:(nonnull NSString *)publishableKey
                   customBackendUrl:(nullable NSString *)customBackendUrl
                   customLogUrl:(nullable NSString *)customLogUrl
