@@ -8,6 +8,8 @@ external dispatchViewManagerCommand: (
 @module("react-native")
 external findNodeHandle: Js.Nullable.t<unit> => int = "findNodeHandle"
 
+@scope("JSON") @val external parse: string => NativeModuleTypes.paymentResult = "parse"
+
 type commands = {createView: string}
 
 type viewManagerConfig = {\"Commands": commands}
@@ -56,13 +58,13 @@ let make = (
   }, [viewId])
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
-    onPaymentResult(event.nativeEvent)
+    onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
   <NativePaymentWidget
     ref={viewRef}
     widgetId={widgetId}
-    widgetType={NativeModuleTypes.PAYMENT_SHEET}
+    widgetType={"widgetPaymentSheet"}
     clientSecret=?{switch options {
       | Some(options) => options.clientSecret
       | None => None

@@ -53,7 +53,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
 
     view.onPaymentResult { result ->
       val event = Arguments.createMap().apply {
-        putString("result", result.toString())
+        putString("result", result[0] as String?)
       }
 
       try {

@@ -7,8 +7,12 @@ type paymentResult = {
 @genType.as("widgetType")
 type widgetType = PAYMENT_SHEET | GOOGLE_PAY | CARD | BUTTON_SHEET | EXPRESS_CHECKOUT
 
+type paymentResultInternal = {
+  result?: string
+}
+
 type nativeEvent = {
-  nativeEvent: paymentResult,
+  nativeEvent: paymentResultInternal,
 }
 @genType.as("paymentWidgetProps")
 type paymentWidgetProps = {
@@ -24,7 +28,7 @@ type paymentWidgetProps = {
 type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
   widgetId: string, // sessionId
-  widgetType?: widgetType,
+  widgetType?: string,
   clientSecret?: string,
   sdkAuthorisation?: string,
   options?: PaymentSheetConfiguration.options, // apperance and client secret can be passed as options in JSON string format
