@@ -10,4 +10,8 @@ export {
   initHyperswitch,
 } from './context/HyperProvider.gen';
 
+export {
+  make as PaymentWidget,
+} from './views/PaymentWidget.gen';
+
 export { useHyper } from './hooks/useHyper.gen';

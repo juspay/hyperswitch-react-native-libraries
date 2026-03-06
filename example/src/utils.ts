@@ -8,7 +8,7 @@ export const getCustomisationOptions = () => {
   const options: PresentPaymentSheetParams = {
     appearance: {
       theme: 'Light',
-      layout: 'tabs',
+      layout: 'accordion',
       colors: {
         dark: {
           background: '#F9FAFB',

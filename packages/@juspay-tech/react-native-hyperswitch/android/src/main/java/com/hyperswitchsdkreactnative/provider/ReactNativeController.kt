@@ -10,11 +10,11 @@ import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.facebook.react.defaults.DefaultComponentsRegistry
-import com.facebook.react.defaults.DefaultReactHost
 import com.facebook.react.defaults.DefaultReactHostDelegate
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.defaults.DefaultTurboModuleManagerDelegate
 import com.facebook.react.fabric.ComponentFactory
+import com.facebook.react.packagerconnection.PackagerConnectionSettings
 import com.facebook.react.runtime.ReactHostImpl
 import com.facebook.react.runtime.cxxreactpackage.CxxReactPackage
 import com.facebook.react.runtime.hermes.HermesInstance
@@ -64,7 +64,7 @@ object ReactNativeController {
   private fun getBundleFromAirborne(application: Application): String {
     try {
       val environment =
-        LogUtils.getEnvironment(HyperProvider.publishableKey())
+        LogUtils.getEnvironment(HyperProvider.publishableKey ?: "")
       val airborneUrl = application.getString(
         if (environment == SDKEnvironment.SANDBOX)
           R.string.hyperOTASandBoxEndPoint
@@ -185,8 +185,12 @@ object ReactNativeController {
     val componentFactory = ComponentFactory()
     DefaultComponentsRegistry.register(componentFactory)
 
+//    PackagerConnectionSettings(application).apply {
+//      debugServerHost = "10.0.2.2:8082"
+//    }
+
     return ReactHostImpl(
-      application.applicationContext,
+      application,
       defaultReactHostDelegate,
       componentFactory,
       false, /* allowPackagerServerAccess */

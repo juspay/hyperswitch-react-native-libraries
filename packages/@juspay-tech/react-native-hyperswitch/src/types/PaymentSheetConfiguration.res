@@ -192,6 +192,7 @@ type appearance = {
 
 @genType
 type options = {
+  clientSecret?: string,
   allowsDelayedPaymentMethods?: bool,
   appearance?: appearance,
   shippingDetails?: addressDetails,
@@ -206,6 +207,7 @@ type options = {
   displaySavedPaymentMethods?: bool,
   placeholder?: placeholder,
   defaultView?: bool,
+  disableBranding?: bool,
   netceteraSDKApiKey?: string,
   displayDefaultSavedPaymentIcon?: bool,
   enablePartialLoading?: bool,

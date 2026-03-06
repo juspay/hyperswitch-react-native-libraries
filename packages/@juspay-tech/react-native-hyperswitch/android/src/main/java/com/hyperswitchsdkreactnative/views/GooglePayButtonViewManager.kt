@@ -34,9 +34,9 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
 
   @ReactProp(name = "buttonType")
   override fun setButtonType(
-    view: GooglePayButtonView?, value: String?
+    view: GooglePayButtonView, value: String?
   ) {
-    view?.type = when (value) {
+    view.type = when (value) {
       "BUY" -> ButtonConstants.ButtonType.BUY
       "BOOK" -> ButtonConstants.ButtonType.BOOK
       "CHECKOUT" -> ButtonConstants.ButtonType.CHECKOUT
@@ -50,9 +50,9 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
 
   @ReactProp(name = "buttonStyle")
   override fun setButtonStyle(
-    view: GooglePayButtonView?, value: String?
+    view: GooglePayButtonView, value: String?
   ) {
-    view?.theme = when (value) {
+    view.theme = when (value) {
       "light" -> ButtonConstants.ButtonTheme.LIGHT
       else -> ButtonConstants.ButtonTheme.DARK
     }
@@ -60,17 +60,17 @@ class GooglePayButtonViewManager : SimpleViewManager<GooglePayButtonView>(),
 
   @ReactProp(name = "borderRadius", defaultDouble = 0.0)
   override fun setBorderRadius(
-    view: GooglePayButtonView?, value: Double
+    view: GooglePayButtonView, value: Double
   ) {
-    view?.cornerRadius = value.toInt()
+    view.cornerRadius = value.toInt()
   }
 
   @ReactProp(name = "allowedPaymentMethods")
   override fun setAllowedPaymentMethods(
-    view: GooglePayButtonView?, value: String?
+    view: GooglePayButtonView, value: String?
   ) {
     if (value != null) {
-      view?.allowedPaymentMethods = value
+      view.allowedPaymentMethods = value
     }
   }
 
