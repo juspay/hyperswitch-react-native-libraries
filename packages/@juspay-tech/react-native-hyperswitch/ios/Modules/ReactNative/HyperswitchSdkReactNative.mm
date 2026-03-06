@@ -1,5 +1,5 @@
 #import "HyperswitchSdkReactNative.h"
-
+#import <React/RCTComponent.h>
 #if __has_include("HyperswitchSdkReactNative-Swift.h")
 #import "HyperswitchSdkReactNative-Swift.h"
 #else
@@ -35,10 +35,10 @@ RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)configuration
 }
 
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-(const facebook::react::ObjCTurboModule::InitParams &)params
-{
-  return std::make_shared<facebook::react::NativeHyperswitchSdkReactNativeSpecJSI>(params);
-}
+//- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+//(const facebook::react::ObjCTurboModule::InitParams &)params
+//{
+//  return std::make_shared<facebook::react::NativeHyperswitchSdkReactNativeSpecJSI>(params);
+//}
 
 @end

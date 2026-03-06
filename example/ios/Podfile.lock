@@ -8,14 +8,10 @@ PODS:
   - hermes-engine (0.79.2):
     - hermes-engine/Pre-built (= 0.79.2)
   - hermes-engine/Pre-built (0.79.2)
-  - HyperCore (0.1.2)
-  - HyperOTA (0.0.8):
-    - HyperCore (= 0.1.2)
   - HyperswitchSdkReactNative (0.3.0):
     - DoubleConversion
     - glog
     - hermes-engine
-    - HyperOTA (= 0.0.8)
     - RCT-Folly (= 2024.11.18.00)
     - RCTRequired
     - RCTTypeSafety
@@ -1828,8 +1824,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - HyperCore
-    - HyperOTA
     - Sentry
     - SocketRocket
 
@@ -1998,9 +1992,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 314be5250afa5692b57b4dd1705959e1973a8ebe
-  HyperCore: 22946379d44746dc6de385a90e383054e38a0692
-  HyperOTA: b8d473168c4f8b79ce24bd493f216902ab73aaf3
-  HyperswitchSdkReactNative: 1d3cfe597403c16658fc533f31924f0482fbc320
+  HyperswitchSdkReactNative: a52e2978ff0e857693210716ee6c72723711c9c8
   RCT-Folly: e78785aa9ba2ed998ea4151e314036f6c49e6d82
   RCTDeprecation: 83ffb90c23ee5cea353bd32008a7bca100908f8c
   RCTRequired: eb7c0aba998009f47a540bec9e9d69a54f68136e

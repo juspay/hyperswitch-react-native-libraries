@@ -17,8 +17,6 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.resources = ["ios/hyperswitchSDK/Core/Resources/*"]
   
-  s.dependency 'HyperOTA', '0.0.8'
-
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'OTHER_SWIFT_FLAGS' => "-enable-experimental-feature AccessLevelOnImport"
