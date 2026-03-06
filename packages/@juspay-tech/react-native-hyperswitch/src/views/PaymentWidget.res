@@ -34,7 +34,7 @@ let make = (
   ~widgetId,
   ~onPaymentResult,
   ~options: option<PaymentSheetConfiguration.options>=?,
-  ~style,
+  ~style: option<ReactNative.Style.t>=?,
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
@@ -71,6 +71,6 @@ let make = (
     }}
     onPaymentResult={onPaymentResultInternal}
     options=?options
-    style={style}
+    style=?style
   />
 }

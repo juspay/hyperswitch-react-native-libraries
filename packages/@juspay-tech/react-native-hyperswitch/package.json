@@ -192,5 +192,6 @@
     "languages": "kotlin-objc",
     "type": "all",
     "version": "0.52.1"
-  }
+  },
+  "gitHead": "e33eb2c28b4968ace6675697a35bb3d098d91e23"
 }
