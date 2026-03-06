@@ -4,11 +4,11 @@ import { type PresentPaymentSheetParams } from '@juspay-tech/react-native-hypers
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';
 
-export const getCustomisationOptions = () => {
+export const getCustomisationOptions = (layout='tabs') => {
   const options: PresentPaymentSheetParams = {
     appearance: {
       theme: 'Light',
-      layout: 'accordion',
+      layout: layout,
       colors: {
         dark: {
           background: '#F9FAFB',

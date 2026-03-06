@@ -1,5 +1,6 @@
 type hyperProviderData = {
   publishableKey: string,
+  profileId: string,
   customBackendUrl?: string,
   customLogUrl?: string,
   customParams?: Js.Json.t,
@@ -33,6 +34,7 @@ let unregisterWidget = (id: string) => {
 
 let defaultVal: hyperProviderData = {
   publishableKey: "",
+  profileId: "",
   isInitialized: false,
 }
 
@@ -55,13 +57,15 @@ let initHyperswitch = (~publishableKey, ~customBackendUrl=?, ~customLogUrl=?, ~c
 @genType @react.component
 let make = (
   ~children: React.element,
-  ~publishableKey="",
+  ~publishableKey,
+  ~profileId,
   ~customBackendUrl=?,
   ~customLogUrl=?,
   ~customParams=?,
 ) => {
   let (state, setState) = React.useState(_ => {
     publishableKey,
+    profileId,
     ?customBackendUrl,
     ?customLogUrl,
     ?customParams,

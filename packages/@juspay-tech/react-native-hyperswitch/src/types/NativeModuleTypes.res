@@ -26,6 +26,7 @@ type nativePaymentWidgetType = {
   widgetId: string, // sessionId
   widgetType?: widgetType,
   clientSecret?: string,
+  sdkAuthorisation?: string,
   options?: PaymentSheetConfiguration.options, // apperance and client secret can be passed as options in JSON string format
   onPaymentResult?: nativeEvent => unit, // callback to receive payment result from native code
   style?: ReactNative.Style.style, // style for the view including min-height

@@ -193,6 +193,7 @@ type appearance = {
 @genType
 type options = {
   clientSecret?: string,
+  sdkAuthorisation?: string,
   allowsDelayedPaymentMethods?: bool,
   appearance?: appearance,
   shippingDetails?: addressDetails,

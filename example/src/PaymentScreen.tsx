@@ -21,6 +21,7 @@ export default function PaymentScreen() {
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [clientSecret, setClientSecret] = useState<string | null | undefined>(null);
+  const [sdkAuthorisation, setSdkAuthorisation] = useState<string | null | undefined>(null);
 
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
@@ -29,6 +30,7 @@ export default function PaymentScreen() {
       throw new Error(data.error || 'Failed to create payment intent');
     }
     setClientSecret(data.clientSecret);
+    setSdkAuthorisation(data.sdkAuthorisation);
     return data.clientSecret;
   }, [baseURL]);
 
@@ -38,6 +40,7 @@ export default function PaymentScreen() {
     if (paymentIntent !== undefined) {
       const params: InitPaymentSessionParams = {
         paymentIntentClientSecret: paymentIntent,
+        sdkAuthorisation: sdkAuthorisation,
       };
       const result: InitPaymentSessionResult = await initPaymentSession(params);
       if (result.error) {
@@ -96,6 +99,10 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
+      <View style={styles.status}>
+        <Text style={styles.statusText}>{status}</Text>
+        {message && <Text style={styles.messageText}>{message}</Text>}
+      </View>
       <PaymentWidget
         widgetId="payment-widget"
         onPaymentResult={(result: any) => {
@@ -108,13 +115,9 @@ export default function PaymentScreen() {
             setMessage(result?.status);
           }
         }}
-        style={{ width: '100%', height: 600 }}
-        options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
+        style={{ width: '100%', height: 400 }}
+        options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
       />
-      <View style={styles.status}>
-        <Text style={styles.statusText}>{status}</Text>
-        {message && <Text style={styles.messageText}>{message}</Text>}
-      </View>
     </View>
   );
 }
