@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
   useHyper,
+  PaymentWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
   type PresentPaymentSheetResult,
@@ -19,6 +20,7 @@ export default function PaymentScreen() {
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
+  const [clientSecret, setClientSecret] = useState<string | null | undefined>(null);
 
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
@@ -26,6 +28,7 @@ export default function PaymentScreen() {
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+    setClientSecret(data.clientSecret);
     return data.clientSecret;
   }, [baseURL]);
 
@@ -93,6 +96,21 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
+      <PaymentWidget
+        widgetId="payment-widget"
+        onPaymentResult={(result: any) => {
+          console.log('Payment Result from Widget:', result);
+          if (result.errorMessage) {
+            setStatus(`Payment failed: ${result.errorMessage}`);
+            setMessage(null);
+          } else {
+            setStatus(getStatus(result?.status));
+            setMessage(result?.status);
+          }
+        }}
+        style={{ width: '100%', height: 600 }}
+        options={{ ...getCustomisationOptions(), clientSecret: clientSecret }}
+      />
       <View style={styles.status}>
         <Text style={styles.statusText}>{status}</Text>
         {message && <Text style={styles.messageText}>{message}</Text>}

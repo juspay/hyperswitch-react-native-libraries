@@ -21,7 +21,7 @@ import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 import javax.annotation.Nonnull;
 
 public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJavaModule implements TurboModule {
-  public static final String NAME = "HyperModules";
+  public static final String NAME = "HyperModule";
 
   public NativeHyperswitchSdkNativeSpec(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -35,6 +35,15 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
   @ReactMethod
   @DoNotStrip
   public abstract void sendMessageToNative(String message);
+
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void startApplePay(String requestObj, Callback callback);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void presentApplePay(String requestObj, Callback callback);
 
   @ReactMethod
   @DoNotStrip
@@ -62,7 +71,7 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
-  public abstract void exitWidgetPaymentsheet(double rootTag, String result, boolean reset);
+  public abstract void exitWidgetPaymentsheet(double rootTag, String widgetId, String result, boolean reset);
 
   @ReactMethod
   @DoNotStrip

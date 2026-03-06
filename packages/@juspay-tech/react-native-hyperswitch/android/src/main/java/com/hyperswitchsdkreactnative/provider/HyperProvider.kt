@@ -20,11 +20,7 @@ import org.json.JSONArray
 
 internal class HyperProvider internal constructor(private val activity: Activity) {
 
-  private var customBackendUrl: String? = null
-  private var customLogUrl: String? = null
-  private var customParams: ReadableMap? = null
   private var clientSecret: String? = null
-
 
   fun initialise(
     publishableKey: String?,
@@ -33,43 +29,27 @@ internal class HyperProvider internal constructor(private val activity: Activity
     customParams: ReadableMap?
   ) {
     Companion.publishableKey = publishableKey
-    this.customBackendUrl = customBackendUrl
-    this.customLogUrl = customLogUrl
-    this.customParams = customParams
+    Companion.customBackendUrl = customBackendUrl
+    Companion.customLogUrl = customLogUrl
+    Companion.customParams = customParams
   }
 
   fun initPaymentSession(clientSecret: String) {
     this.clientSecret = clientSecret
   }
 
-
   fun presentPaymentSheet(readableMap: ReadableMap) {
     ReactNativeController.initialize(activity.application)
     val activity = activity as? FragmentActivity
     removeSheetView(true) // remove any existing payment sheet
     activity?.let {
-      val propsBundle = Bundle().apply {
-        putString("type", "payment")
-        putString("from", "rn")
-        putString("publishableKey", publishableKey ?: "")
-        putString("clientSecret", clientSecret ?: "")
-        putBundle("configuration", readableMapToBundle(readableMap))
-        putBundle("hyperParams", getHyperParams(activity, readableMapToBundle(readableMap)))
-        customBackendUrl?.let { url -> putString("customBackendUrl", url) }
-        customLogUrl?.let { url -> putString("customLogUrl", url) }
-        customParams?.let { params ->
-          putString(
-            "customParams", readableMapToJSON(params).toString()
-          )
-        }
-      }
-
-      val bundle = Bundle().apply {
-        putBundle("props", propsBundle)
-      }
-
+      val launchOptions = LaunchOptions(activity, BuildConfig.VERSION_NAME)
       reactFragment =
-        HyperFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle).setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED).build()
+        HyperFragment.Builder()
+          .setComponentName("hyperSwitch")
+          .setLaunchOptions(launchOptions.getBundle(publishableKey, clientSecret, readableMap, customBackendUrl, customLogUrl, customParams))
+          .setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
+          .build()
 
       val fragmentManager: FragmentManager = it.supportFragmentManager
       val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -100,166 +80,13 @@ internal class HyperProvider internal constructor(private val activity: Activity
   companion object {
     @JvmStatic
     var reactFragment: HyperFragment? = null
-
     @JvmStatic
-    private var publishableKey: String? = null
-
-    fun publishableKey(): String {
-      return publishableKey ?: ""
-    }
-
-    fun readableMapToJSON(readableMap: ReadableMap?): JSONObject {
-      val json = JSONObject()
-      if (readableMap == null) return json
-
-      val iterator = readableMap.keySetIterator()
-      while (iterator.hasNextKey()) {
-        val key = iterator.nextKey()
-        val type = readableMap.getType(key)
-
-        when (type) {
-          ReadableType.Null -> json.put(key, JSONObject.NULL)
-          ReadableType.Boolean -> json.put(key, readableMap.getBoolean(key))
-          ReadableType.Number -> json.put(key, readableMap.getDouble(key))
-          ReadableType.String -> json.put(key, readableMap.getString(key))
-          ReadableType.Map -> json.put(key, readableMapToJSON(readableMap.getMap(key)))
-          ReadableType.Array -> json.put(key, readableArrayToJSON(readableMap.getArray(key)))
-        }
-      }
-      return json
-    }
-
-    fun readableArrayToJSON(readableArray: ReadableArray?): JSONArray {
-      val json = JSONArray()
-      if (readableArray == null) return json
-
-      for (i in 0 until readableArray.size()) {
-        val type = readableArray.getType(i)
-        when (type) {
-          ReadableType.Null -> json.put(JSONObject.NULL)
-          ReadableType.Boolean -> json.put(readableArray.getBoolean(i))
-          ReadableType.Number -> json.put(readableArray.getDouble(i))
-          ReadableType.String -> json.put(readableArray.getString(i))
-          ReadableType.Map -> json.put(readableMapToJSON(readableArray.getMap(i)))
-          ReadableType.Array -> json.put(readableArrayToJSON(readableArray.getArray(i)))
-        }
-      }
-      return json
-    }
-
-    fun getUserAgent(context: Context): String {
-      return try {
-        WebSettings.getDefaultUserAgent(context)
-      } catch (e: RuntimeException) {
-        System.getProperty("http.agent") ?: ""
-      }
-    }
-
-    fun getCurrentTime(): Double {
-      return System.currentTimeMillis().toDouble()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun getRootWindowInsetsCompatR(rootView: View): EdgeInsets? {
-      val insets = rootView.rootWindowInsets?.getInsets(
-        WindowInsets.Type.statusBars() or WindowInsets.Type.displayCutout() or WindowInsets.Type.navigationBars() or WindowInsets.Type.captionBar()
-      ) ?: return null
-      return EdgeInsets(
-        top = insets.top.toFloat(),
-        right = insets.right.toFloat(),
-        bottom = insets.bottom.toFloat(),
-        left = insets.left.toFloat()
-      )
-    }
-
-    private fun getRootWindowInsetsCompatBase(rootView: View): EdgeInsets? {
-      val visibleRect = android.graphics.Rect()
-      rootView.getWindowVisibleDisplayFrame(visibleRect)
-      return EdgeInsets(
-        top = visibleRect.top.toFloat(),
-        right = (rootView.width - visibleRect.right).toFloat(),
-        bottom = (rootView.height - visibleRect.bottom).toFloat(),
-        left = visibleRect.left.toFloat()
-      )
-    }
-
-
-    private fun getBottomInset(context: Activity?): EdgeInsets? {
-      if (context != null) {
-        val rootView = context.window.decorView
-        return when {
-          Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> getRootWindowInsetsCompatR(
-            rootView
-          )
-
-          else -> getRootWindowInsetsCompatBase(rootView)
-        }
-      } else {
-        return null
-      }
-    }
-
-    private fun getHyperParams(context: Activity, configuration: Bundle): Bundle = Bundle().apply {
-      putString("appId", context.packageName)
-      putString("country", context.resources?.configuration?.locales?.get(0)?.country)
-      putString("user-agent", getUserAgent(context))
-      putDouble("launchTime", getCurrentTime())
-      putString("sdkVersion", BuildConfig.VERSION_NAME)
-      putString("device_model", Build.MODEL)
-      putString("os_type", "android")
-      putString("os_version", Build.VERSION.RELEASE)
-      putString("deviceBrand", Build.BRAND)
-      val edgeInsets = getBottomInset(context as Activity?)
-//        if(edgeInsets!=null) {
-//          putFloat("topInset", edgeInsets.top)
-//          putFloat("leftInset", edgeInsets.left)
-//          putFloat("rightInset", edgeInsets.right)
-//          putFloat("bottomInset", edgeInsets.bottom)
-//        }
-      configuration.getBoolean("disableBranding").let {
-        putBoolean(
-          "disableBranding", it
-        )
-      }
-      configuration.getBoolean("defaultView").let {
-        putBoolean(
-          "defaultView", it
-        )
-      }
-    }
-
-    fun readableMapToBundle(readableMap: ReadableMap?): Bundle {
-      val bundle = Bundle()
-      if (readableMap == null) return bundle
-
-      val iterator = readableMap.keySetIterator()
-      while (iterator.hasNextKey()) {
-        val key = iterator.nextKey()
-        val type = readableMap.getType(key)
-
-        when (type) {
-          ReadableType.Null -> bundle.putString(key, null)
-          ReadableType.Boolean -> bundle.putBoolean(key, readableMap.getBoolean(key))
-          ReadableType.Number -> {
-            val value = readableMap.getDouble(key)
-            if (value % 1 == 0.0) {
-              bundle.putInt(key, value.toInt())
-            } else {
-              bundle.putDouble(key, value)
-            }
-          }
-
-          ReadableType.String -> bundle.putString(key, readableMap.getString(key))
-          ReadableType.Map -> bundle.putBundle(key, readableMapToBundle(readableMap.getMap(key)))
-          ReadableType.Array -> {
-            // Convert array to JSON string for simplicity
-            bundle.putString(key, readableMap.getArray(key)?.toString())
-          }
-        }
-      }
-      return bundle
-    }
+    var publishableKey: String? = null
+    @JvmStatic
+    var customBackendUrl: String? = null
+    @JvmStatic
+    var customLogUrl: String? = null
+    @JvmStatic
+    var customParams: ReadableMap? = null
   }
 }
-
-data class EdgeInsets(val top: Float, val right: Float, val bottom: Float, val left: Float)

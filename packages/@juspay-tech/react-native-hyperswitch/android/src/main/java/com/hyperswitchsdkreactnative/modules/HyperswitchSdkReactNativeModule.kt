@@ -1,12 +1,11 @@
 package com.hyperswitchsdkreactnative.modules
 
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
-@ReactModule(name = HyperswitchSdkReactNativeModule.NAME)
+
 class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
 
@@ -63,7 +62,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       promise?.reject("PRESENT_ERROR", "Failed to present payment sheet: ${e.message}")
     }
   }
-
+  
   fun resetView() {
     hyperProvider?.removeSheetView(true)
   }
