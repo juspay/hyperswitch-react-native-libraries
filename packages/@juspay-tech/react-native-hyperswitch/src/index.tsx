@@ -5,6 +5,17 @@ export type {
   presentPaymentSheetResult as PresentPaymentSheetResult,
 } from './modules/NativeHyperswitchSdk.gen';
 
+export type {
+  subscriptionEvent as PaymentEventName,
+} from './types/PaymentSheetConfiguration.gen';
+
+export type PaymentEvent = {
+  eventName: string;
+  payload?: Record<string, unknown>;
+};
+
+export { registerCallback, unregisterCallback } from './utils/PaymentSheetEventManager.res.js';
+
 export {
   make as HyperProvider,
   initHyperswitch,

@@ -39,6 +39,8 @@ export interface Spec extends TurboModule {
   updateWidgetHeight(height: number): void;
 
   onAddPaymentMethod(data: string): void;
+
+  emitPaymentEvent(widgetId:string,eventType: string, payload: Object): void;
 }
 
 /**

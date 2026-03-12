@@ -1,5 +1,8 @@
 import { Platform } from 'react-native';
-import { type PresentPaymentSheetParams } from '@juspay-tech/react-native-hyperswitch';
+import {
+  type PresentPaymentSheetParams,
+  type PaymentEventName,
+} from '@juspay-tech/react-native-hyperswitch';
 
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';
@@ -41,6 +44,11 @@ export const getCustomisationOptions = (layout='tabs') => {
       },
     },
     primaryButtonLabel: 'Complete Purchase',
+    subscribedEvents: [
+      'PAYMENT_METHOD_INFO_CARD',
+      'PAYMENT_METHOD_STATUS',
+      'FORM_STATUS',
+    ] as PaymentEventName[],
   };
 
   return options;

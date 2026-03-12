@@ -11,6 +11,7 @@ import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
@@ -22,6 +23,7 @@ import com.hyperswitchsdkreactnative.BuildConfig
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 import com.hyperswitchsdkreactnative.provider.HyperFragment
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
+import com.hyperswitchsdkreactnative.utils.EventCallback
 import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
 import java.util.UUID
 
@@ -34,6 +36,13 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   override fun getDelegate(): ViewManagerDelegate<PaymentWidgetView> {
     return mDelegate
   }
+  override fun getExportedCustomDirectEventTypeConstants() = mapOf(
+    "topPaymentResult" to mapOf(
+      "registrationName" to "onPaymentResult"
+    ),
+    "onPaymentEvent" to mapOf("registrationName" to "onPaymentEvent"),
+  )
+
 
   override fun getName(): String = NAME
   private lateinit var launchOptions: LaunchOptions
@@ -67,6 +76,17 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
         removeWidget(view)
       }
     }
+    view.onEventResult( { result ->
+        Log.i("HyperViewManager", "reachedHere ${result}")
+        val event: WritableMap = Arguments.createMap()
+        event.putString("eventName", result.eventName)
+        event.putMap("payload", result.payload)
+        context?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
+          view.id,
+          "onPaymentEvent",
+          event
+        )
+    })
   }
 
   @ReactProp(name = "widgetId")
@@ -118,11 +138,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     }
   }
 
-  override fun getExportedCustomDirectEventTypeConstants() = mapOf(
-    "topPaymentResult" to mapOf(
-      "registrationName" to "onPaymentResult"
-    )
-  )
 
 
   private fun showWidgetInternal(view: PaymentWidgetView) {

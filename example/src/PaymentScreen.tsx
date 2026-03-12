@@ -6,6 +6,7 @@ import {
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
   type PresentPaymentSheetResult,
+  type PaymentEvent,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -55,7 +56,16 @@ export default function PaymentScreen() {
   const checkout = async (): Promise<void> => {
     try {
       const { error, paymentResult }: PresentPaymentSheetResult =
-        await presentPaymentSheet(getCustomisationOptions());
+        await presentPaymentSheet(
+          getCustomisationOptions(),
+          (event: PaymentEvent) => {
+            console.log(
+              'PaymentSheet Event:',
+              event.eventName,
+              event.payload
+            );
+          }
+        );
       if (error) {
         console.error('Payment failed:', JSON.stringify(error, null, 2));
         setStatus(`Payment failed: ${error.code}`);
@@ -116,6 +126,13 @@ export default function PaymentScreen() {
           }
         }}
         style={{ width: '100%', height: 400 }}
+        onPaymentEvent={(event: PaymentEvent) => {
+          console.log(
+            'PaymentWidget Events:',
+            event.eventName,
+            event.payload
+          );
+        }}
         options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
       />
     </View>

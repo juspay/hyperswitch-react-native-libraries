@@ -1,8 +1,10 @@
 package com.hyperswitchsdkreactnative.modules
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 
@@ -13,6 +15,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
 
   init {
     currentInstance = this
+    hostReactContext = reactContext
   }
 
   override fun getName(): String {
@@ -71,6 +74,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     const val NAME = "HyperswitchSdkReactNative"
     private var sheetPromise: Promise? = null
     private var currentInstance: HyperswitchSdkReactNativeModule? = null
+    private var hostReactContext: ReactApplicationContext? = null
 
     fun resolvePromise(data: Any?) {
       try {
@@ -81,6 +85,18 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
 
     fun resetView() {
       currentInstance?.resetView()
+    }
+
+    fun emitPaymentSheetEvent(eventType: String, payload: ReadableMap) {
+      try {
+        hostReactContext
+          ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+          ?.emit("onPaymentSheetEvent", Arguments.createMap().apply {
+            putString("eventName", eventType)
+            putMap("payload", payload)
+          })
+      } catch (e: Exception) {
+      }
     }
   }
 }

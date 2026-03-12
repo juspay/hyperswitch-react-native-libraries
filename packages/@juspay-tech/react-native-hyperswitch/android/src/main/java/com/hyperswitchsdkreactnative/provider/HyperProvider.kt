@@ -1,22 +1,13 @@
 package com.hyperswitchsdkreactnative.provider
 
 import android.app.Activity
-import android.content.Context
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.webkit.WebSettings
-import android.view.WindowInsets
-import androidx.annotation.RequiresApi
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-import org.json.JSONObject
-import org.json.JSONArray
 
 internal class HyperProvider internal constructor(private val activity: Activity) {
 
@@ -41,13 +32,20 @@ internal class HyperProvider internal constructor(private val activity: Activity
   fun presentPaymentSheet(readableMap: ReadableMap) {
     ReactNativeController.initialize(activity.application)
     val activity = activity as? FragmentActivity
-    removeSheetView(true) // remove any existing payment sheet
+    removeSheetView(true)
     activity?.let {
       val launchOptions = LaunchOptions(activity, BuildConfig.VERSION_NAME)
       reactFragment =
         HyperFragment.Builder()
           .setComponentName("hyperSwitch")
-          .setLaunchOptions(launchOptions.getBundle(publishableKey, clientSecret, readableMap, customBackendUrl, customLogUrl, customParams))
+          .setLaunchOptions(launchOptions.getBundle(
+            publishableKey = publishableKey,
+            clientSecret = clientSecret,
+            configuration = readableMap,
+            customBackendUrl = customBackendUrl,
+            customLogUrl = customLogUrl,
+            customParams = customParams,
+          ))
           .setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
           .build()
 
@@ -56,8 +54,6 @@ internal class HyperProvider internal constructor(private val activity: Activity
       fragmentTransaction.add(android.R.id.content, reactFragment!!, "HyperPaymentSheet")
       fragmentTransaction.addToBackStack("HyperPaymentSheet")
       fragmentTransaction.commit()
-    } ?: run {
-//      callback(PaymentResult(status = "failed", message = "Activity is not a FragmentActivity"))
     }
   }
 
@@ -88,5 +84,14 @@ internal class HyperProvider internal constructor(private val activity: Activity
     var customLogUrl: String? = null
     @JvmStatic
     var customParams: ReadableMap? = null
+
+    fun readableArrayToArrayList(readableArray: ReadableArray?): ArrayList<String> {
+      val list = ArrayList<String>()
+      if (readableArray == null) return list
+      for (i in 0 until readableArray.size()) {
+        list.add(readableArray.getString(i) ?: "")
+      }
+      return list
+    }
   }
 }

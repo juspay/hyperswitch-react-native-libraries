@@ -33,6 +33,7 @@ let createView = viewId => {
 let make = (
   ~widgetId,
   ~onPaymentResult,
+  ~onPaymentEvent: option<NativeModuleTypes.paymentEventResult => unit>=?,
   ~options: option<PaymentSheetConfiguration.options>=?,
   ~style: option<ReactNative.Style.t>=?,
 ) => {
@@ -61,16 +62,24 @@ let make = (
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
+  let onPaymentEventInternal = (event: NativeModuleTypes.paymentEventNative) => {
+    switch onPaymentEvent {
+    | Some(callback) => callback(event.nativeEvent)
+    | None => ()
+    }
+  }
+
   <NativePaymentWidget
     ref={viewRef}
     widgetId={widgetId}
     widgetType={"widgetPaymentSheet"}
     clientSecret=?{switch options {
-      | Some(options) => options.clientSecret
-      | None => None
+    | Some(options) => options.clientSecret
+    | None => None
     }}
     onPaymentResult={onPaymentResultInternal}
-    options=?options
-    style=?style
+    onPaymentEvent={onPaymentEventInternal}
+    ?options
+    ?style
   />
 }

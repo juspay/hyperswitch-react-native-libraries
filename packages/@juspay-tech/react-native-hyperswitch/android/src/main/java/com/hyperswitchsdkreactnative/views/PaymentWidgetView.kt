@@ -102,8 +102,8 @@ class PaymentWidgetView : FrameLayout {
     WidgetCallbackManager.setCallback(callback, true, this.widgetId)
   }
 
-  fun onEvent(eventCallback: EventCallback) {
-    WidgetCallbackManager.setEventCallback(this.widgetId, eventCallback)
+  fun onEventResult(eventCallback: EventCallback) {
+    WidgetCallbackManager.setEventCallback(this.widgetId, eventCallback as EventCallback)
   }
 
   override fun onAttachedToWindow() {

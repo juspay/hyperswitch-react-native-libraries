@@ -1,11 +1,12 @@
 package com.hyperswitchsdkreactnative.utils
 
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.ReadableMap
 import java.util.concurrent.ConcurrentHashMap
 
 data class OnEventResult(
     val eventName: String,
-    val payload: String? = null
+    val payload: ReadableMap? = null
 )
 
 typealias EventCallback = (OnEventResult) -> Unit
@@ -34,12 +35,12 @@ object WidgetCallbackManager {
         return fragmentFlags[sessionId] ?: true
     }
 
-    fun setEventCallback(sessionId: String, callback: EventCallback) {
-        eventCallbacks[sessionId] = callback
+    fun setEventCallback(widgetId: String, callback: EventCallback) {
+        eventCallbacks[widgetId] = callback
     }
 
-    fun sendEvent(sessionId: String, eventName: String, payload: String? = null) {
-        eventCallbacks[sessionId]?.invoke(
+    fun sendEvent(widgetId: String, eventName: String, payload: ReadableMap? = null) {
+        eventCallbacks[widgetId]?.invoke(
             OnEventResult(eventName, payload)
         )
     }

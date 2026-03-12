@@ -1,5 +1,16 @@
 open NativeHyperswitchSdk
 
+type paymentEvent = {
+  eventName: string,
+  payload?: Js.Json.t,
+}
+
+@module("../utils/PaymentSheetEventManager.res.js")
+external registerCallback: (paymentEvent => unit) => unit = "registerCallback"
+
+@module("../utils/PaymentSheetEventManager.res.js")
+external unregisterCallback: unit => unit = "unregisterCallback"
+
 let getError: (~error: string=?) => presentPaymentSheetResult = (
   ~error="Unknown error occurred while presenting payment sheet",
 ) => {
@@ -22,16 +33,15 @@ let _initPaymentSession = async (params: initPaymentSessionParams): initPaymentS
     switch Exn.message(obj) {
     | Some(msg) => {error: msg}
     | None => {error: "Unknown error occurred while initializing payment sheet"}
+    | _ => {error: "Unexpected error occurred while initializing payment sheet"}
     }
-  | _ => {error: "Unexpected error occurred while initializing payment sheet"}
   }
 }
-let getData = (data, ~key : string, ~fallback : string)=>{
+
+let getData = (data, ~key: string, ~fallback: string) => {
   data
-  ->Option.flatMap(obj =>
-        obj->Js.Dict.get(key)->Option.flatMap(json => json->Js.Json.decodeString)
-      )
-      ->Option.getOr(fallback)
+  ->Option.flatMap(obj => obj->Js.Dict.get(key)->Option.flatMap(json => json->Js.Json.decodeString))
+  ->Option.getOr(fallback)
 }
 
 let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
@@ -42,21 +52,13 @@ let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
     }
     let decodedObject = parsed->Js.Json.decodeObject
 
-    let status =
-      decodedObject->getData(~key="status", ~fallback="failed")
-    let errorMessage =
-      decodedObject->getData(~key="error", ~fallback="")
-    
+    let status = decodedObject->getData(~key="status", ~fallback="failed")
+    let errorMessage = decodedObject->getData(~key="error", ~fallback="")
 
-    let code =
-      decodedObject->getData(~key="code", ~fallback="")
+    let code = decodedObject->getData(~key="code", ~fallback="")
 
-    let typeData =
-      decodedObject->getData(~key="type", ~fallback="")
-      
-    let message =
-      decodedObject
-      ->getData(~key="message", ~fallback="failed")
+    let typeData = decodedObject->getData(~key="type", ~fallback="")
+    let message = decodedObject->getData(~key="message", ~fallback="failed")
 
     let paymentResult = {
       status,
@@ -112,7 +114,10 @@ let _presentPaymentSheet = async (params: presentPaymentSheetParams): presentPay
 
 type useHyper = {
   initPaymentSession: initPaymentSessionParams => promise<initPaymentSessionResult>,
-  presentPaymentSheet: presentPaymentSheetParams => promise<presentPaymentSheetResult>,
+  presentPaymentSheet: (
+    presentPaymentSheetParams,
+    option<paymentEvent => unit>,
+  ) => promise<presentPaymentSheetResult>,
 }
 
 @genType
@@ -124,16 +129,23 @@ let useHyper = () => {
     _initPaymentSession(params)
   })
 
-  let presentPaymentSheet = React.useCallback1((params: presentPaymentSheetParams) => {
-    if !isReady {
-      let a: promise<presentPaymentSheetResult> = Promise.resolve(
-        getError(~error="Hyperswitch is not initialized"),
-      )
-      a
-    } else {
-      _presentPaymentSheet(params)
-    }
-  }, [isReady])
+  let presentPaymentSheet = React.useCallback1(
+    (params: presentPaymentSheetParams, onPaymentEvent: option<paymentEvent => unit>) => {
+      if !isReady {
+        Promise.resolve(getError(~error="Hyperswitch is not initialized"))
+      } else {
+        switch onPaymentEvent {
+        | Some(callback) => registerCallback(callback)
+        | None => ()
+        }
+        _presentPaymentSheet(params)->Promise.then(res => {
+          unregisterCallback()
+          Promise.resolve(res)
+        })
+      }
+    },
+    [isReady],
+  )
 
   {
     initPaymentSession,

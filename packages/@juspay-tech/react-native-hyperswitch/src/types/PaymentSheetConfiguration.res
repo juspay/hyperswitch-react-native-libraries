@@ -124,8 +124,8 @@ type primaryButtonColor = {
   border?: string,
 }
 type primaryButtonColorType = {
-  light?: primaryButtonColor, 
-  dark?: primaryButtonColor
+  light?: primaryButtonColor,
+  dark?: primaryButtonColor,
 }
 
 type primaryButton = {
@@ -190,6 +190,12 @@ type appearance = {
   layout?: layoutType,
 }
 
+type subscriptionEvent =
+  | @as("PAYMENT_METHOD_INFO_CARD") PaymentMethodInfoCard
+  | @as("PAYMENT_METHOD_STATUS") PaymentMethodStatus
+  | @as("FORM_STATUS") FormStatus
+  | @as("PAYMENT_METHOD_INFO_ADDRESS") PaymentMethodInfoAddress
+
 @genType
 type options = {
   clientSecret?: string,
@@ -215,4 +221,5 @@ type options = {
   customer?: customerConfiguration,
   paymentSheetHeaderLabel?: string,
   savedPaymentSheetHeaderLabel?: string,
+  subscribedEvents?: array<subscriptionEvent>,
 }
