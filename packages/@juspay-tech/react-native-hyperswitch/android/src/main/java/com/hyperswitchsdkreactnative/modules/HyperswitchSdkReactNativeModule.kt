@@ -2,9 +2,13 @@ package com.hyperswitchsdkreactnative.modules
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
+import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
+import org.json.JSONObject
 
 class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
@@ -62,7 +66,46 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       promise?.reject("PRESENT_ERROR", "Failed to present payment sheet: ${e.message}")
     }
   }
-  
+
+  override fun goBack(widgetId: String) {
+    try {
+      val eventData = JSONObject().apply {
+        put("widgetId", widgetId)
+        put("action", "goBack")
+      }
+
+      // Use HyperModule's context to emit event
+      HyperswitchSdkNativeModule.emitEventToJS("WidgetGoBack", eventData.toString())
+    } catch (e: Exception) {
+      // Handle error
+    }
+  }
+
+  override fun confirmPayment(widgetId: String, promise: Promise) {
+    try {
+      val eventData = JSONObject().apply {
+        put("widgetId", widgetId)
+      }
+
+      // Store the promise to resolve later when bundle responds
+      WidgetCallbackManager.setConfirmPromise(widgetId, promise)
+
+      // Use HyperModule's context to emit event
+      HyperswitchSdkNativeModule.emitEventToJS("WidgetConfirmPayment", eventData.toString())
+    } catch (e: Exception) {
+      promise.reject("CONFIRM_ERROR", "Failed to trigger confirmPayment: ${e.message}")
+    }
+  }
+  @ReactMethod
+  fun addListener(eventName: String) {
+    // Keep: Required for RN built-in Event Emitter
+  }
+
+  @ReactMethod
+  fun removeListeners(count: Double) {
+    // Keep: Required for RN built-in Event Emitter
+  }
+
   fun resetView() {
     hyperProvider?.removeSheetView(true)
   }

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
   useHyper,
   PaymentWidget,
+  useHyperWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
   type PresentPaymentSheetResult,
@@ -22,7 +23,8 @@ export default function PaymentScreen() {
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [clientSecret, setClientSecret] = useState<string | null | undefined>(null);
   const [sdkAuthorisation, setSdkAuthorisation] = useState<string | null | undefined>(null);
-
+  const {goBack, confirmPayment, isReady, isLoading} = useHyperWidget("payment-widget");
+  
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
@@ -99,8 +101,15 @@ export default function PaymentScreen() {
       <TouchableOpacity style={styles.button} onPress={checkout}>
         <Text style={styles.buttonText}>Checkout</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={goBack}>
+        <Text style={styles.buttonText}>Go Back</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={confirmPayment}>
+        <Text style={styles.buttonText}>Confirm Payment</Text>
+      </TouchableOpacity>
       <View style={styles.status}>
         <Text style={styles.statusText}>{status}</Text>
+        <Text style={styles.statusText}>{isReady ? 'Ready' : 'Not Ready'} {isLoading ? 'Loading' : 'Idle'}</Text>
         {message && <Text style={styles.messageText}>{message}</Text>}
       </View>
       <PaymentWidget
@@ -116,7 +125,7 @@ export default function PaymentScreen() {
           }
         }}
         style={{ width: '100%', height: 400 }}
-        options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
+        options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation, hideConfirmButton: true}}
       />
     </View>
   );

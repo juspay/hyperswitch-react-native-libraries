@@ -24,6 +24,7 @@ class PaymentWidgetView : FrameLayout {
   private var profileId: String? = null
   private var widgetId = UUID.randomUUID().toString()
   private var clientSecret: String = ""
+  private var widgetType: String? = null
 
   fun getConfiguration(): ReadableMap?{
     return this.configuration
@@ -33,7 +34,7 @@ class PaymentWidgetView : FrameLayout {
     return this.clientSecret
   }
 
-  private var widgetType: String? = null
+
 
   fun setWidgetId(widgetId: String) {
     this.widgetId = widgetId

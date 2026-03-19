@@ -215,4 +215,5 @@ type options = {
   customer?: customerConfiguration,
   paymentSheetHeaderLabel?: string,
   savedPaymentSheetHeaderLabel?: string,
+  hideConfirmButton?:bool
 }

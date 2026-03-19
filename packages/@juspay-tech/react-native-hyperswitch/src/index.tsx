@@ -14,4 +14,5 @@ export {
   make as PaymentWidget,
 } from './views/PaymentWidget.gen';
 
+export { useHyperWidget } from './hooks/useHyperWidget.gen';
 export { useHyper } from './hooks/useHyper.gen';

@@ -176,7 +176,9 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   private fun setupLayout(view: View) {
     val callback = object : Choreographer.FrameCallback {
       override fun doFrame(frameTimeNanos: Long) {
-        if (view.isAttachedToWindow) {
+        // Check if context is still active before proceeding
+        val reactContext = context?.takeIf { it.hasActiveCatalystInstance() }
+        if (view.isAttachedToWindow && reactContext != null) {
           manuallyLayoutChildren(view)
           view.viewTreeObserver.dispatchOnGlobalLayout()
           Choreographer.getInstance().postFrameCallback(this)

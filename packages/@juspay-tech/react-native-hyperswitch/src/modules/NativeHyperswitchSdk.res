@@ -45,10 +45,15 @@ type presentPaymentSheetResult = {
 @genType
 type presentPaymentSheet = presentPaymentSheetParams => promise<string>
 
+@genType
+type confirmPaymentParams = {widgetId: string}
+
 type nativeHyperswitchSdk = {
   initialise: initialise,
   initPaymentSession: initPaymentSession,
   presentPaymentSheet: presentPaymentSheet,
+  goBack: string => unit,
+  confirmPayment: string => promise<presentPaymentSheetResult>,
 }
 
 @module("../specs/NativeHyperswitchSdkReactNative")
