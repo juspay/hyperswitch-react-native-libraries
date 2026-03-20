@@ -3,7 +3,7 @@ type hyperProviderData = {
   profileId: string,
   customBackendUrl?: string,
   customLogUrl?: string,
-  customParams?: Js.Json.t,
+  customParams?: JSON.t,
   isInitialized: bool,
   error?: string,
 }

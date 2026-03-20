@@ -109,10 +109,8 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
 
   override fun onWidgetStateChange(widgetId: String, state: String) {
     try {
-      // Use the static method to emit event
-      emitEventToJS("WidgetStateChange", state)
-    } catch (e: Exception) {
-      // Handle error silently
+      HyperswitchSdkReactNativeModule.emitEventToJS("widgetStateChange", state)
+    } catch (_: Exception) {
     }
   }
 
@@ -135,29 +133,14 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "HyperModule"
 
-    // Static reference to ReactApplicationContext for use by other modules
     private var reactContextInstance: ReactApplicationContext? = null
 
-    /**
-     * Get the ReactApplicationContext from HyperModule
-     * This allows other modules to emit events to React Native
-     */
-    fun getReactContext(): ReactApplicationContext? {
-      return reactContextInstance
-    }
-
-    /**
-     * Emit event to React Native JS layer
-     * Can be called from any module
-     */
-    fun emitEventToJS(eventName: String, data: String) {
+    fun emitEventToJS(eventName: String, data: Any) {
       try {
-        Log.i("Manideep",data)
         reactContextInstance
           ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
           ?.emit(eventName, data)
-      } catch (e: Exception) {
-        // Handle error silently
+      } catch (_: Exception) {
       }
     }
   }

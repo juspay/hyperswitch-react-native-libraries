@@ -29,18 +29,18 @@ let _initPaymentSession = async (params: initPaymentSessionParams): initPaymentS
 let getData = (data, ~key : string, ~fallback : string)=>{
   data
   ->Option.flatMap(obj =>
-        obj->Js.Dict.get(key)->Option.flatMap(json => json->Js.Json.decodeString)
+        obj->Dict.get(key)->Option.flatMap(json => json->JSON.Decode.string)
       )
       ->Option.getOr(fallback)
 }
 
 let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
   try {
-    let parsed = switch Js.typeof(result) {
-    | "string" => Js.Json.parseExn(result)
+    let parsed = switch typeof(result) {
+    | #string=> JSON.parseExn(result)
     | _ => result->Obj.magic
     }
-    let decodedObject = parsed->Js.Json.decodeObject
+    let decodedObject = parsed->JSON.Decode.object
 
     let status =
       decodedObject->getData(~key="status", ~fallback="failed")
@@ -86,8 +86,8 @@ let _presentPaymentSheet = async (params: presentPaymentSheetParams): presentPay
   } catch {
   | Exn.Error(obj) =>
     // Check if the error is an object error - if so, return the error
-    switch Js.typeof(obj) {
-    | "object" =>
+    switch typeof(obj) {
+    | #object =>
       // Try to parse the object error
       try {
         let errorObj = obj->Obj.magic

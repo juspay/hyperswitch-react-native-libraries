@@ -1,5 +1,7 @@
 package com.hyperswitchsdkreactnative.modules
 
+import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactMethod
@@ -17,6 +19,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
 
   init {
     currentInstance = this
+    reactContextInstance = reactContext
   }
 
   override fun getName(): String {
@@ -69,33 +72,26 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
 
   override fun goBack(widgetId: String) {
     try {
-      val eventData = JSONObject().apply {
-        put("widgetId", widgetId)
-        put("action", "goBack")
-      }
-
-      // Use HyperModule's context to emit event
-      HyperswitchSdkNativeModule.emitEventToJS("WidgetGoBack", eventData.toString())
+      val eventData = Arguments.createMap()
+      eventData.putString("widgetId", widgetId)
+      eventData.putString("actionType", "goBack")
+      HyperswitchSdkNativeModule.emitEventToJS("triggerWidgetAction", eventData)
     } catch (e: Exception) {
-      // Handle error
     }
   }
 
   override fun confirmPayment(widgetId: String, promise: Promise) {
     try {
-      val eventData = JSONObject().apply {
-        put("widgetId", widgetId)
-      }
-
-      // Store the promise to resolve later when bundle responds
+      val eventData = Arguments.createMap()
+      eventData.putString("widgetId", widgetId)
+      eventData.putString("actionType", "confirmPayment")
       WidgetCallbackManager.setConfirmPromise(widgetId, promise)
-
-      // Use HyperModule's context to emit event
-      HyperswitchSdkNativeModule.emitEventToJS("WidgetConfirmPayment", eventData.toString())
+      HyperswitchSdkNativeModule.emitEventToJS("triggerWidgetAction", eventData)
     } catch (e: Exception) {
       promise.reject("CONFIRM_ERROR", "Failed to trigger confirmPayment: ${e.message}")
     }
   }
+
   @ReactMethod
   fun addListener(eventName: String) {
     // Keep: Required for RN built-in Event Emitter
@@ -114,6 +110,16 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     const val NAME = "HyperswitchSdkReactNative"
     private var sheetPromise: Promise? = null
     private var currentInstance: HyperswitchSdkReactNativeModule? = null
+    private var reactContextInstance: ReactApplicationContext? = null
+
+    fun emitEventToJS(eventName: String, data: Any) {
+      try {
+        reactContextInstance
+          ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+          ?.emit(eventName, data)
+      } catch (_: Exception) {
+      }
+    }
 
     fun resolvePromise(data: Any?) {
       try {
@@ -121,7 +127,6 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       } catch (e: Exception) {
       }
     }
-
     fun resetView() {
       currentInstance?.resetView()
     }

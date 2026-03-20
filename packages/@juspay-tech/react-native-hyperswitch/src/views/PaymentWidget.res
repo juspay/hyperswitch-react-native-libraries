@@ -6,7 +6,7 @@ external dispatchViewManagerCommand: (
 ) => unit = "dispatchViewManagerCommand"
 
 @module("react-native")
-external findNodeHandle: Js.Nullable.t<unit> => int = "findNodeHandle"
+external findNodeHandle: Nullable.t<unit> => int = "findNodeHandle"
 
 @scope("JSON") @val external parse: string => NativeModuleTypes.paymentResult = "parse"
 
@@ -25,7 +25,7 @@ let make = (
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   // run after mount
   React.useEffect(() => {
-    switch Js.Nullable.toOption(viewRef.current) {
+    switch Nullable.toOption(viewRef.current) {
     | Some(_) =>
       setViewId(_ => Some(findNodeHandle(viewRef.current)))
       ()

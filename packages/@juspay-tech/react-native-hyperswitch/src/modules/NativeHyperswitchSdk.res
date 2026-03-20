@@ -3,7 +3,7 @@ type initialise = (
   ~publishableKey: string,
   ~customBackendUrl: string=?,
   ~customLogUrl: string=?,
-  ~customParams: Js.Json.t=?,
+  ~customParams: JSON.t=?,
 ) => promise<unit>
 
 type initPaymentSession = (~paymentIntentClientSecret: string) => promise<unit>
