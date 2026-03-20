@@ -6,13 +6,27 @@ external dispatchViewManagerCommand: (
 ) => unit = "dispatchViewManagerCommand"
 
 @module("react-native")
-external findNodeHandle: Js.Nullable.t<unit> => int = "findNodeHandle"
+external findNodeHandle: Nullable.t<unit> => int = "findNodeHandle"
 
 @scope("JSON") @val external parse: string => NativeModuleTypes.paymentResult = "parse"
 
 type commands = {createView: string}
 
 type viewManagerConfig = {\"Commands": commands}
+
+let emitUnknownEventWarningWidget = (callback: NativeModuleTypes.paymentEventResult => unit, invalidEvents: array<string>) => {
+  let warningPayload = EventValidator.makeUnknownEventWarningPayload(invalidEvents)
+  let payloadJson = Dict.fromArray([
+    ("message", JSON.Encode.string(warningPayload.message)),
+    ("invalidEvents", JSON.Encode.array(warningPayload.invalidEvents->Array.map(JSON.Encode.string))),
+    ("validEvents", JSON.Encode.array(warningPayload.validEvents->Array.map(JSON.Encode.string))),
+  ])->JSON.Encode.object
+  let payloadStr = payloadJson->JSON.stringify
+  callback({
+    eventName: "UNKNOWN_EVENT_SUBSCRIBED",
+    payload: payloadStr,
+  })
+}
 
 // @module("react-native") @scope("UIManager")
 // external getViewManagerConfig: string => viewManagerConfig = "getViewManagerConfig"
@@ -39,24 +53,40 @@ let make = (
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
-  // run after mount
-  React.useEffect(() => {
-    switch Js.Nullable.toOption(viewRef.current) {
+  React.useEffect0(() => {
+    switch Nullable.toOption(viewRef.current) {
     | Some(_) =>
       setViewId(_ => Some(findNodeHandle(viewRef.current)))
       ()
     | None => ()
     }
     None
-  }, [])
+  })
 
-  React.useEffect(() => {
+  React.useEffect1(() => {
     switch viewId {
     | Some(id) => createView(id)
     | None => ()
     }
     None
   }, [viewId])
+
+  let warningEmitted = React.useRef(false)
+  
+  React.useEffect0(() => {
+    switch (options, onPaymentEvent) {
+    | (Some(opts), Some(callback)) when !warningEmitted.current =>
+      let subscribedEventStrings: option<array<string>> = opts.subscribedEvents->Obj.magic
+      let invalidEvents = EventValidator.validateSubscribedEventStrings(subscribedEventStrings)
+      if Array.length(invalidEvents) > 0 {
+        warningEmitted.current = true
+        emitUnknownEventWarningWidget(callback, invalidEvents)
+      }
+      ()
+    | _ => ()
+    }
+    None
+  })
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
