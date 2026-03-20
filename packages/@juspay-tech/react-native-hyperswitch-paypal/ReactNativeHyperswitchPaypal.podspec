@@ -22,4 +22,6 @@ if respond_to?(:install_modules_dependencies, true)
 else
   s.dependency "React-Core"
 end
+
+  s.dependency "PayPal", "~> 2.0"
 end

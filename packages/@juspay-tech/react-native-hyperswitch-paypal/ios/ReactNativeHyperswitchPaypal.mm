@@ -1,14 +1,17 @@
 #import <React/RCTBridgeModule.h>
+#import <React/RCTViewManager.h>
 
-@interface RCT_EXTERN_MODULE(ReactNativeHyperswitchPaypal, NSObject)
+@interface RCT_EXTERN_MODULE(HyperswitchPaypal, NSObject)
 
-RCT_EXTERN_METHOD(multiply:(float)a withB:(float)b
-                 withResolver:(RCTPromiseResolveBlock)resolve
-                 withRejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(launchPayPal:(NSString *)requestObj
+                  callback:(RCTResponseSenderBlock)callback)
 
-+ (BOOL)requiresMainQueueSetup
-{
-  return NO;
-}
+@end
+
+@interface RCT_EXTERN_MODULE(PaypalButton, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(buttonColor, NSString)
+RCT_EXPORT_VIEW_PROPERTY(buttonLabel, NSString)
+RCT_EXPORT_VIEW_PROPERTY(borderRadius, double)
 
 @end
