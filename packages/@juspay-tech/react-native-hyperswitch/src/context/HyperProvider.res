@@ -8,30 +8,6 @@ type hyperProviderData = {
   error?: string,
 }
 
-type result = {
-  paymentResult: string,
-  error: string
-}
-
-type widgetState = {
-  confirmPayment: unit => unit,
-  goBack: unit => unit,
-  showWidget: unit => unit,
-  isConfirmDisabled: bool,
-  isLoading: bool,
-  isReady: bool,
-}
-
-let widgetRegistry: ref<Dict.t<widgetState>> = ref(Js.Dict.empty())
-
-let registerWidget = (id: string, controller: widgetState) => {
-  Dict.set(widgetRegistry.contents, id, controller)
-}
-
-let unregisterWidget = (id: string) => {
-  Dict.delete(widgetRegistry.contents, id)
-}
-
 let defaultVal: hyperProviderData = {
   publishableKey: "",
   profileId: "",

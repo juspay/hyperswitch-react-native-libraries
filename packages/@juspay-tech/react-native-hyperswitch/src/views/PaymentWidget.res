@@ -10,16 +10,6 @@ external findNodeHandle: Js.Nullable.t<unit> => int = "findNodeHandle"
 
 @scope("JSON") @val external parse: string => NativeModuleTypes.paymentResult = "parse"
 
-type commands = {createView: string}
-
-type viewManagerConfig = {"Commands": commands}
-
-// Event types for widget state
-type widgetEvent = {
-  eventName: string,
-  payload: option<Js.Json.t>,
-}
-
 let createView = viewId => {
   dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
 }
@@ -33,33 +23,6 @@ let make = (
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
-  let (isReady, setIsReady) = React.useState(_ => false)
-  let (isConfirmDisabled, setIsConfirmDisabled) = React.useState(_ => true)
-  let (isLoading, setIsLoading) = React.useState(_ => false)
-
-  // Register widget with HyperProvider
-  React.useEffect4(() => {
-    let controller : HyperProvider.widgetState = {
-      confirmPayment: () => {
-        // This will be called by useHyperWidget hook
-        ()
-      },
-      goBack: () => {
-        // Handle goBack - can be emitted to native or bundle
-        ()
-      },
-      isConfirmDisabled: isConfirmDisabled,
-      isLoading: isLoading,
-      isReady: isReady,
-    }
-
-    HyperProvider.registerWidgetSetter(widgetId, (controller)=>())
-
-    Some(() => {
-      HyperProvider.unregisterWidgetSetter(widgetId)
-    })
-  }, (widgetId, isReady, isConfirmDisabled, isLoading))
-
   // run after mount
   React.useEffect(() => {
     switch Js.Nullable.toOption(viewRef.current) {
