@@ -1,16 +1,15 @@
-type hyperProviderData = {
-  publishableKey: string,
-  profileId: string,
+@genType
+type customConfig = {
   customBackendUrl?: string,
   customLogUrl?: string,
-  customParams?: Js.Json.t,
-  isInitialized: bool,
-  error?: string,
+  customParams?: JSON.t,
 }
 
-type result = {
-  paymentResult: string,
-  error: string
+@genType
+type hyperProviderOptions = {
+  publishableKey: string,
+  profileId: string,
+  customConfig?: customConfig,
 }
 
 type widgetState = {
@@ -32,9 +31,21 @@ let unregisterWidget = (id: string) => {
   Dict.delete(widgetRegistry.contents, id)
 }
 
+let getWidgetState = (id: string): option<widgetState> => {
+  Js.Dict.get(widgetRegistry.contents, id)
+}
+
+type hyperProviderData = {
+  options: hyperProviderOptions,
+  isInitialized: bool,
+  error?: string,
+}
+
 let defaultVal: hyperProviderData = {
-  publishableKey: "",
-  profileId: "",
+  options: {
+    publishableKey: "",
+    profileId: "",
+  },
   isInitialized: false,
 }
 
@@ -55,20 +66,26 @@ let initHyperswitch = (~publishableKey, ~customBackendUrl=?, ~customLogUrl=?, ~c
 }
 
 @genType @react.component
-let make = (
-  ~children: React.element,
-  ~publishableKey,
-  ~profileId,
-  ~customBackendUrl=?,
-  ~customLogUrl=?,
-  ~customParams=?,
-) => {
+let make = (~children: React.element, ~options: hyperProviderOptions) => {
+  let publishableKey = options.publishableKey
+  let _profileId = options.profileId
+  let customConfig = options.customConfig
+
+  let customBackendUrl = switch customConfig {
+  | Some(config) => config.customBackendUrl
+  | None => None
+  }
+  let customLogUrl = switch customConfig {
+  | Some(config) => config.customLogUrl
+  | None => None
+  }
+  let customParams = switch customConfig {
+  | Some(config) => config.customParams
+  | None => None
+  }
+
   let (state, setState) = React.useState(_ => {
-    publishableKey,
-    profileId,
-    ?customBackendUrl,
-    ?customLogUrl,
-    ?customParams,
+    options,
     isInitialized: false,
   })
 
@@ -76,10 +93,15 @@ let make = (
 
   let initialise = async () => {
     try {
-      let _ = await initHyperswitch(~publishableKey, ~customBackendUrl?, ~customLogUrl?, ~customParams?)
+      let _ = await initHyperswitch(
+        ~publishableKey,
+        ~customBackendUrl?,
+        ~customLogUrl?,
+        ~customParams?,
+      )
       setState(_ => {
         ...state,
-        isInitialized:true,
+        isInitialized: true,
       })
     } catch {
     | Exn.Error(obj) =>
@@ -92,7 +114,7 @@ let make = (
   }
 
   React.useEffect1(() => {
-    if (publishableKey != "") {
+    if publishableKey != "" {
       initialise()->ignore
     }
     None

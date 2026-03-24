@@ -7,7 +7,16 @@ export default function App() {
   const profileId = process.env.PROFILE_ID;
 
   return publishableKey && profileId ? (
-    <HyperProvider publishableKey={publishableKey} profileId={profileId}>
+    <HyperProvider
+      options={{
+        publishableKey,
+        profileId,
+        // customConfig: {
+        //   backendEndpoint: process.env.HYPERSWITCH_CUSTOM_BACKEND_URL,
+        //   loggingEndpoint: process.env.HYPERSWITCH_CUSTOM_LOG_URL,
+        // },
+      }}
+    >
       <PaymentScreen />
     </HyperProvider>
   ) : (

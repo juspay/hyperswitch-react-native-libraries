@@ -1,3 +1,5 @@
+open HyperTypes
+
 @module("react-native") @scope("UIManager")
 external dispatchViewManagerCommand: (
   ~viewId: int,
@@ -33,9 +35,13 @@ let createView = viewId => {
 let make = (
   ~widgetId,
   ~onPaymentResult,
-  ~options: option<PaymentSheetConfiguration.options>=?,
+  ~options: option<configuration>=?,
   ~style: option<ReactNative.Style.t>=?,
 ) => {
+  let hyperElements = React.useContext(HyperElements.hyperElementsContext)
+  let clientSecret = hyperElements.clientSecret
+  let sdkAuthorisation = hyperElements.sdkAuthorisation
+
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   // run after mount
@@ -61,16 +67,28 @@ let make = (
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
+  let paymentSheetOptions: option<PaymentSheetConfiguration.options> = switch options {
+  | Some(config) =>
+    Some({
+      clientSecret: ?clientSecret,
+      sdkAuthorisation: ?sdkAuthorisation,
+      appearance: ?config.appearance,
+    })
+  | None =>
+    Some({
+      clientSecret: ?clientSecret,
+      sdkAuthorisation: ?sdkAuthorisation,
+    })
+  }
+
   <NativePaymentWidget
     ref={viewRef}
     widgetId={widgetId}
     widgetType={"widgetPaymentSheet"}
-    clientSecret=?{switch options {
-      | Some(options) => options.clientSecret
-      | None => None
-    }}
+    ?clientSecret
+    ?sdkAuthorisation
     onPaymentResult={onPaymentResultInternal}
-    options=?options
-    style=?style
+    options=?paymentSheetOptions
+    ?style
   />
 }
