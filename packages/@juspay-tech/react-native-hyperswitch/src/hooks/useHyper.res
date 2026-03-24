@@ -11,52 +11,28 @@ let getError: (~error: string=?) => presentPaymentSheetResult = (
   }
 }
 
-let _initPaymentSession = async (params: initPaymentSessionParams): initPaymentSessionResult => {
-  try {
-    await nativeHyperswitchSdk.initPaymentSession(
-      ~paymentIntentClientSecret=params.paymentIntentClientSecret->Option.getOr(""),
-    )
-    {}
-  } catch {
-  | Exn.Error(obj) =>
-    switch Exn.message(obj) {
-    | Some(msg) => {error: msg}
-    | None => {error: "Unknown error occurred while initializing payment sheet"}
-    }
-  | _ => {error: "Unexpected error occurred while initializing payment sheet"}
-  }
-}
-let getData = (data, ~key : string, ~fallback : string)=>{
+let getData = (data, ~key: string, ~fallback: string) => {
   data
-  ->Option.flatMap(obj =>
-        obj->Js.Dict.get(key)->Option.flatMap(json => json->Js.Json.decodeString)
-      )
-      ->Option.getOr(fallback)
+  ->Option.flatMap(obj => obj->Dict.get(key)->Option.flatMap(json => json->JSON.Decode.string))
+  ->Option.getOr(fallback)
 }
 
 let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
   try {
     let parsed = switch Js.typeof(result) {
-    | "string" => Js.Json.parseExn(result)
+    | "string" => JSON.parseExn(result)
     | _ => result->Obj.magic
     }
-    let decodedObject = parsed->Js.Json.decodeObject
+    let decodedObject = parsed->JSON.Decode.object
 
-    let status =
-      decodedObject->getData(~key="status", ~fallback="failed")
-    let errorMessage =
-      decodedObject->getData(~key="error", ~fallback="")
-    
+    let status = decodedObject->getData(~key="status", ~fallback="failed")
+    let errorMessage = decodedObject->getData(~key="error", ~fallback="")
 
-    let code =
-      decodedObject->getData(~key="code", ~fallback="")
+    let code = decodedObject->getData(~key="code", ~fallback="")
 
-    let typeData =
-      decodedObject->getData(~key="type", ~fallback="")
-      
-    let message =
-      decodedObject
-      ->getData(~key="message", ~fallback="failed")
+    let typeData = decodedObject->getData(~key="type", ~fallback="")
+
+    let message = decodedObject->getData(~key="message", ~fallback="failed")
 
     let paymentResult = {
       status,
@@ -110,19 +86,25 @@ let _presentPaymentSheet = async (params: presentPaymentSheetParams): presentPay
   }
 }
 
+@genType
 type useHyper = {
-  initPaymentSession: initPaymentSessionParams => promise<initPaymentSessionResult>,
+  // confirmPayment: unit => promise<presentPaymentSheetResult>,
   presentPaymentSheet: presentPaymentSheetParams => promise<presentPaymentSheetResult>,
+  isReady: bool,
+  isSessionInitialized: bool,
 }
 
 @genType
-let useHyper = () => {
-  let (contextData, _) = React.useContext(HyperProvider.hyperProviderContext)
-  let isReady = contextData.isInitialized && contextData.error->Belt.Option.isNone
+let useHyper = (): useHyper => {
+  let (providerData, _) = React.useContext(HyperProvider.hyperProviderContext)
+  let hyperElements = React.useContext(HyperElements.hyperElementsContext)
 
-  let initPaymentSession = React.useCallback0((params: initPaymentSessionParams) => {
-    _initPaymentSession(params)
-  })
+  let isProviderReady = providerData.isInitialized && providerData.error->Option.isNone
+  let isSessionInitialized = hyperElements.isSessionInitialized
+  let isReady = isProviderReady && isSessionInitialized
+
+  let clientSecret = hyperElements.clientSecret
+  let sdkAuthorisation = hyperElements.sdkAuthorisation
 
   let presentPaymentSheet = React.useCallback1((params: presentPaymentSheetParams) => {
     if !isReady {
@@ -135,8 +117,27 @@ let useHyper = () => {
     }
   }, [isReady])
 
+  // Confirm payment - for headless flow
+  // let confirmPayment = React.useCallback3(() => {
+  //   if !isReady {
+  //     let a: promise<presentPaymentSheetResult> = Promise.resolve(
+  //       getError(~error="Hyperswitch is not initialized or session is not ready"),
+  //     )
+  //     a
+  //   } else {
+  //     // Build params from context
+  //     let params: presentPaymentSheetParams = {
+  //       ?clientSecret,
+  //       ?sdkAuthorisation,
+  //     }
+  //     _presentPaymentSheet(params)
+  //   }
+  // }, (isReady, clientSecret, sdkAuthorisation))
+
   {
-    initPaymentSession,
+    // confirmPayment,
     presentPaymentSheet,
+    isReady,
+    isSessionInitialized,
   }
 }
