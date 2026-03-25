@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import {
   type PresentPaymentSheetParams,
   type PaymentEventName,
+  type CvcAppearance,
 } from '@juspay-tech/react-native-hyperswitch';
 
 export const initialBaseUrl =
@@ -42,6 +43,11 @@ export const getCustomisationOptions = (layout='tabs') => {
           },
         },
       },
+      font: {
+        // family: 'serif',
+        // scale: 1.5,
+        // placeholderTextSizeAdjust: 5.0,
+      },
     },
     primaryButtonLabel: 'Complete Purchase',
     subscribedEvents: [
@@ -52,6 +58,40 @@ export const getCustomisationOptions = (layout='tabs') => {
   };
 
   return options;
+};
+
+export const getCvcInputOptions = (): { appearance: CvcAppearance } => {
+  return {
+    appearance: {
+      colors: {
+        light: {
+          primary: '#0066CC',
+          componentBackground: '#FFFFFF',
+          componentBorder: '#CCCCCC',
+          componentText: '#333333',
+          placeholderText: '#999999',
+          error: '#CC0000',
+        },
+        dark: {
+          primary: '#4DA6FF',
+          componentBackground: '#1A1A1A',
+          componentBorder: '#444444',
+          componentText: '#FFFFFF',
+          placeholderText: '#888888',
+          error: '#FF4444',
+        },
+      },
+      shapes: {
+        borderRadius: 8.0,
+        borderWidth: 1.0,
+      },
+      font: {
+        family: 'serif',
+        // scale: 1.5,
+        // placeholderTextSizeAdjust: 5.0,
+      },
+    },
+  };
 };
 
 export const getStatus = (paymentStatus: any) => {

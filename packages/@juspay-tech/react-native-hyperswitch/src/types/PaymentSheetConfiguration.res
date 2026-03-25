@@ -30,8 +30,6 @@ type localeTypes =
   | Ms
   | Tr_CY
 
-type fontFamilyTypes = DefaultIOS | DefaultAndroid | CustomFont(string) | DefaultWeb
-
 type placeholder = {
   cardNumber?: string,
   expiryDate?: string,
@@ -106,16 +104,8 @@ type shapes = {
 }
 
 type font = {
-  family?: fontFamilyTypes,
+  family?: string,
   scale?: float,
-  headingTextSizeAdjust?: float,
-  subHeadingTextSizeAdjust?: float,
-  placeholderTextSizeAdjust?: float,
-  buttonTextSizeAdjust?: float,
-  errorTextSizeAdjust?: float,
-  linkTextSizeAdjust?: float,
-  modalTextSizeAdjust?: float,
-  cardTextSizeAdjust?: float,
 }
 
 type primaryButtonColor = {
@@ -195,6 +185,21 @@ type subscriptionEvent =
   | @as("PAYMENT_METHOD_STATUS") PaymentMethodStatus
   | @as("FORM_STATUS") FormStatus
   | @as("PAYMENT_METHOD_INFO_ADDRESS") PaymentMethodInfoAddress
+  | @as("CVC_STATUS") CvcStatus
+
+@genType
+type cvcAppearance = {
+  colors?: colorType,
+  shapes?: shapes,
+  font?: font,
+}
+
+@genType
+type cvcWidgetOptions = {
+  clientSecret: string,
+  appearance?: cvcAppearance,
+  placeholder?: string,
+}
 
 @genType
 type options = {

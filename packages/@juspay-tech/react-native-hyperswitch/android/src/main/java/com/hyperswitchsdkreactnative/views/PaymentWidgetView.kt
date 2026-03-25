@@ -68,7 +68,7 @@ class PaymentWidgetView : FrameLayout {
     publishableKey: String, profileId: String
   ) {
     initWidget(
-      context.applicationContext as Application, "widgetPaymentSheet", publishableKey, profileId
+      context.applicationContext as Application, this.widgetType ?: "widgetPaymentSheet", publishableKey, profileId
     )
   }
 

@@ -3,6 +3,7 @@ let validEventStrings = [
   "PAYMENT_METHOD_STATUS",
   "FORM_STATUS",
   "PAYMENT_METHOD_INFO_ADDRESS",
+  "CVC_STATUS",
 ]
 
 let getValidEventsString = () => {

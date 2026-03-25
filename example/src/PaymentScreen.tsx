@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
   useHyper,
   PaymentWidget,
+  CvcWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
   type PresentPaymentSheetResult,
@@ -11,6 +12,7 @@ import {
 import {
   initialBaseUrl,
   getCustomisationOptions,
+  getCvcInputOptions,
   getStatus,
   getErrorMessage,
 } from './utils';
@@ -135,6 +137,36 @@ export default function PaymentScreen() {
         }}
         options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
       />
+      <Text style={styles.statusText}>CVC Widget (for saved cards):</Text>
+      {clientSecret && (
+        <CvcWidget
+          options={{
+            ...getCvcInputOptions(),
+            clientSecret: clientSecret,
+            placeholder:"123"
+          }}
+          style={{ width: '30%', height: 80 }}
+          onChange={(event: PaymentEvent) => {
+            console.log('CvcWidget Event:', event.eventName, event.payload);
+            if (event.eventName === 'CVC_STATUS') {
+              const payload = event.payload as {
+                requiresCvv: boolean;
+                isCvcComplete: boolean;
+                isFocused: boolean;
+              };
+              console.log('CVC Status:', JSON.stringify(payload, null, 2));
+            }
+            if (event.eventName === '') {
+              const payload = event.payload as {
+                requiresCvv: boolean;
+                isCvcComplete: boolean;
+                isFocused: boolean;
+              };
+              console.log('CVC Status:', JSON.stringify(payload, null, 2));
+            }
+          }}
+        />
+      )}
     </View>
   );
 }

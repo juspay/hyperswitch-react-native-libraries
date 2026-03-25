@@ -6,12 +6,17 @@ type paymentResult = {
 
 @genType
 type cardInfo = {
-  bin: string,
-  brand: string,
-  last4: string,
-  country: string,
-  fundingType: string,
-  isComplete: bool,
+  bin: option<string>,
+  last4: option<string>,
+  brand: option<string>,
+  expiryMonth: option<string>,
+  expiryYear: option<string>,
+  formattedExpiry: option<string>,
+  isCardNumberComplete: bool,
+  isCvcComplete: bool,
+  isExpiryComplete: bool,
+  isCardNumberValid: bool,
+  isExpiryValid: bool,
 }
 
 type formStatusValue =
@@ -24,22 +29,26 @@ type paymentMethodStatusEvent = {
   paymentMethod: string,
   paymentMethodType: string,
   isSavedPaymentMethod: bool,
+  isOneClickWallet: bool,
 }
 
 @genType
 type formStatusEvent = {
-  status: string, // "EMPTY" | "FILLING" | "COMPLETE"
-  paymentMethod: option<string>,
+  status: string,
 }
 
 @genType
 type paymentMethodInfoAddress = {
-  city: option<string>,
-  country: option<string>,
-  line1: option<string>,
-  line2: option<string>,
-  postalCode: option<string>,
-  state: option<string>,
+  country: string,
+  state: string,
+  postalCode: string,
+}
+
+@genType
+type cvcStatusEvent = {
+  requiresCvv: bool,
+  isCvcComplete: bool,
+  isFocused: bool,
 }
 
 type paymentEventPayload =
@@ -47,6 +56,7 @@ type paymentEventPayload =
   | PaymentMethodStatusPayload(paymentMethodStatusEvent)
   | FormStatusPayload(formStatusEvent)
   | AddressInfoPayload(paymentMethodInfoAddress)
+  | CvcStatusPayload(cvcStatusEvent)
 
 @genType
 type paymentEventResult = {
@@ -56,7 +66,7 @@ type paymentEventResult = {
 
 type paymentEventNative = {nativeEvent: paymentEventResult}
 
-type widgetType = PAYMENT_SHEET | GOOGLE_PAY | CARD | BUTTON_SHEET | EXPRESS_CHECKOUT
+type widgetType = PAYMENT_SHEET | GOOGLE_PAY | CARD | BUTTON_SHEET | EXPRESS_CHECKOUT | CVC_WIDGET
 
 type paymentResultInternal = {result?: string}
 
