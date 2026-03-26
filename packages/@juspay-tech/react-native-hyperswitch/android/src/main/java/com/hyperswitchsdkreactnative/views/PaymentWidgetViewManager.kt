@@ -77,7 +77,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
       }
     }
     view.onEventResult( { result ->
-        Log.i("HyperViewManager", "reachedHere ${result}")
         val event: WritableMap = Arguments.createMap()
         event.putString("eventName", result.eventName)
         event.putMap("payload", result.payload)
