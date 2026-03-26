@@ -38,7 +38,8 @@ let make = (
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
-  // run after mount
+  let (hyperElementsContext, _) = HyperElements.useHyperElements()
+
   React.useEffect(() => {
     switch Js.Nullable.toOption(viewRef.current) {
     | Some(_) =>
@@ -61,16 +62,19 @@ let make = (
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
-  <NativePaymentWidget
-    ref={viewRef}
-    widgetId={widgetId}
-    widgetType={"widgetPaymentSheet"}
-    clientSecret=?{switch options {
-      | Some(options) => options.clientSecret
-      | None => None
-    }}
-    onPaymentResult={onPaymentResultInternal}
-    options=?options
-    style=?style
-  />
+  // Only render if HyperElements is initialized
+  // if !hyperElementsContext.isInitialized {
+  //   React.null
+  // } else {
+
+    <NativePaymentWidget
+      ref={viewRef}
+      widgetId={widgetId}
+      widgetType={"widgetPaymentSheet"}
+      clientSecret={hyperElementsContext.clientSecret->Option.getOr("")}
+      // sdkAuthorisation={hyperElementsContext.sdkAuthorisation->Option.getOr("")}
+      onPaymentResult={onPaymentResultInternal}
+      options=?options
+      style=?style
+    />
 }

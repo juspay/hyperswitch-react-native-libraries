@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
-  useHyper,
   PaymentWidget,
-  type InitPaymentSessionParams,
-  type InitPaymentSessionResult,
-  type PresentPaymentSheetResult,
+  HyperElements,
+  type HyperElementsOptions,
+  type HyperInstance,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -15,8 +14,11 @@ import {
 } from './utils';
 import { styles } from './styles';
 
-export default function PaymentScreen() {
-  const { initPaymentSession, presentPaymentSheet } = useHyper();
+interface PaymentScreenProps {
+  hyperPromise: Promise<HyperInstance>;
+}
+
+export default function PaymentScreen({ hyperPromise }: PaymentScreenProps) {
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
@@ -35,89 +37,68 @@ export default function PaymentScreen() {
   }, [baseURL]);
 
   const setup = useCallback(async (): Promise<void> => {
-    const paymentIntent = await createPaymentIntent();
-
-    if (paymentIntent !== undefined) {
-      const params: InitPaymentSessionParams = {
-        paymentIntentClientSecret: paymentIntent,
-        sdkAuthorisation: sdkAuthorisation,
-      };
-      const result: InitPaymentSessionResult = await initPaymentSession(params);
-      if (result.error) {
-        throw new Error(result.error);
-      } else {
-        setStatus('Ready to checkout');
-        setMessage(null);
-      }
-    }
-  }, [initPaymentSession, createPaymentIntent]);
-
-  const checkout = async (): Promise<void> => {
     try {
-      const { error, paymentResult }: PresentPaymentSheetResult =
-        await presentPaymentSheet(getCustomisationOptions());
-      if (error) {
-        console.error('Payment failed:', JSON.stringify(error, null, 2));
-        setStatus(`Payment failed: ${error.code}`);
-        setMessage(error.message);
-      } else {
-        console.log(
-          'Payment completed with status:',
-          JSON.stringify(paymentResult, null, 2)
-        );
-        setStatus(getStatus(paymentResult?.status));
-        setMessage(paymentResult?.message);
-      }
-    } catch (error: any) {
-      console.error('Checkout failed:', error);
-      setStatus(`Checkout failed`);
-      setMessage(error.message);
-    }
-  };
-
-  useEffect(() => {
-    try {
-      setup();
+      await createPaymentIntent();
+      setStatus('Ready to checkout');
+      setMessage(null);
     } catch (error) {
       console.error('Setup failed:', error);
       setStatus('Setup Error:');
       setMessage(getErrorMessage(error));
     }
+  }, [createPaymentIntent]);
+
+  const checkout = async (): Promise<void> => {
+    // Checkout logic would go here using useWidget hook
+    console.log('Checkout initiated');
+  };
+
+  useEffect(() => {
+    setup();
   }, [setup]);
 
+  const hyperElementsOptions: HyperElementsOptions = {
+    clientSecret: clientSecret ?? undefined,
+    sdkAuthorisationForPayments: sdkAuthorisation ?? undefined,
+  };
+
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.textInput}
-        placeholder="Enter base URL"
-        value={baseURL}
-        onChangeText={(text) => setBaseURL(text)}
-      />
-      <TouchableOpacity style={styles.button} onPress={setup}>
-        <Text style={styles.buttonText}>Reload client Secret</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={checkout}>
-        <Text style={styles.buttonText}>Checkout</Text>
-      </TouchableOpacity>
-      <View style={styles.status}>
-        <Text style={styles.statusText}>{status}</Text>
-        {message && <Text style={styles.messageText}>{message}</Text>}
+    <HyperElements hyper={hyperPromise} options={hyperElementsOptions}>
+      <View style={styles.container}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Enter base URL"
+          value={baseURL}
+          onChangeText={(text) => setBaseURL(text)}
+        />
+        <TouchableOpacity style={styles.button} onPress={setup}>
+          <Text style={styles.buttonText}>Reload client Secret</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={checkout}>
+          <Text style={styles.buttonText}>Checkout</Text>
+        </TouchableOpacity>
+        <View style={styles.status}>
+          <Text style={styles.statusText}>{status}</Text>
+          {message && <Text style={styles.messageText}>{message}</Text>}
+        </View>
+        <PaymentWidget
+          widgetId="payment-widget"
+          onPaymentResult={(result: any) => {
+            console.log('Payment Result from Widget:', result);
+            if (result.errorMessage) {
+              setStatus(`Payment failed: ${result.errorMessage}`);
+              setMessage(null);
+            } else {
+              setStatus(getStatus(result?.status));
+              setMessage(result?.status);
+            }
+          }}
+          style={{ width: '100%', height: 400 }}
+          options={{ 
+            ...getCustomisationOptions('accordion'), 
+          }}
+        />
       </View>
-      <PaymentWidget
-        widgetId="payment-widget"
-        onPaymentResult={(result: any) => {
-          console.log('Payment Result from Widget:', result);
-          if (result.errorMessage) {
-            setStatus(`Payment failed: ${result.errorMessage}`);
-            setMessage(null);
-          } else {
-            setStatus(getStatus(result?.status));
-            setMessage(result?.status);
-          }
-        }}
-        style={{ width: '100%', height: 400 }}
-        options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
-      />
-    </View>
+    </HyperElements>
   );
 }
