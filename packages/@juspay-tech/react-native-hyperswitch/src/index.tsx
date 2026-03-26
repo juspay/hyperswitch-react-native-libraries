@@ -9,7 +9,6 @@ export {
 // HyperElements - Context provider component
 export {
   make as HyperElements,
-  useHyperElements,
 } from './core/HyperElements.gen';
 
 // useWidget - Hook for accessing widget methods within HyperElements

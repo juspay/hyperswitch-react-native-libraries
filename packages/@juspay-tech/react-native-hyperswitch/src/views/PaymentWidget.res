@@ -63,18 +63,23 @@ let make = (
   }
 
   // Only render if HyperElements is initialized
-  // if !hyperElementsContext.isInitialized {
-  //   React.null
-  // } else {
-
-    <NativePaymentWidget
-      ref={viewRef}
-      widgetId={widgetId}
-      widgetType={"widgetPaymentSheet"}
-      clientSecret={hyperElementsContext.clientSecret->Option.getOr("")}
-      // sdkAuthorisation={hyperElementsContext.sdkAuthorisation->Option.getOr("")}
-      onPaymentResult={onPaymentResultInternal}
-      options=?options
-      style=?style
-    />
+  if !hyperElementsContext.isInitialized {
+    React.null
+  } else {
+    switch hyperElementsContext.clientSecret {
+    | Some(clientSecret) =>
+      <NativePaymentWidget
+        ref={viewRef}
+        widgetId={widgetId}
+        widgetType={"widgetPaymentSheet"}
+        clientSecret={clientSecret}
+        // sdkAuthorisation={hyperElementsContext.sdkAuthorisation->Option.getOr("")}
+        onPaymentResult={onPaymentResultInternal}
+        options=?options
+        style=?style
+      />
+    | None =>
+      React.null
+    }
+  }
 }

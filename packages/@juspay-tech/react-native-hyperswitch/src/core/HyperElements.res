@@ -1,6 +1,6 @@
 // HyperElements.res
 // Context provider component that handles SDK initialization
-// Accepts hyper promise from Hyper.init() and options (sdkAuthorisationForPayments)
+// Accepts hyper promise from Hyper.init() and options (sdkAuthorisation)
 
 open NativeHyperswitchSdk
 
@@ -12,6 +12,7 @@ type hyperElementsOptions = {
 }
 
 // Use hyperInstance type from Hyper module
+@genType
 type hyperElementsData = {
   hyperInstance: option<HyperTypes.hyperInstance>,
   isInitialized: bool,
@@ -149,7 +150,6 @@ let make = (
 }
 
 // Hook to use HyperElements context
-@genType
 let useHyperElements = () => {
   React.useContext(hyperElementsContext)
 }

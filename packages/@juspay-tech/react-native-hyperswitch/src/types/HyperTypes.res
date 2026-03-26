@@ -10,13 +10,6 @@ type hyperInstance = {
   completeUpdateIntent: string => promise<Js.Json.t>,
 }
 
-// Context data type for HyperElements
-@genType
-type hyperElementsContextData = {
-  hyperInstance: option<hyperInstance>,
-  isInitialized: bool,
-  error: option<string>,
-}
 
 // Widget controller type for useWidget hook
 @genType

@@ -59,7 +59,7 @@ export default function PaymentScreen({ hyperPromise }: PaymentScreenProps) {
 
   const hyperElementsOptions: HyperElementsOptions = {
     clientSecret: clientSecret ?? undefined,
-    sdkAuthorisationForPayments: sdkAuthorisation ?? undefined,
+    sdkAuthorisation: sdkAuthorisation ?? undefined,
   };
 
   return (
