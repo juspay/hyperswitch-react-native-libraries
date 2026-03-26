@@ -12,7 +12,8 @@ import React
 public class HyperswitchModule: NSObject {
 
   @objc public static let shared: HyperswitchModule = HyperswitchModule()
-  var paymentSession: PaymentSession?
+  private var paymentSession: PaymentSession?
+  private var paymentSessionHandler: PaymentSessionHandler?
 
   @objc(initialiseWithPublishableKey:customBackendUrl:customLogUrl:customParams:resolve:reject:)
   public func initialise(publishableKey: String,
@@ -57,5 +58,117 @@ public class HyperswitchModule: NSObject {
         }
       })
     }
+  }
+
+  // MARK: - Headless Payment Methods
+  
+  private func initSavedPaymentMethodSessionCallback(handler: PaymentSessionHandler)-> Void {
+      self.paymentSessionHandler = handler
+  }
+
+  @objc
+  public func getCustomerSavedPaymentMethods(
+      withResolve resolve: @escaping RCTPromiseResolveBlock,
+      reject: @escaping RCTPromiseRejectBlock
+  ) -> Void {
+      self.paymentSession?.getCustomerSavedPaymentMethods(initSavedPaymentMethodSessionCallback)
+
+      resolve(["status": "success"])
+  }
+
+  @objc
+  public func getCustomerDefaultSavedPaymentMethodData(
+    withResolve resolve: @escaping RCTPromiseResolveBlock,
+      reject: @escaping RCTPromiseRejectBlock
+  ) -> Void {
+      guard let handler = self.paymentSessionHandler else {
+          reject("NO_HANDLER", "Payment session handler not initialized. Call getCustomerSavedPaymentMethods first.", nil)
+          return
+      }
+
+      let result = handler.getCustomerDefaultSavedPaymentMethodData()
+      switch result {
+      case .success(let paymentMethod):
+          if let jsonData = try? JSONEncoder().encode(paymentMethod),
+             let jsonString = String(data: jsonData, encoding: .utf8) {
+              resolve(jsonString)
+          } else {
+              reject("ENCODE_ERROR", "Failed to encode payment method", nil)
+          }
+      case .failure(let error):
+          reject(error.code, error.message, nil)
+      }
+  }
+
+  @objc
+  public func getCustomerLastUsedPaymentMethodData(
+    withResolve resolve: @escaping RCTPromiseResolveBlock,
+      reject: @escaping RCTPromiseRejectBlock
+  ) -> Void {
+      guard let handler = self.paymentSessionHandler else {
+          reject("NO_HANDLER", "Payment session handler not initialized. Call getCustomerSavedPaymentMethods first.", nil)
+          return
+      }
+
+      let result = handler.getCustomerLastUsedPaymentMethodData()
+      switch result {
+      case .success(let paymentMethod):
+          if let jsonData = try? JSONEncoder().encode(paymentMethod),
+             let jsonString = String(data: jsonData, encoding: .utf8) {
+              resolve(jsonString)
+          } else {
+              reject("ENCODE_ERROR", "Failed to encode payment method", nil)
+          }
+      case .failure(let error):
+          reject(error.code, error.message, nil)
+      }
+  }
+
+  @objc
+  public func confirmWithCustomerDefaultPaymentMethod(
+    withResolve resolve: @escaping RCTPromiseResolveBlock,
+      reject: @escaping RCTPromiseRejectBlock
+  ) -> Void {
+      guard let handler = self.paymentSessionHandler else {
+          reject("NO_HANDLER", "Payment session handler not initialized.", nil)
+          return
+      }
+
+      handler.confirmWithCustomerDefaultPaymentMethod { result in
+          let dict: [String: Any]
+          switch result {
+          case .completed(let data):
+              dict = ["status": "completed", "message": data]
+          case .failed(let error as NSError):
+              dict = ["status": "failed", "code": error.domain, "message": error.userInfo["message"] ?? "Failed"]
+          case .canceled(let data):
+              dict = ["status": "cancelled", "message": data]
+          }
+          resolve(dict)
+      }
+  }
+
+  @objc
+  public func confirmWithCustomerLastUsedPaymentMethod(
+    withResolve resolve: @escaping RCTPromiseResolveBlock,
+      reject: @escaping RCTPromiseRejectBlock
+  ) -> Void {
+      guard let handler = self.paymentSessionHandler else {
+          reject("NO_HANDLER", "Payment session handler not initialized.", nil)
+          return
+      }
+
+      handler.confirmWithCustomerLastUsedPaymentMethod { result in
+          let dict: [String: Any]
+          switch result {
+          case .completed(let data):
+              dict = ["status": "completed", "message": data]
+          case .failed(let error as NSError):
+              dict = ["status": "failed", "code": error.domain, "message": error.userInfo["message"] ?? "Failed"]
+          case .canceled(let data):
+              dict = ["status": "cancelled", "message": data]
+          }
+          resolve(dict)
+      }
   }
 }

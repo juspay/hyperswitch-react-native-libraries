@@ -130,3 +130,49 @@ let init = (
   Promise.resolve(createHyperInstance())
 }
 
+// PaymentSession type for headless payment methods
+@genType
+type paymentSession = {
+  getCustomerSavedPaymentMethods: unit => promise<Js.Json.t>,
+  getCustomerDefaultSavedPaymentMethodData: unit => promise<Js.Json.t>,
+  getCustomerLastUsedPaymentMethodData: unit => promise<Js.Json.t>,
+  confirmWithCustomerDefaultPaymentMethod: unit => promise<Js.Json.t>,
+  confirmWithCustomerLastUsedPaymentMethod: unit => promise<Js.Json.t>,
+}
+
+// Initialize payment session and return session object with headless methods
+@genType
+let initPaymentSession = (
+  ~hyperPromise: promise<HyperTypes.hyperInstance>,
+  ~paymentIntentClientSecret: string,
+): promise<paymentSession> => {
+  hyperPromise->Promise.then(_hyperInstance => {
+    nativeHyperswitchSdk.initPaymentSession(~paymentIntentClientSecret)
+    ->Promise.then(_initResult => {
+      // Return payment session object with headless methods
+      Promise.resolve({
+        getCustomerSavedPaymentMethods: () => {
+          nativeHyperswitchSdk.getCustomerSavedPaymentMethods()
+          ->Promise.thenResolve(parsePaymentResult)
+        },
+        getCustomerDefaultSavedPaymentMethodData: () => {
+          nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()
+          ->Promise.thenResolve(parsePaymentResult)
+        },
+        getCustomerLastUsedPaymentMethodData: () => {
+          nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()
+          ->Promise.thenResolve(parsePaymentResult)
+        },
+        confirmWithCustomerDefaultPaymentMethod: () => {
+          nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod()
+          ->Promise.thenResolve(parsePaymentResult)
+        },
+        confirmWithCustomerLastUsedPaymentMethod: () => {
+          nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod()
+          ->Promise.thenResolve(parsePaymentResult)
+        },
+      })
+    })
+  })
+}
+

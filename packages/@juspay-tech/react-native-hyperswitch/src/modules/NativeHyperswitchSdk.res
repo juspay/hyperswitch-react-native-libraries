@@ -53,6 +53,13 @@ type presentPaymentSheetResult = {
 @genType
 type presentPaymentSheet = presentPaymentSheetParams => promise<string>
 
+// Headless Payment Method types
+type getCustomerSavedPaymentMethods = unit => promise<string>
+type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
+type getCustomerLastUsedPaymentMethodData = unit => promise<string>
+type confirmWithCustomerDefaultPaymentMethod = unit => promise<string>
+type confirmWithCustomerLastUsedPaymentMethod = unit => promise<string>
+
 type nativeHyperswitchSdk = {
   initialise: initialise,
   initPaymentSession: initPaymentSession,
@@ -62,6 +69,12 @@ type nativeHyperswitchSdk = {
   confirmCardPayment: confirmCardPayment,
   retrievePaymentIntent: retrievePaymentIntent,
   completeUpdateIntent: completeUpdateIntent,
+  // Headless Payment Methods
+  getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
+  getCustomerDefaultSavedPaymentMethodData: getCustomerDefaultSavedPaymentMethodData,
+  getCustomerLastUsedPaymentMethodData: getCustomerLastUsedPaymentMethodData,
+  confirmWithCustomerDefaultPaymentMethod: confirmWithCustomerDefaultPaymentMethod,
+  confirmWithCustomerLastUsedPaymentMethod: confirmWithCustomerLastUsedPaymentMethod,
 }
 
 @module("../specs/NativeHyperswitchSdkReactNative")
