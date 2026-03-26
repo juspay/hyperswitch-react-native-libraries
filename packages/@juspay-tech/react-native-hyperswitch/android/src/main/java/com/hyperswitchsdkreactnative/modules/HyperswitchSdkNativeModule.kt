@@ -105,8 +105,6 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   @ReactMethod
   override fun emitPaymentEvent(widgetId: String, eventType: String, payload: ReadableMap) {
     try {
-      Log.d("HyperModule", "emitPaymentEvent: widgetId=$widgetId, eventType=$eventType, payload=$payload, widgetId empty?${widgetId.isEmpty()}" )
-
       if (widgetId.isEmpty()) {
         HyperswitchSdkReactNativeModule.emitPaymentSheetEvent(eventType, payload)
       } else {
