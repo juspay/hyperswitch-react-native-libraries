@@ -62,12 +62,12 @@ let useWidget = (): HyperTypes.widgetController => {
   let presentPaymentSheet = React.useCallback1(
     (params: presentPaymentSheetParams) => {
       if !isReady {
-        Promise.resolve({
+        Promise.resolve(({
           error: {
             code: "failed",
             message: "Hyperswitch is not initialized",
           },
-        })
+        }: presentPaymentSheetResult))
       } else {
         nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
         ->Promise.then(result => {
@@ -115,24 +115,24 @@ let useWidget = (): HyperTypes.widgetController => {
             type_: typeData,
           }
 
-          let error = {
+          let error: error = {
             code,
             message: errorMessage,
           }
 
           if errorMessage != "" {
-            Promise.resolve({error, paymentResult})
+            Promise.resolve({error, paymentResult: paymentResult})
           } else {
             Promise.resolve({paymentResult: paymentResult})
           }
         })
         ->Promise.catch(_err => {
-          Promise.resolve({
+          Promise.resolve(({
             error: {
               code: "failed",
               message: "Failed to present payment sheet",
             },
-          })
+          }: presentPaymentSheetResult))
         })
       }
     },
@@ -190,12 +190,12 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
   let presentPaymentSheet: presentPaymentSheetFn = React.useCallback1(
     (params: presentPaymentSheetParams) => {
       if !isReady {
-        Promise.resolve({
+        Promise.resolve(({
           error: {
             code: "failed",
             message: "Hyperswitch is not initialized",
           },
-        })
+        }: presentPaymentSheetResult))
       } else {
         nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
         ->Promise.then(result => {
@@ -243,24 +243,24 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
             type_: typeData,
           }
 
-          let error = {
+          let error: error = {
             code,
             message: errorMessage,
           }
 
           if errorMessage != "" {
-            Promise.resolve({error, paymentResult})
+            Promise.resolve({error, paymentResult: paymentResult})
           } else {
             Promise.resolve({paymentResult: paymentResult})
           }
         })
         ->Promise.catch(_err => {
-          Promise.resolve({
+          Promise.resolve(({
             error: {
               code: "failed",
               message: "Failed to present payment sheet",
             },
-          })
+          }: presentPaymentSheetResult))
         })
       }
     },

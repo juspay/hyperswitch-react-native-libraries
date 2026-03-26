@@ -3,7 +3,7 @@
 // Provides Hyper.init() function to create a hyper instance with configuration
 
 open NativeHyperswitchSdk
-
+open ResponseHandler
 
 type globalConfig = {
   publishableKey: string,
@@ -44,7 +44,8 @@ let parsePaymentResult = (result: 'a): Js.Json.t => {
   } catch {
   | _ =>
     let errorObj = Dict.make()
-    errorObj->Dict.set("status", "failed"->Js.Json.string)
+    errorObj->Dict.set("status", "error"->Js.Json.string)
+    errorObj->Dict.set("code", "PARSE_ERROR"->Js.Json.string)
     errorObj->Dict.set("message", "Failed to parse payment result"->Js.Json.string)
     errorObj->Js.Json.object_
   }
@@ -130,3 +131,36 @@ let init = (
   Promise.resolve(createHyperInstance())
 }
 
+// Initialize payment session 
+@genType
+let initPaymentSession = (
+  ~hyperPromise: promise<HyperTypes.hyperInstance>,
+  ~paymentIntentClientSecret: string,
+): promise<HyperTypes.paymentSession> => {
+  hyperPromise->Promise.then(_hyperInstance => {
+    nativeHyperswitchSdk.initPaymentSession(~paymentIntentClientSecret)
+    ->Promise.then(_initResult => {
+      nativeHyperswitchSdk.getCustomerSavedPaymentMethods()
+      ->Promise.then(_savedMethodsResult => {
+        Promise.resolve({
+          getCustomerDefaultSavedPaymentMethodData: () => {
+            nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()
+            ->Promise.thenResolve(parseResponse)
+          },
+          getCustomerLastUsedPaymentMethodData: () => {
+            nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()
+            ->Promise.thenResolve(parseResponse)
+          },
+          confirmWithCustomerDefaultPaymentMethod: () => {
+            nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod()
+            ->Promise.thenResolve(parseResponse)
+          },
+          confirmWithCustomerLastUsedPaymentMethod: () => {
+            nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod()
+            ->Promise.thenResolve(parseResponse)
+          },
+        }: HyperTypes.paymentSession)
+      })
+    })
+  })
+}

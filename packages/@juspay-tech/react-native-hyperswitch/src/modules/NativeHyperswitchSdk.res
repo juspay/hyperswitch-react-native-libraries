@@ -25,6 +25,9 @@ type initPaymentSessionResult = {error?: string}
 @genType
 type presentPaymentSheetParams = PaymentSheetConfiguration.options
 
+@genType
+type presentPaymentSheet = presentPaymentSheetParams => promise<string>
+
 type status =
   | @as("succeeded") Completed
   | @as("cancelled") Canceled
@@ -50,8 +53,66 @@ type presentPaymentSheetResult = {
   paymentResult?: paymentResult
 }
 
+// Card details for saved payment methods
 @genType
-type presentPaymentSheet = presentPaymentSheetParams => promise<string>
+type cardDetails = {
+  expiry_year: string,
+  card_issuer: string,
+  expiry_month: string,
+  nick_name: string,
+  last4_digits: string,
+  card_holder_name: string,
+  card_network: string,
+  card_isin: string,
+  scheme: string,
+  issuer_country: string,
+  card_type: string,
+  saved_to_locker: bool,
+}
+
+// Saved payment method data structure
+@genType
+type savedPaymentMethod = {
+  card?: cardDetails,
+  requires_cvv: bool,
+  payment_method_str: string,
+  payment_method_type: string,
+  payment_experience: array<string>,
+  default_payment_method_set: bool,
+  recurring_enabled: bool,
+  payment_method_issuer: string,
+  last_used_at: string,
+  installment_payment_enabled: bool,
+  payment_method_id: string,
+  customer_id: string,
+  payment_token: string,
+  created: string,
+}
+
+// Headless payment response types
+@genType
+type headlessResponseStatus =
+  | @as("succeeded") Succeeded
+  | @as("requires_action") RequiresAction
+  | @as("requires_confirmation") RequiresConfirmation
+  | @as("requires_customer_action") RequiresCustomerAction
+  | @as("failed") Failed
+
+@genType
+type headlessResponse = {
+  status: headlessResponseStatus,
+  message?: string,
+  error?: error,
+  paymentIntentId?: string,
+  clientSecret?: string,
+}
+
+// Headless Payment Method types
+type getCustomerSavedPaymentMethods = unit => promise<string>
+type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
+type getCustomerLastUsedPaymentMethodData = unit => promise<string>
+type confirmWithCustomerDefaultPaymentMethod = unit => promise<string>
+type confirmWithCustomerLastUsedPaymentMethod = unit => promise<string>
 
 type nativeHyperswitchSdk = {
   initialise: initialise,
@@ -62,6 +123,12 @@ type nativeHyperswitchSdk = {
   confirmCardPayment: confirmCardPayment,
   retrievePaymentIntent: retrievePaymentIntent,
   completeUpdateIntent: completeUpdateIntent,
+  // Headless Payment Methods
+  getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
+  getCustomerDefaultSavedPaymentMethodData: getCustomerDefaultSavedPaymentMethodData,
+  getCustomerLastUsedPaymentMethodData: getCustomerLastUsedPaymentMethodData,
+  confirmWithCustomerDefaultPaymentMethod: confirmWithCustomerDefaultPaymentMethod,
+  confirmWithCustomerLastUsedPaymentMethod: confirmWithCustomerLastUsedPaymentMethod,
 }
 
 @module("../specs/NativeHyperswitchSdkReactNative")
