@@ -34,6 +34,13 @@ RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)configuration
   [HyperswitchModule.shared presentPaymentSheetWithConfiguration:configuration resolver:resolve rejecter:reject];
 }
 
+RCT_EXPORT_METHOD(confirmPayment:(nonnull NSString *)widgetId
+                  resolve:(nonnull RCTPromiseResolveBlock)resolve
+                  reject:(nonnull RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared confirmPaymentWithWidgetId:widgetId resolve:resolve reject:reject];
+}
+
 #pragma mark - Headless Payment Methods
 
 RCT_EXPORT_METHOD(getCustomerSavedPaymentMethods:(RCTPromiseResolveBlock)resolve

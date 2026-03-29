@@ -25,83 +25,37 @@ let setGlobalConfig = (
   ~customLogUrl: option<string>=?,
   ~customParams: option<Js.Json.t>=?,
 ) => {
-  globalConfigRef := Some({
-    publishableKey: publishableKey,
-    profileId: profileId,
-    ?customBackendUrl,
-    ?customLogUrl,
-    ?customParams,
-  })
-}
-
-// Parse payment result from native SDK
-let parsePaymentResult = (result: 'a): Js.Json.t => {
-  try {
-    switch Js.typeof(result) {
-    | "string" => Js.Json.parseExn(result)
-    | _ => result->Obj.magic
-    }
-  } catch {
-  | _ =>
-    let errorObj = Dict.make()
-    errorObj->Dict.set("status", "error"->Js.Json.string)
-    errorObj->Dict.set("code", "PARSE_ERROR"->Js.Json.string)
-    errorObj->Dict.set("message", "Failed to parse payment result"->Js.Json.string)
-    errorObj->Js.Json.object_
-  }
+  globalConfigRef :=
+    Some({
+      publishableKey,
+      profileId,
+      ?customBackendUrl,
+      ?customLogUrl,
+      ?customParams,
+    })
 }
 
 // Create a hyper instance with the given config
 let createHyperInstance = (): HyperTypes.hyperInstance => {
-  confirmPayment: (paymentParams: Js.Json.t) => {
-    let paramsDict = Js.Dict.empty()
-    paramsDict->Js.Dict.set("paymentParams", paymentParams)
-    let params = paramsDict->Js.Json.object_
-    nativeHyperswitchSdk.confirmPayment(params)->Promise.thenResolve(parsePaymentResult)
-  },
-
-  confirmCardPayment: (
-    clientSecret: string,
-    paymentMethodData: option<Js.Json.t>,
-    paymentIntentParams: option<Js.Json.t>
-  ) => {
-    let paramsDict = Js.Dict.empty()
-    paramsDict->Js.Dict.set("clientSecret", clientSecret->Js.Json.string)
-    paramsDict->Js.Dict.set("paymentMethodData", paymentMethodData->Option.getOr(Js.Json.null))
-    paramsDict->Js.Dict.set("paymentIntentParams", paymentIntentParams->Option.getOr(Js.Json.null))
-    let params = paramsDict->Js.Json.object_
-    nativeHyperswitchSdk.confirmCardPayment(params)->Promise.thenResolve(parsePaymentResult)
-  },
-
-  retrievePaymentIntent: (clientSecret: string) => {
-    let paramsDict = Js.Dict.empty()
-    paramsDict->Js.Dict.set("clientSecret", clientSecret->Js.Json.string)
-    let params = paramsDict->Js.Json.object_
-    nativeHyperswitchSdk.retrievePaymentIntent(params)->Promise.thenResolve(parsePaymentResult)
-  },
-
+  // confirmPayment: (paymentParams: Js.Json.t) => {}
   initPaymentSession: (sessionParams: string) => {
-    nativeHyperswitchSdk.initPaymentSession(~paymentIntentClientSecret=sessionParams)->Promise.thenResolve(parsePaymentResult)
+    nativeHyperswitchSdk.initPaymentSession(
+      ~paymentIntentClientSecret=sessionParams,
+    )->Promise.thenResolve(parseNativeResponse)
   },
 
-  completeUpdateIntent: (clientSecret: string) => {
-    let paramsDict = Js.Dict.empty()
-    paramsDict->Js.Dict.set("clientSecret", clientSecret->Js.Json.string)
-    let params = paramsDict->Js.Json.object_
-    nativeHyperswitchSdk.completeUpdateIntent(params)->Promise.thenResolve(parsePaymentResult)
-  },
+  // completeUpdateIntent: (clientSecret: string) => {}
 }
 
 // Helper to get string from JSON config
 let getStringFromConfig = (config: option<Js.Json.t>, key: string): option<string> => {
   switch config {
-  | Some(cfg) => {
-      cfg
-      ->Js.Json.decodeObject
-      ->Option.getOr(Js.Dict.empty())
-      ->Js.Dict.get(key)
-      ->Option.flatMap(x => Js.Json.decodeString(x))
-    }
+  | Some(cfg) =>
+    cfg
+    ->JSON.Decode.object
+    ->Option.getOr(Dict.make())
+    ->Dict.get(key)
+    ->Option.flatMap(x => x->JSON.Decode.string)
   | None => None
   }
 }
@@ -131,36 +85,46 @@ let init = (
   Promise.resolve(createHyperInstance())
 }
 
-// Initialize payment session 
+// Initialize payment session
 @genType
 let initPaymentSession = (
   ~hyperPromise: promise<HyperTypes.hyperInstance>,
   ~paymentIntentClientSecret: string,
 ): promise<HyperTypes.paymentSession> => {
   hyperPromise->Promise.then(_hyperInstance => {
-    nativeHyperswitchSdk.initPaymentSession(~paymentIntentClientSecret)
-    ->Promise.then(_initResult => {
-      nativeHyperswitchSdk.getCustomerSavedPaymentMethods()
-      ->Promise.then(_savedMethodsResult => {
-        Promise.resolve({
-          getCustomerDefaultSavedPaymentMethodData: () => {
-            nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()
-            ->Promise.thenResolve(parseResponse)
-          },
-          getCustomerLastUsedPaymentMethodData: () => {
-            nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()
-            ->Promise.thenResolve(parseResponse)
-          },
-          confirmWithCustomerDefaultPaymentMethod: () => {
-            nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod()
-            ->Promise.thenResolve(parseResponse)
-          },
-          confirmWithCustomerLastUsedPaymentMethod: () => {
-            nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod()
-            ->Promise.thenResolve(parseResponse)
-          },
-        }: HyperTypes.paymentSession)
-      })
+    nativeHyperswitchSdk.initPaymentSession(
+      ~paymentIntentClientSecret,
+    )->Promise.then(_initResult => {
+      nativeHyperswitchSdk.getCustomerSavedPaymentMethods()->Promise.then(
+        _savedMethodsResult => {
+          Promise.resolve(
+            (
+              {
+                getCustomerDefaultSavedPaymentMethodData: () => {
+                  nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()->Promise.thenResolve(
+                    parseNativeResponse,
+                  )
+                },
+                getCustomerLastUsedPaymentMethodData: () => {
+                  nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()->Promise.thenResolve(
+                    parseNativeResponse,
+                  )
+                },
+                confirmWithCustomerDefaultPaymentMethod: () => {
+                  nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod()->Promise.thenResolve(
+                    parseNativeResponse,
+                  )
+                },
+                confirmWithCustomerLastUsedPaymentMethod: () => {
+                  nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod()->Promise.thenResolve(
+                    parseNativeResponse,
+                  )
+                },
+              }: HyperTypes.paymentSession
+            ),
+          )
+        },
+      )
     })
   })
 }
