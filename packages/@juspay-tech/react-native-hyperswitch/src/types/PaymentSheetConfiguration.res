@@ -133,19 +133,21 @@ type primaryButton = {
   primaryButtonColor?: primaryButtonColorType,
 }
 
-type googlePayButtonType = BUY | BOOK | CHECKOUT | DONATE | ORDER | PAY | SUBSCRIBE | PLAIN
+// ---- Wallet configuration types ----
 
-type googlePayButtonStyle = [#light | #dark]
+type walletShowType =
+  | @as("auto") Auto
+  | @as("never") Never
 
-type googlePayThemeBaseStyle = {
-  light?: googlePayButtonStyle,
-  dark?: googlePayButtonStyle,
-}
-
-type googlePayConfiguration = {
-  buttonType?: googlePayButtonType,
-  buttonStyle?: googlePayThemeBaseStyle,
-}
+type googlePayButtonType =
+  | @as("BUY") BUY
+  | @as("BOOK") BOOK
+  | @as("CHECKOUT") CHECKOUT
+  | @as("DONATE") DONATE
+  | @as("ORDER") ORDER
+  | @as("PAY") PAY
+  | @as("SUBSCRIBE") SUBSCRIBE
+  | @as("PLAIN") PLAIN
 
 type applePayButtonType = [
   | #buy
@@ -155,18 +157,50 @@ type applePayButtonType = [
   | #checkout
   | #book
   | #subscribe
+  | #reload
+  | #addMoney
+  | #topUp
+  | #rent
+  | #order
+  | #support
+  | #tip
+  | #contribute
   | #plain
 ]
-type applePayButtonStyle = [#white | #whiteOutline | #black]
 
-type applePayThemeBaseStyle = {
-  light?: applePayButtonStyle,
-  dark?: applePayButtonStyle,
+type paypalButtonType =
+  | @as("paypal") Paypal
+  | @as("checkout") Checkout
+  | @as("buynow") Buynow
+  | @as("pay") Pay
+  | @as("installment") Installment
+
+type samsungPayButtonType = | @as("buy") Buy
+
+type walletTheme =
+  | @as("default") WalletDefault
+  | @as("dark") WalletDark
+  | @as("light") WalletLight
+  | @as("outline") WalletOutline
+
+type walletStyle = {
+  applePayType?: applePayButtonType,
+  googlePayType?: googlePayButtonType,
+  paypalType?: paypalButtonType,
+  samsungPayType?: samsungPayButtonType,
+  theme?: walletTheme,
+  height?: int,
+  buttonRadius?: int,
 }
 
-type applePayConfiguration = {
-  buttonType?: applePayButtonType,
-  buttonStyle?: applePayThemeBaseStyle,
+type walletConfiguration = {
+  applePay?: walletShowType,
+  googlePay?: walletShowType,
+  payPal?: walletShowType,
+  klarna?: walletShowType,
+  paze?: walletShowType,
+  samsungPay?: walletShowType,
+  style?: walletStyle,
 }
 
 type themeType =
@@ -184,8 +218,6 @@ type appearance = {
   shapes?: shapes,
   font?: font,
   primaryButton?: primaryButton,
-  googlePay?: googlePayConfiguration,
-  applePay?: applePayConfiguration,
   theme?: themeType,
   layout?: layoutType,
 }
@@ -196,6 +228,7 @@ type options = {
   sdkAuthorisation?: string,
   allowsDelayedPaymentMethods?: bool,
   appearance?: appearance,
+  wallets?: walletConfiguration,
   shippingDetails?: addressDetails,
   primaryButtonLabel?: string,
   paymentSheetHeaderText?: string,
