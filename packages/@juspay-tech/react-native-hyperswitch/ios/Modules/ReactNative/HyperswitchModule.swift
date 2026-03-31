@@ -69,8 +69,7 @@ public class HyperswitchModule: NSObject {
   @objc
   public func getCustomerSavedPaymentMethods(
       withResolve resolve: @escaping RCTPromiseResolveBlock,
-      reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
+      reject: @escaping RCTPromiseRejectBlock) -> Void {
       self.paymentSession?.getCustomerSavedPaymentMethods(initSavedPaymentMethodSessionCallback)
 
       resolve(["status": "success", "message": "Payment methods initialized"])
@@ -79,8 +78,7 @@ public class HyperswitchModule: NSObject {
   @objc
   public func getCustomerDefaultSavedPaymentMethodData(
     withResolve resolve: @escaping RCTPromiseResolveBlock,
-      reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
+      reject: @escaping RCTPromiseRejectBlock) -> Void {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
@@ -119,8 +117,7 @@ public class HyperswitchModule: NSObject {
   @objc
   public func getCustomerLastUsedPaymentMethodData(
     withResolve resolve: @escaping RCTPromiseResolveBlock,
-      reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
+      reject: @escaping RCTPromiseRejectBlock) -> Void {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
@@ -159,8 +156,7 @@ public class HyperswitchModule: NSObject {
   @objc
   public func confirmWithCustomerDefaultPaymentMethod(
     withResolve resolve: @escaping RCTPromiseResolveBlock,
-      reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
+      reject: @escaping RCTPromiseRejectBlock) -> Void {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
@@ -197,8 +193,7 @@ public class HyperswitchModule: NSObject {
   @objc
   public func confirmWithCustomerLastUsedPaymentMethod(
     withResolve resolve: @escaping RCTPromiseResolveBlock,
-      reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
+      reject: @escaping RCTPromiseRejectBlock) -> Void {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
