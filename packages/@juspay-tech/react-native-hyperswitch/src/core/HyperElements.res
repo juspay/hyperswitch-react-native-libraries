@@ -65,8 +65,11 @@ let initializeNativeSdk = async (
   ~publishableKey: string,
   ~customBackendUrl: option<string>,
   ~customLogUrl: option<string>,
+  ~customAssetUrl as _: option<string>,
   ~customParams: option<Js.Json.t>,
 ) => {
+  // NOTE: we can ignore customAssetUrl for now since it's not used in the native SDK initialization,
+  // but we include it in the parameters for future compatibility
   await NativeHyperswitchSdk.nativeHyperswitchSdk.initialise(
     ~publishableKey,
     ~customBackendUrl,
@@ -108,6 +111,7 @@ let make = (
               ~publishableKey=config.publishableKey,
               ~customBackendUrl=config.customBackendUrl,
               ~customLogUrl=config.customLogUrl,
+              ~customAssetUrl=config.customAssetUrl,
               ~customParams=config.customParams,
             )
 
