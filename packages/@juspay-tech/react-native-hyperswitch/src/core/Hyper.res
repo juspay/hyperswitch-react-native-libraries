@@ -10,6 +10,7 @@ type globalConfig = {
   profileId: string,
   customBackendUrl?: string,
   customLogUrl?: string,
+  customAssetUrl?: string,
   customParams?: Js.Json.t,
 }
 
@@ -24,6 +25,7 @@ let setGlobalConfig = (
   ~customBackendUrl: option<string>=?,
   ~customLogUrl: option<string>=?,
   ~customParams: option<Js.Json.t>=?,
+  ~customAssetUrl: option<string>=?,
 ) => {
   globalConfigRef := Some({
     publishableKey: publishableKey,
@@ -31,6 +33,7 @@ let setGlobalConfig = (
     ?customBackendUrl,
     ?customLogUrl,
     ?customParams,
+    ?customAssetUrl,
   })
 }
 
@@ -116,6 +119,7 @@ let init = (
 ): promise<HyperTypes.hyperInstance> => {
   let backendUrl = getStringFromConfig(customConfig, "customBackendUrl")
   let logUrl = getStringFromConfig(customConfig, "customLogUrl")
+  let assetUrl = getStringFromConfig(customConfig, "customAssetUrl")
   let params = customConfig
 
   // Store config globally using function parameters
@@ -125,6 +129,7 @@ let init = (
     ~customBackendUrl=?backendUrl,
     ~customLogUrl=?logUrl,
     ~customParams=?params,
+    ~customAssetUrl=?assetUrl,
   )
 
   // Return a promise of hyperInstance (actual initialization happens in HyperElements)
