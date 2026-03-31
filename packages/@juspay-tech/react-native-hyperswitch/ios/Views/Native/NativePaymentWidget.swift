@@ -89,7 +89,7 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
         if let onPaymentResult = onPaymentResult,
            let response = response  {
             onPaymentResult(["result": response])
-            // TODO: temp 
+            // TODO: temp
             self.rootView?.removeFromSuperview()
         }
     }
