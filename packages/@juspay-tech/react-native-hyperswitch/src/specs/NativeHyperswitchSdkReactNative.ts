@@ -10,6 +10,13 @@ export interface Spec extends TurboModule {
   ): Promise<void>;
   initPaymentSession(paymentIntentClientSecret: string): Promise<string>;
   presentPaymentSheet(configuration: Object): Promise<string>;
+  
+  // Headless Payment Methods
+  getCustomerSavedPaymentMethods(): Promise<string>;
+  getCustomerDefaultSavedPaymentMethodData(): Promise<string>;
+  getCustomerLastUsedPaymentMethodData(): Promise<string>;
+  confirmWithCustomerDefaultPaymentMethod(): Promise<string>;
+  confirmWithCustomerLastUsedPaymentMethod(): Promise<string>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>(

@@ -20,3 +20,22 @@ type widgetController = {
   isLoading: bool,
   isReady: bool,
 }
+
+// Headless Payment Response Types
+@genType
+// TODO: Expand for all the native layer api responses.
+type headlessResponse = {
+  status: string,
+  message: string,
+  code?: string,
+  data?: Js.Json.t,
+}
+
+// UsePaymentSession response type
+@genType
+type paymentSession = {
+  getCustomerDefaultSavedPaymentMethodData: unit => promise<headlessResponse>,
+  getCustomerLastUsedPaymentMethodData: unit => promise<headlessResponse>,
+  confirmWithCustomerDefaultPaymentMethod: unit => promise<headlessResponse>,
+  confirmWithCustomerLastUsedPaymentMethod: unit => promise<headlessResponse>,
+}

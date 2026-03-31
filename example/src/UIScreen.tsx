@@ -14,11 +14,11 @@ import {
 } from './utils';
 import { styles } from './styles';
 
-interface PaymentScreenProps {
+interface UIScreenProps {
   hyperPromise: Promise<HyperInstance>;
 }
 
-export default function PaymentScreen({ hyperPromise }: PaymentScreenProps) {
+export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [status, setStatus] = useState<string | null | undefined>(null);
   const [message, setMessage] = useState<string | null | undefined>(null);
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
@@ -49,7 +49,6 @@ export default function PaymentScreen({ hyperPromise }: PaymentScreenProps) {
   }, [createPaymentIntent]);
 
   const checkout = async (): Promise<void> => {
-    // Checkout logic would go here using useWidget hook
     console.log('Checkout initiated');
   };
 
@@ -65,6 +64,7 @@ export default function PaymentScreen({ hyperPromise }: PaymentScreenProps) {
   return (
     <HyperElements hyper={hyperPromise} options={hyperElementsOptions}>
       <View style={styles.container}>
+        <Text style={styles.title}>UI Mode</Text>
         <TextInput
           style={styles.textInput}
           placeholder="Enter base URL"

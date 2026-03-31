@@ -4,7 +4,13 @@
 // Hyper.init - Initialize the SDK with publishable key and profile id
 export {
   init as HyperInit,
+  initPaymentSession,
 } from './core/Hyper.gen';
+
+// PaymentSession type
+export type {
+  paymentSession as PaymentSession,
+} from './types/HyperTypes.gen';
 
 // HyperElements - Context provider component
 export {
@@ -30,7 +36,6 @@ export type {
 } from './modules/NativeHyperswitchSdk.gen';
 
 export type {
-  hyperElementsContextData as HyperElementsContextData,
   widgetController as WidgetController,
 } from './types/HyperTypes.gen';
 
@@ -44,6 +49,14 @@ export type {
 
 export type {
   hyperInstance as HyperInstance,
-} from './core/Hyper.gen';
+} from './types/HyperTypes.gen';
+
+// Headless Payment Response Types
+export type {
+  headlessResponse as HeadlessResponse,
+  headlessResponseStatus as HeadlessResponseStatus,
+  cardDetails as CardDetails,
+  savedPaymentMethod as SavedPaymentMethod,
+} from './modules/NativeHyperswitchSdk.gen';
 
 
