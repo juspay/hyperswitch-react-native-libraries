@@ -8,7 +8,6 @@ import { TurboModuleRegistry } from 'react-native';
 export interface Spec extends TurboModule {
   sendMessageToNative(message: string): void;
 
-
   startApplePay(requestObj: string, callback: (result: Object) => void): void;
 
   presentApplePay(requestObj: string, callback: (result: Object) => void): void;
@@ -31,6 +30,8 @@ export interface Spec extends TurboModule {
 
   exitWidgetPaymentsheet(rootTag: number, widgetId: string, result: string, reset: boolean): void;
 
+  notifyWidgetPaymentResult(widgetId: string, result: string): void;
+
   launchWidgetPaymentSheet(
     requestObj: string,
     callback: (result: Object) => void
@@ -42,7 +43,7 @@ export interface Spec extends TurboModule {
 }
 
 /**
- * 
+ *
  * DO NOT use getEnforcing() because you want silent fallback.
  * This allows Turbo → Legacy fallback safely.
  * This allows the TurboModule to be optional, and the app can still run without it without crashing.

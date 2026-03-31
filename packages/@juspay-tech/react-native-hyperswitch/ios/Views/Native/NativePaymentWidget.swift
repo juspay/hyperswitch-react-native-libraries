@@ -18,6 +18,7 @@ internal class NativePaymentWidget: RCTViewManager {
     @objc override static func requiresMainQueueSetup() -> Bool {
         return false
     }
+
     @objc func showWidget(_ reactTag: NSNumber) {
         //        bridge.uiManager.addUIBlock { uiManager, viewRegistry in
         //            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
@@ -46,8 +47,10 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
         if let clientSecret = clientSecret {
             RNViewManager.sharedInstance.responseHandler = self
             let hyperParams = HyperParams.getHyperParams()
+            var configuration = self.options ?? [:]
+            configuration["hideConfirmButton"] = true
             let props: [String : Any] = [
-                "configuration": self.options as Any,
+                "configuration": configuration,
                 "type": self.widgetType as Any,
                 "widgetId": self.widgetId as Any,
                 "clientSecret": clientSecret as Any,
@@ -89,7 +92,7 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
         if let onPaymentResult = onPaymentResult,
            let response = response  {
             onPaymentResult(["result": response])
-            // TODO: temp 
+            // TODO: temp
             self.rootView?.removeFromSuperview()
         }
     }

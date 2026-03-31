@@ -8,10 +8,8 @@ type initialise = (
 
 
 // New method types for the updated API
-type confirmPayment = Js.Json.t => promise<string>
-type confirmCardPayment = Js.Json.t => promise<string>
-type retrievePaymentIntent = Js.Json.t => promise<string>
-type completeUpdateIntent = Js.Json.t => promise<string>
+type confirmPayment = string => promise<string>
+// type completeUpdateIntent = Js.Json.t => promise<string>
 
 type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string>
 
@@ -89,24 +87,6 @@ type savedPaymentMethod = {
   created: string,
 }
 
-// Headless payment response types
-@genType
-type headlessResponseStatus =
-  | @as("succeeded") Succeeded
-  | @as("requires_action") RequiresAction
-  | @as("requires_confirmation") RequiresConfirmation
-  | @as("requires_customer_action") RequiresCustomerAction
-  | @as("failed") Failed
-
-@genType
-type headlessResponse = {
-  status: headlessResponseStatus,
-  message?: string,
-  error?: error,
-  paymentIntentId?: string,
-  clientSecret?: string,
-}
-
 // Headless Payment Method types
 type getCustomerSavedPaymentMethods = unit => promise<string>
 type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
@@ -120,9 +100,7 @@ type nativeHyperswitchSdk = {
   presentPaymentSheet: presentPaymentSheet,
   // New methods
   confirmPayment: confirmPayment,
-  confirmCardPayment: confirmCardPayment,
-  retrievePaymentIntent: retrievePaymentIntent,
-  completeUpdateIntent: completeUpdateIntent,
+  // completeUpdateIntent: completeUpdateIntent,
   // Headless Payment Methods
   getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
   getCustomerDefaultSavedPaymentMethodData: getCustomerDefaultSavedPaymentMethodData,
