@@ -28,13 +28,24 @@ internal class HyperModule: RCTEventEmitter {
 
     @objc
     internal override func supportedEvents() -> [String] {
-        return ["confirm", "confirmEC"]
+        return ["confirm", "confirmEC", "triggerWidgetAction"]
     }
 
     @objc
     internal func confirm(data: [String: Any]) {
         self.sendEvent(withName: "confirm", body: data)
     }
+
+    @objc
+    func confirmPayment(_ widgetId: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        let eventData: [String: String] = [
+          "widgetId": widgetId,
+          "actionType": "confirmPayment"
+        ]
+        RNViewManager.sharedInstance.setConfirmPromise(widgetId: widgetId, resolve: resolve, reject: reject)
+        self.sendEvent(withName: "triggerWidgetAction", body: eventData)
+    }
+
     // MARK: WIP
     //    @objc func confirmEC(data: [String: Any]) {
     //        self.sendEvent(withName: "confirmEC", body: data)
@@ -96,13 +107,51 @@ internal class HyperModule: RCTEventEmitter {
     }
 
     @objc
-    private func exitWidgetPaymentsheet(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
-        exitSheet(rnMessage)
-    }
-
-    @objc
     private func exitWidgetPaymentsheet(_ rootTag: NSNumber,_ widgetId: String ,_ result: String, _ reset: Bool) {
-//        exitSheet(result)
+        // Structure: ["status": string, "code": string?, "message": string, "data": Any?]
+        var structuredResponse: [String: Any] = [:]
+        if let data = result.data(using: .utf8) {
+          do {
+            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+              if let status = jsonObject["status"] as? String {
+                structuredResponse["status"] = status
+              } else {
+                structuredResponse["status"] = "unknown"
+              }
+
+              if let message = jsonObject["message"] as? String {
+                structuredResponse["message"] = message
+              } else {
+                structuredResponse["message"] = ""
+              }
+
+              if let code = jsonObject["code"] as? String {
+                structuredResponse["code"] = code
+              }
+
+              if let dataValue = jsonObject["data"] {
+                structuredResponse["data"] = dataValue
+              }
+            }
+          } catch {
+            structuredResponse = [
+              "status": "error",
+              "code": "PARSE_ERROR",
+              "message": "Failed to parse response: \(error.localizedDescription)"
+            ]
+          }
+        } else {
+          structuredResponse = [
+            "status": "error",
+            "code": "INVALID_DATA",
+            "message": "Invalid response data"
+          ]
+        }
+
+        // Resolve the confirm promise for the given widgetId with the structured response
+        RNViewManager.sharedInstance.resolveConfirmPromise(widgetId: widgetId, result: structuredResponse)
+
+        // Keep the response handler call for backward compatibility
         RNViewManager.sharedInstance.responseHandler?.didReceiveResponse(response: result, error: nil)
     }
 
@@ -136,6 +185,26 @@ internal class HyperModule: RCTEventEmitter {
         } else {
             RNViewManager.sharedInstance.responseHandler?.didReceiveResponse(response: "failed", error: NSError(domain: "UNKNOWN_ERROR", code: 0, userInfo: ["message" : "An error has occurred."]))
         }
+    }
+
+    @objc
+    private func notifyWidgetPaymentResult(_ widgetId: String, _ rnMessage: String) {
+        guard let data = rnMessage.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: String] else {
+          return
+        }
+        let status  = json["status"]  ?? "failed"
+        let code    = json["code"]    ?? "form_validation_failed"
+        let message = json["message"] ?? "Form validation failed."
+
+        var structuredResponse: [String: Any] = [
+          "status": status,
+          "message": message
+        ]
+        structuredResponse["code"] = code
+
+        // Resolve the confirm promise for the given widgetId with the structured response
+        RNViewManager.sharedInstance.resolveConfirmPromise(widgetId: widgetId, result: structuredResponse)
     }
 
     @objc

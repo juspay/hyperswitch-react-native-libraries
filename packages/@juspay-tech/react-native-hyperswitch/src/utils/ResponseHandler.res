@@ -1,9 +1,22 @@
 // ResponseHandler.res
-// Utility module for handling standardized responses from native layer
+// Native layer sends: { "status": string, "code": string?, "message": string, "data": Any? }
+//
+// Status normalization:
+//   "succeeded" | "success" | "completed"  -> Succeeded
+//   "failed"                                -> Failed
+//   "cancelled"                             -> Cancelled
+//   "error" | <anything else>               -> Error
 
-// Parse JSON string response into headlessResponse type
-// Handles both string JSON and object inputs from native SDK
-let parseResponse = (result: 'a): HyperTypes.headlessResponse => {
+let parseStatus = (raw: string): HyperTypes.responseStatus => {
+  switch raw->Js.String2.toLowerCase {
+  | "succeeded" | "success" | "completed" => Succeeded
+  | "failed" => Failed
+  | "cancelled" => Cancelled
+  | _ => Error
+  }
+}
+
+let parseNativeResponse = (result: 'a): HyperTypes.nativeResponse => {
   try {
     let json = switch Js.typeof(result) {
     | "string" => Js.Json.parseExn(result->Obj.magic)
@@ -16,6 +29,7 @@ let parseResponse = (result: 'a): HyperTypes.headlessResponse => {
         ->Js.Dict.get("status")
         ->Belt.Option.flatMap(Js.Json.decodeString)
         ->Belt.Option.getWithDefault("error")
+        ->parseStatus
 
       let message =
         dict
@@ -23,68 +37,66 @@ let parseResponse = (result: 'a): HyperTypes.headlessResponse => {
         ->Belt.Option.flatMap(Js.Json.decodeString)
         ->Belt.Option.getWithDefault("Unknown error")
 
-      let code = dict->Js.Dict.get("code")
+      let code =
+        dict
+        ->Dict.get("code")
+        ->Option.flatMap(JSON.Decode.string)
 
       let data = dict->Js.Dict.get("data")
 
-      // Build the record - optional fields need special handling
       switch (code, data) {
-      | (Some(codeJson), Some(dataJson)) =>
-        switch (Js.Json.decodeString(codeJson), Js.Json.decodeObject(dataJson)) {
-        | (Some(codeStr), Some(_)) => {status, message, code: codeStr, data: dataJson}
-        | (Some(codeStr), None) => {status, message, code: codeStr, data: dataJson}
-        | (None, Some(_)) => {status, message, data: dataJson}
-        | (None, None) => {status, message, data: dataJson}
-        }
-      | (Some(codeJson), None) =>
-        switch Js.Json.decodeString(codeJson) {
-        | Some(codeStr) => {status, message, code: codeStr}
-        | None => {status, message}
-        }
+      | (Some(codeStr), Some(dataJson)) => {status, message, code: codeStr, data: dataJson}
+      | (Some(codeStr), None) => {status, message, code: codeStr}
       | (None, Some(dataJson)) => {status, message, data: dataJson}
       | (None, None) => {status, message}
       }
     | None => {
-        status: "error",
+        status: Error,
         message: "Invalid response format",
         code: "PARSE_ERROR",
       }
     }
   } catch {
   | _ => {
-      status: "error",
+      status: Error,
       message: "Failed to parse response",
       code: "PARSE_ERROR",
     }
   }
 }
 
-// Check if response is successful
-let isSuccess = (response: HyperTypes.headlessResponse): bool => {
-  response.status == "success"
+let isSuccess = (response: HyperTypes.nativeResponse): bool => {
+  switch response.status {
+  | Succeeded => true
+  | _ => false
+  }
 }
 
-// Check if response indicates failure
-let isFailed = (response: HyperTypes.headlessResponse): bool => {
-  response.status == "failed"
+let isFailed = (response: HyperTypes.nativeResponse): bool => {
+  switch response.status {
+  | Failed => true
+  | _ => false
+  }
 }
 
-// Check if response indicates cancellation
-let isCancelled = (response: HyperTypes.headlessResponse): bool => {
-  response.status == "cancelled"
+let isCancelled = (response: HyperTypes.nativeResponse): bool => {
+  switch response.status {
+  | Cancelled => true
+  | _ => false
+  }
 }
 
-// Check if response indicates an error
-let isError = (response: HyperTypes.headlessResponse): bool => {
-  response.status == "error"
+let isError = (response: HyperTypes.nativeResponse): bool => {
+  switch response.status {
+  | Error => true
+  | _ => false
+  }
 }
 
-// Get data from response with type safety
-let getData = (response: HyperTypes.headlessResponse): option<Js.Json.t> => {
+let getData = (response: HyperTypes.nativeResponse): option<Js.Json.t> => {
   response.data
 }
 
-// Get code from response with type safety
-let getCode = (response: HyperTypes.headlessResponse): option<string> => {
+let getCode = (response: HyperTypes.nativeResponse): option<string> => {
   response.code
 }

@@ -12,7 +12,7 @@ let useWidget = (): HyperTypes.widgetController => {
   let (isReady, setIsReady) = React.useState(_ => false)
 
   let isInitialized = contextData.isInitialized && contextData.error->Option.isNone
-  let hyperInstance = contextData.hyperInstance
+  let _hyperInstance = contextData.hyperInstance
 
   // Update ready state when initialization changes
   React.useEffect1(() => {
@@ -20,124 +20,67 @@ let useWidget = (): HyperTypes.widgetController => {
     None
   }, [isInitialized])
 
-  // confirmPayment method - triggers payment confirmation
-  let confirmPayment = React.useCallback0(() => {
-    switch hyperInstance {
-    | Some(instance) => {
-        setIsLoading(_ => true)
-        setIsConfirmDisabled(_ => true)
+  // confirmPayment method - triggers payment confirmation via native module
+  let confirmPayment = React.useCallback1((widgetId: string) => {
+    if !isReady {
+      Promise.resolve(
+        (
+          {
+            status: HyperTypes.Failed,
+            message: "Widget is not ready",
+          }: HyperTypes.nativeResponse
+        ),
+      )
+    } else {
+      setIsLoading(_ => true)
+      setIsConfirmDisabled(_ => true)
 
-        let paymentParamsDict = Js.Dict.empty()
-        paymentParamsDict->Js.Dict.set(
-          "sdkAuthorisation",
-          contextData.sdkAuthorisation->Option.getOr("")->Js.Json.string,
+      nativeHyperswitchSdk.confirmPayment(widgetId)
+      ->Promise.then(result => {
+        setIsLoading(_ => false)
+        setIsConfirmDisabled(_ => false)
+        Promise.resolve(ResponseHandler.parseNativeResponse(result))
+      })
+      ->Promise.catch(_err => {
+        setIsLoading(_ => false)
+        setIsConfirmDisabled(_ => false)
+        Promise.resolve(
+          (
+            {
+              status: HyperTypes.Failed,
+              message: "Payment confirmation failed",
+            }: HyperTypes.nativeResponse
+          ),
         )
-        let paymentParams = paymentParamsDict->Js.Json.object_
-
-        instance.confirmPayment(paymentParams)
-        ->Promise.then(result => {
-          setIsLoading(_ => false)
-          setIsConfirmDisabled(_ => false)
-          Promise.resolve(result)
-        })
-        ->Promise.catch(_err => {
-          setIsLoading(_ => false)
-          setIsConfirmDisabled(_ => false)
-
-          let errorObj = Js.Dict.empty()
-          errorObj->Js.Dict.set("status", "failed"->Js.Json.string)
-          errorObj->Js.Dict.set("message", "Payment confirmation failed"->Js.Json.string)
-          Promise.resolve(errorObj->Js.Json.object_)
-        })
-      }
-    | None => {
-        let errorObj = Js.Dict.empty()
-        errorObj->Js.Dict.set("status", "failed"->Js.Json.string)
-        errorObj->Js.Dict.set("message", "Hyper instance not initialized"->Js.Json.string)
-        Promise.resolve(errorObj->Js.Json.object_)
-      }
+      })
     }
-  })
+  }, [isReady])
 
-  let presentPaymentSheet = React.useCallback1(
-    (params: presentPaymentSheetParams) => {
-      if !isReady {
-        Promise.resolve(({
-          error: {
-            code: "failed",
+  let presentPaymentSheet = React.useCallback1((params: presentPaymentSheetParams) => {
+    if !isReady {
+      Promise.resolve(
+        (
+          {
+            status: HyperTypes.Failed,
             message: "Hyperswitch is not initialized",
-          },
-        }: presentPaymentSheetResult))
-      } else {
-        nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
-        ->Promise.then(result => {
-          let parsed = switch Js.typeof(result) {
-          | "string" => Js.Json.parseExn(result)
-          | _ => result->Obj.magic
-          }
-
-          let decodedObject = parsed->Js.Json.decodeObject
-
-          let status =
-            decodedObject
-            ->Option.flatMap(obj => Js.Dict.get(obj, "status"))
-            ->Option.flatMap(x => Js.Json.decodeString(x))
-            ->Option.getOr("failed")
-
-          let errorMessage =
-            decodedObject
-            ->Option.flatMap(obj => Js.Dict.get(obj, "error"))
-            ->Option.flatMap(x => Js.Json.decodeString(x))
-            ->Option.getOr("")
-
-          let code =
-            decodedObject
-            ->Option.flatMap(obj => Js.Dict.get(obj, "code"))
-            ->Option.flatMap(x => Js.Json.decodeString(x))
-            ->Option.getOr("")
-
-          let typeData =
-            decodedObject
-            ->Option.flatMap(obj => Js.Dict.get(obj, "type"))
-            ->Option.flatMap(x => Js.Json.decodeString(x))
-            ->Option.getOr("")
-
-          let message =
-            decodedObject
-            ->Option.flatMap(obj => Js.Dict.get(obj, "message"))
-            ->Option.flatMap(x => Js.Json.decodeString(x))
-            ->Option.getOr("failed")
-
-          let paymentResult: paymentResult = {
-            status,
-            message,
-            error: errorMessage,
-            type_: typeData,
-          }
-
-          let error: error = {
-            code,
-            message: errorMessage,
-          }
-
-          if errorMessage != "" {
-            Promise.resolve({error, paymentResult: paymentResult})
-          } else {
-            Promise.resolve({paymentResult: paymentResult})
-          }
-        })
-        ->Promise.catch(_err => {
-          Promise.resolve(({
-            error: {
-              code: "failed",
+          }: HyperTypes.nativeResponse
+        ),
+      )
+    } else {
+      nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
+      ->Promise.thenResolve(ResponseHandler.parseNativeResponse)
+      ->Promise.catch(_err => {
+        Promise.resolve(
+          (
+            {
+              status: HyperTypes.Failed,
               message: "Failed to present payment sheet",
-            },
-          }: presentPaymentSheetResult))
-        })
-      }
-    },
-    [isReady],
-  )
+            }: HyperTypes.nativeResponse
+          ),
+        )
+      })
+    }
+  }, [isReady])
 
   {
     confirmPayment,
@@ -164,7 +107,10 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
   let isReady = contextData.isInitialized && contextData.error->Option.isNone
 
   let initPaymentSession = React.useCallback0((params: initPaymentSessionParams) => {
-    nativeHyperswitchSdk.initPaymentSession(~paymentIntentClientSecret=params.paymentIntentClientSecret->Option.getOr(""))->Promise.then(result => {
+    nativeHyperswitchSdk.initPaymentSession(
+      ~paymentIntentClientSecret=params.paymentIntentClientSecret->Option.getOr(""),
+    )
+    ->Promise.then(result => {
       // Parse the result string
       let resultObj: initPaymentSessionResult = try {
         let obj = Js.Json.parseExn(result)
@@ -190,12 +136,16 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
   let presentPaymentSheet: presentPaymentSheetFn = React.useCallback1(
     (params: presentPaymentSheetParams) => {
       if !isReady {
-        Promise.resolve(({
-          error: {
-            code: "failed",
-            message: "Hyperswitch is not initialized",
-          },
-        }: presentPaymentSheetResult))
+        Promise.resolve(
+          (
+            {
+              error: {
+                code: "failed",
+                message: "Hyperswitch is not initialized",
+              },
+            }: presentPaymentSheetResult
+          ),
+        )
       } else {
         nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
         ->Promise.then(result => {
@@ -249,18 +199,22 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
           }
 
           if errorMessage != "" {
-            Promise.resolve({error, paymentResult: paymentResult})
+            Promise.resolve({error, paymentResult})
           } else {
             Promise.resolve({paymentResult: paymentResult})
           }
         })
         ->Promise.catch(_err => {
-          Promise.resolve(({
-            error: {
-              code: "failed",
-              message: "Failed to present payment sheet",
-            },
-          }: presentPaymentSheetResult))
+          Promise.resolve(
+            (
+              {
+                error: {
+                  code: "failed",
+                  message: "Failed to present payment sheet",
+                },
+              }: presentPaymentSheetResult
+            ),
+          )
         })
       }
     },

@@ -2,11 +2,12 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    height: '100%',
+    flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 24,
     gap: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   scrollContainer: {
     flex: 1,
@@ -90,5 +91,17 @@ export const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: 16,
+  },
+  widgetStatus: {
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  widgetStatusText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });
