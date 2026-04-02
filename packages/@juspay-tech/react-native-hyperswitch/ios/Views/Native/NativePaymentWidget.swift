@@ -10,9 +10,10 @@ import UIKit
 
 @objc(NativePaymentWidget)
 internal class NativePaymentWidget: RCTViewManager {
-
+    let nativePaymentWidget
     override func view() -> (NativePaymentWidgetView) {
-        return NativePaymentWidgetView()
+        nativePaymentWidget = NativePaymentWidgetView()
+        return nativePaymentWidget
     }
 
     @objc override static func requiresMainQueueSetup() -> Bool {
@@ -31,6 +32,11 @@ internal class NativePaymentWidget: RCTViewManager {
         //            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
         //                        view.removeWidget()
         //        }
+    }
+    @objc func confirmPayment(_ reactTag: NSNumber) {
+      print("confirmPayment", reactTag)
+      nativePaymentWidget?.confirmPayment()
+      // emit the event to the sdk
     }
 }
 
@@ -96,4 +102,9 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
             self.rootView?.removeFromSuperview()
         }
     }
+    
+  func confirmPayment(){
+    
+  }
+    
 }

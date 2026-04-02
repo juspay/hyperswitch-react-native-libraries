@@ -119,7 +119,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   }
 
   override fun getExportedCustomDirectEventTypeConstants() = mapOf(
-    "topPaymentResult" to mapOf(
+    "onPaymentResult" to mapOf(
       "registrationName" to "onPaymentResult"
     )
   )

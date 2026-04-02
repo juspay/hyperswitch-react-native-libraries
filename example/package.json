@@ -29,6 +29,7 @@
     "@react-native/babel-preset": "0.79.2",
     "@react-native/metro-config": "0.79.2",
     "@react-native/typescript-config": "0.79.2",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",

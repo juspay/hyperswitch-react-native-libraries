@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.79.2):
     - hermes-engine/Pre-built (= 0.79.2)
   - hermes-engine/Pre-built (0.79.2)
-  - HyperswitchSdkReactNative (0.3.0):
+  - HyperswitchSdkReactNative (0.4.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1358,10 +1358,6 @@ PODS:
     - React-jsiexecutor
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
-  - react-native-hyperswitch-netcetera-3ds (0.2.2):
-    - React-Core
-  - react-native-hyperswitch-scancard (0.2.2):
-    - React-Core
   - react-native-webview (13.16.0):
     - DoubleConversion
     - glog
@@ -1783,8 +1779,6 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - "react-native-hyperswitch-netcetera-3ds (from `../../packages/@juspay-tech/react-native-hyperswitch-netcetera-3ds`)"
-  - "react-native-hyperswitch-scancard (from `../../packages/@juspay-tech/react-native-hyperswitch-scancard`)"
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -1907,10 +1901,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-hyperswitch-netcetera-3ds:
-    :path: "../../packages/@juspay-tech/react-native-hyperswitch-netcetera-3ds"
-  react-native-hyperswitch-scancard:
-    :path: "../../packages/@juspay-tech/react-native-hyperswitch-scancard"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
   React-NativeModulesApple:
@@ -1992,7 +1982,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 314be5250afa5692b57b4dd1705959e1973a8ebe
-  HyperswitchSdkReactNative: a52e2978ff0e857693210716ee6c72723711c9c8
+  HyperswitchSdkReactNative: 268afb829499f8b461056d8c822b809001baead8
   RCT-Folly: e78785aa9ba2ed998ea4151e314036f6c49e6d82
   RCTDeprecation: 83ffb90c23ee5cea353bd32008a7bca100908f8c
   RCTRequired: eb7c0aba998009f47a540bec9e9d69a54f68136e
@@ -2024,8 +2014,6 @@ SPEC CHECKSUMS:
   React-logger: 8edfcedc100544791cd82692ca5a574240a16219
   React-Mapbuffer: c3f4b608e4a59dd2f6a416ef4d47a14400194468
   React-microtasksnativemodule: 054f34e9b82f02bd40f09cebd4083828b5b2beb6
-  react-native-hyperswitch-netcetera-3ds: ae0b9ba256e9043f89876bf40501b7600f374489
-  react-native-hyperswitch-scancard: 170935288dc13d221ea24b6166f78c8947c88aec
   react-native-webview: 8ad427a520a3b94d2006a62bb7756be726116af5
   React-NativeModulesApple: 2c4377e139522c3d73f5df582e4f051a838ff25e
   React-oscompat: ef5df1c734f19b8003e149317d041b8ce1f7d29c
@@ -2067,4 +2055,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 1eafee019bef683066fb87f89c96b8753f6c609f
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

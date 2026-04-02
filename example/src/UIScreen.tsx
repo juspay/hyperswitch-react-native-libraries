@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import {
   PaymentWidget,
@@ -6,6 +6,7 @@ import {
   useWidget,
   type HyperElementsOptions,
   type HyperInstance,
+  type paymentWidgetRef
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -26,18 +27,22 @@ function WidgetContent({
 }) {
   const widget = useWidget();
   const [isConfirming, setIsConfirming] = useState(false);
+  const ref = useRef<paymentWidgetRef>(null);
 
   const handleConfirmPayment = async () => {
-    if (!widget.isReady) {
-      onStatusUpdate('Error', 'Widget is not ready');
-      return;
-    }
+    onStatusUpdate('Confirming...', 'Payment confirmation in progress');
+
+    // if (!widget.isReady) {
+    //   onStatusUpdate('Error', 'Widget is not ready');
+    //   return;
+    // }
 
     try {
       setIsConfirming(true);
       onStatusUpdate('Confirming...', 'Payment confirmation in progress');
       // Call confirmPayment with widgetId
-      const result = await widget.confirmPayment('payment-widget');
+      // const result = await widget.confirmPayment('payment-widget');
+      const result = await ref.current?.confirmPayment();
       
       // Parse the result
       const status = result?.status || 'unknown';
@@ -54,6 +59,7 @@ function WidgetContent({
   return (
     <>
       <PaymentWidget
+        ref={ref}
         widgetId="payment-widget"
         onPaymentResult={(result: any) => {
           if (result.errorMessage) {

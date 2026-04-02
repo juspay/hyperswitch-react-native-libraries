@@ -26,19 +26,28 @@ type viewManagerConfig = {\"Commands": commands}
 //   }
 
 let createView = viewId => {
-  dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
+  ReactNativeUtils.dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
+}
+
+type paymentWidgetRef = {confirmPayment: unit => promise<HyperTypes.nativeResponse>}
+
+type pendingConfirmation = {
+  resolve: HyperTypes.nativeResponse => unit,
+  reject: exn => unit,
 }
 
 @react.component @genType
-let make = (
-  ~widgetId,
-  ~onPaymentResult,
+let make = React.forwardRef((
+  ~widgetId: string,
+  ~onPaymentResult: NativeModuleTypes.paymentResult => unit,
   ~options: option<PaymentSheetConfiguration.options>=?,
   ~style: option<ReactNative.Style.t>=?,
+  ref,
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let (hyperElementsContext, _) = HyperElements.useHyperElements()
+  let pendingConfirmationRef: React.ref<option<pendingConfirmation>> = React.useRef(None)
 
   React.useEffect(() => {
     switch Js.Nullable.toOption(viewRef.current) {
@@ -50,9 +59,74 @@ let make = (
     None
   }, [])
 
+  let onConfirmationResult = (event: NativeModuleTypes.nativeEvent) => {
+    let result = event.nativeEvent.result
+    let parsedResult = result->Option.getOr("")->parse
+    switch pendingConfirmationRef.current {
+    | Some({resolve}) => {
+        pendingConfirmationRef.current = None
+        let response: HyperTypes.nativeResponse = {
+          status: switch parsedResult.status->Option.getOr("") {
+          | "succeeded" => HyperTypes.Succeeded
+          | "failed" => HyperTypes.Failed
+          | "cancelled" => HyperTypes.Cancelled
+          | _ => HyperTypes.Error
+          },
+          message: parsedResult.errorMessage->Option.getOr("Payment completed"),
+        }
+        resolve(response)
+      }
+    | None => onPaymentResult(parsedResult)
+    }
+  }
+
+  React.useImperativeHandle(
+    ref,
+    () => {
+      {
+        confirmPayment: (): promise<HyperTypes.nativeResponse> => {
+          switch Js.Nullable.toOption(viewRef.current) {
+          | Some(_) =>
+            switch Some(findNodeHandle(viewRef.current)) {
+            | Some(id) => {
+                let promise = Promise.make((resolve, reject) => {
+                  pendingConfirmationRef.current = Some({resolve, reject})
+                })
+                ReactNativeUtils.dispatchViewManagerCommand(
+                  ~viewId=id,
+                  ~commandId=2,
+                  ~commandArgs=[],
+                )
+                promise
+              }
+            | None => {
+                let response: HyperTypes.nativeResponse = {
+                  status: HyperTypes.Failed,
+                  message: "Widget not ready",
+                }
+                Promise.resolve(response)
+              }
+            }
+          | None => {
+              let response: HyperTypes.nativeResponse = {
+                status: HyperTypes.Failed,
+                message: "Widget not ready",
+              }
+              Promise.resolve(response)
+            }
+          }
+        },
+      }
+    },
+    [viewId],
+  )
+
   React.useEffect(() => {
     switch viewId {
-    | Some(id) => createView(id)
+    | Some(id) => {
+        WidgetRegistry.registerWidget(widgetId, id)
+        createView(id)
+      }
     | None => ()
     }
     None
@@ -73,13 +147,12 @@ let make = (
         widgetId={widgetId}
         widgetType={"widgetPaymentSheet"}
         clientSecret={clientSecret}
-        // sdkAuthorisation={hyperElementsContext.sdkAuthorisation->Option.getOr("")}
+        onConfirmationResult={onConfirmationResult}
         onPaymentResult={onPaymentResultInternal}
-        options=?options
-        style=?style
+        ?options
+        ?style
       />
-    | None =>
-      React.null
+    | None => React.null
     }
   }
-}
+})

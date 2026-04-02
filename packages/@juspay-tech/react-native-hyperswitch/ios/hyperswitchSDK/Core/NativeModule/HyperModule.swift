@@ -189,22 +189,23 @@ internal class HyperModule: RCTEventEmitter {
 
   @objc
   private func notifyWidgetPaymentResult(_ widgetId: String, _ rnMessage: String) {
-    guard let data = rnMessage.data(using: .utf8),
-          let json = try? JSONSerialization.jsonObject(with: data) as? [String: String] else {
-      return
-    }
-    let status  = json["status"]  ?? "failed"
-    let code    = json["code"]    ?? "form_validation_failed"
-    let message = json["message"] ?? "Form validation failed."
-
-    var structuredResponse: [String: Any] = [
-      "status": status,
-      "message": message
-    ]
-    structuredResponse["code"] = code
-
-    // Resolve the confirm promise for the given widgetId with the structured response
-    RNViewManager.sharedInstance.resolveConfirmPromise(widgetId: widgetId, result: structuredResponse)
+//    guard let data = rnMessage.data(using: .utf8),
+//          let json = try? JSONSerialization.jsonObject(with: data) as? [String: String] else {
+//      return
+//    }
+//    let status  = json["status"]  ?? "failed"
+//    let code    = json["code"]    ?? "form_validation_failed"
+//    let message = json["message"] ?? "Form validation failed."
+//
+//    var structuredResponse: [String: Any] = [
+//      "status": status,
+//      "message": message
+//    ]
+//    structuredResponse["code"] = code
+//
+//    // Resolve the confirm promise for the given widgetId with the structured response
+//    RNViewManager.sharedInstance.resolveConfirmPromise(widgetId: widgetId, result: structuredResponse)
+    
   }
 
   @objc

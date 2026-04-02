@@ -21,36 +21,32 @@ let useWidget = (): HyperTypes.widgetController => {
   }, [isInitialized])
 
   // confirmPayment method - triggers payment confirmation via native module
+  // Returns the actual payment result from the native SDK instead of calling onPaymentResult callback
   let confirmPayment = React.useCallback1((widgetId: string) => {
     if !isReady {
       Promise.resolve(
-        (
-          {
-            status: HyperTypes.Failed,
-            message: "Widget is not ready",
-          }: HyperTypes.nativeResponse
-        ),
+        {
+          status: HyperTypes.Failed,
+          message: "Widget is not ready",
+        }: HyperTypes.nativeResponse,
       )
     } else {
       setIsLoading(_ => true)
       setIsConfirmDisabled(_ => true)
-
-      nativeHyperswitchSdk.confirmPayment(widgetId)
-      ->Promise.then(result => {
+      WidgetRegistry.confirmPayment(widgetId)
+      ->Promise.thenResolve(response => {
         setIsLoading(_ => false)
         setIsConfirmDisabled(_ => false)
-        Promise.resolve(ResponseHandler.parseNativeResponse(result))
+        response
       })
-      ->Promise.catch(_err => {
+      ->Promise.catch(err => {
         setIsLoading(_ => false)
         setIsConfirmDisabled(_ => false)
         Promise.resolve(
-          (
-            {
-              status: HyperTypes.Failed,
-              message: "Payment confirmation failed",
-            }: HyperTypes.nativeResponse
-          ),
+          {
+            status: HyperTypes.Failed,
+            message: "Payment confirmation failed: " ++ err->Obj.magic,
+          }: HyperTypes.nativeResponse,
         )
       })
     }
@@ -59,24 +55,20 @@ let useWidget = (): HyperTypes.widgetController => {
   let presentPaymentSheet = React.useCallback1((params: presentPaymentSheetParams) => {
     if !isReady {
       Promise.resolve(
-        (
-          {
-            status: HyperTypes.Failed,
-            message: "Hyperswitch is not initialized",
-          }: HyperTypes.nativeResponse
-        ),
+        {
+          status: HyperTypes.Failed,
+          message: "Hyperswitch is not initialized",
+        }: HyperTypes.nativeResponse,
       )
     } else {
       nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
       ->Promise.thenResolve(ResponseHandler.parseNativeResponse)
       ->Promise.catch(_err => {
         Promise.resolve(
-          (
-            {
-              status: HyperTypes.Failed,
-              message: "Failed to present payment sheet",
-            }: HyperTypes.nativeResponse
-          ),
+          {
+            status: HyperTypes.Failed,
+            message: "Failed to present payment sheet",
+          }: HyperTypes.nativeResponse,
         )
       })
     }
@@ -137,14 +129,12 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
     (params: presentPaymentSheetParams) => {
       if !isReady {
         Promise.resolve(
-          (
-            {
-              error: {
-                code: "failed",
-                message: "Hyperswitch is not initialized",
-              },
-            }: presentPaymentSheetResult
-          ),
+          {
+            error: {
+              code: "failed",
+              message: "Hyperswitch is not initialized",
+            },
+          }: presentPaymentSheetResult,
         )
       } else {
         nativeHyperswitchSdk.presentPaymentSheet(params->Obj.magic)
@@ -206,14 +196,12 @@ let useWidgetLegacy = (): useWidgetLegacyResult => {
         })
         ->Promise.catch(_err => {
           Promise.resolve(
-            (
-              {
-                error: {
-                  code: "failed",
-                  message: "Failed to present payment sheet",
-                },
-              }: presentPaymentSheetResult
-            ),
+            {
+              error: {
+                code: "failed",
+                message: "Failed to present payment sheet",
+              },
+            }: presentPaymentSheetResult,
           )
         })
       }
