@@ -31,28 +31,6 @@ internal class RNViewManager: NSObject {
         self.rootView = rootView
         return rootView
     }
-
-    // Confirm Payment Promise Helpers
-    internal func setConfirmPromise(widgetId: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
-        confirmPromises[widgetId] = resolve
-        confirmRejectors[widgetId] = reject
-    }
-
-    internal func resolveConfirmPromise(widgetId: String, result: Any?) {
-        if let resolve = confirmPromises[widgetId] {
-            resolve(result)
-            confirmPromises.removeValue(forKey: widgetId)
-            confirmRejectors.removeValue(forKey: widgetId)
-        }
-    }
-
-    internal func rejectConfirmPromise(widgetId: String, error: NSError) {
-        if let reject = confirmRejectors[widgetId] {
-            reject(error.domain, error.localizedDescription, error)
-            confirmPromises.removeValue(forKey: widgetId)
-            confirmRejectors.removeValue(forKey: widgetId)
-        }
-    }
 }
 
 extension RNViewManager: RCTBridgeDelegate {

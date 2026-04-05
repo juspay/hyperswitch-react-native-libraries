@@ -14,6 +14,7 @@ type nativeEvent = {
   nativeEvent: paymentResultInternal,
 }
 
+@genType
 type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
   widgetId: string, // sessionId
@@ -22,5 +23,6 @@ type nativePaymentWidgetType = {
   sdkAuthorisation?: string,
   options?: PaymentSheetConfiguration.options, // appearance and other configs can be passed as options in JSON string format
   onPaymentResult?: nativeEvent => unit, // callback to receive payment result from native code
+  onConfirmationResult?: nativeEvent => unit, // callback to receive confirmation result from native code
   style?: ReactNative.Style.t, // style for the view including min-height
 }

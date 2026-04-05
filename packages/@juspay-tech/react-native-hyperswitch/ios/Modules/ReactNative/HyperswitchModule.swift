@@ -195,22 +195,22 @@ public class HyperswitchModule: NSObject {
       }
   }
   
-  @objc(confirmPaymentWithWidgetId:resolve:reject:)
-  public func confirmPayment(
-    withWidgetId widgetId: String,
-    resolve: @escaping RCTPromiseResolveBlock,
-    reject: @escaping RCTPromiseRejectBlock
-  ) -> Void {
-    guard let hyperModule = HyperModule.shared else {
-      resolve([
-          "status": "error",
-          "code": "NOT_INITIALIZED",
-          "message": "HyperModule is not initialized."
-      ])
-      return
-    }
-    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
-  }
+//  @objc(confirmPaymentWithWidgetId:resolve:reject:)
+//  public func confirmPayment(
+//    withWidgetId widgetId: String,
+//    resolve: @escaping RCTPromiseResolveBlock,
+//    reject: @escaping RCTPromiseRejectBlock
+//  ) -> Void {
+//    guard let hyperModule = HyperModule.shared else {
+//      resolve([
+//          "status": "error",
+//          "code": "NOT_INITIALIZED",
+//          "message": "HyperModule is not initialized."
+//      ])
+//      return
+//    }
+//    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
+//  }
 
   @objc
   public func confirmWithCustomerLastUsedPaymentMethod(

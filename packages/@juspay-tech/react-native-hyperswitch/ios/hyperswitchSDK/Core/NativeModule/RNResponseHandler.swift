@@ -8,5 +8,9 @@
 import Foundation
 
 internal protocol RNResponseHandler {
-    func didReceiveResponse(response: String?, error: Error?) -> Void
+  func didReceiveResponse(response: String?, error: Error?) -> Void
+}
+
+extension Notification.Name {
+  static let hyperWidgetPaymentResult = Notification.Name("hyperWidgetPaymentResult")
 }
