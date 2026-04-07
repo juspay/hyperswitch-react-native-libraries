@@ -12,7 +12,7 @@ import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resetView
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resolvePromise
-import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
+import com.hyperswitchsdkreactnative.utils.CallbackManager
 import io.hyperswitch.payments.GooglePayCallbackManager
 
 /**
@@ -104,7 +104,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     result: String,
     reset: Boolean
   ) {
-    WidgetCallbackManager.executeCallback(result, widgetId)
+    CallbackManager.executeCallback(result, widgetId)
   }
 
   override fun launchWidgetPaymentSheet(requestObj: String, callback: Callback) {
@@ -132,6 +132,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
     return writableMap
   }
+
 
   override fun addListener(eventName: String?) {
     Log.i("Manideep", eventName.toString())

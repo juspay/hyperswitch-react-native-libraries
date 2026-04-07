@@ -73,7 +73,6 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   }
 
   override fun confirmPayment(reactTag: Int, callback: Callback) {
-    Log.i("Manideep", reactTag.toString())
     val uiManagerModule =
       reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
     uiManagerModule?.addUIBlock { nvhm ->
@@ -82,9 +81,8 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
         if (view is PaymentWidgetView) {
           val resultCallback = { it : Any ->
             callback.invoke(it)
-            resetView()
           }
-          view.confirmPayment(callback)
+          view.confirmPayment(resultCallback)
         } else {
           callback.invoke("ERROR", "Invalid view type")
         }

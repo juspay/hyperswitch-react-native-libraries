@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
-import android.util.Log
 import android.widget.FrameLayout
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReadableMap
@@ -14,10 +13,8 @@ import com.hyperswitchsdkreactnative.provider.HyperProvider
 import com.hyperswitchsdkreactnative.utils.EventCallback
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
 import com.hyperswitchsdkreactnative.provider.ReactNativeController
-import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
-import org.greenrobot.eventbus.Logger
+import com.hyperswitchsdkreactnative.utils.CallbackManager
 import java.util.UUID
-
 class PaymentWidgetView : FrameLayout {
   private var configuration: ReadableMap? = null
   private lateinit var launchOptions: LaunchOptions
@@ -102,11 +99,11 @@ class PaymentWidgetView : FrameLayout {
 
   fun onPaymentResult(callback: Callback) {
     this.callback = callback
-    WidgetCallbackManager.setCallback(callback, true, this.widgetId)
+    CallbackManager.setCallback(callback, true, this.widgetId)
   }
 
   fun onEvent(eventCallback: EventCallback) {
-    WidgetCallbackManager.setEventCallback(this.widgetId, eventCallback)
+    CallbackManager.setEventCallback(this.widgetId, eventCallback)
   }
 
   override fun onAttachedToWindow() {
@@ -128,6 +125,7 @@ class PaymentWidgetView : FrameLayout {
 
   fun confirmPayment(callback: Callback){
     val requestId = UUID.randomUUID().toString()
+    CallbackManager.setCallback(callback, true, requestId)
     HyperswitchSdkNativeModule.emitConfirmPaymentEvent(requestId)
   }
 
