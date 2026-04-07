@@ -7,11 +7,8 @@ type initialise = (
 ) => promise<unit>
 
 
-// New method types for the updated API
-type confirmPayment = Js.Json.t => promise<string>
-type confirmCardPayment = Js.Json.t => promise<string>
-type retrievePaymentIntent = Js.Json.t => promise<string>
-type completeUpdateIntent = Js.Json.t => promise<string>
+
+// type completeUpdateIntent = Js.Json.t => promise<string>
 
 type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string>
 
@@ -89,24 +86,6 @@ type savedPaymentMethod = {
   created: string,
 }
 
-// Headless payment response types
-@genType
-type headlessResponseStatus =
-  | @as("succeeded") Succeeded
-  | @as("requires_action") RequiresAction
-  | @as("requires_confirmation") RequiresConfirmation
-  | @as("requires_customer_action") RequiresCustomerAction
-  | @as("failed") Failed
-
-@genType
-type headlessResponse = {
-  status: headlessResponseStatus,
-  message?: string,
-  error?: error,
-  paymentIntentId?: string,
-  clientSecret?: string,
-}
-
 // Headless Payment Method types
 type getCustomerSavedPaymentMethods = unit => promise<string>
 type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
@@ -115,15 +94,16 @@ type confirmWithCustomerDefaultPaymentMethod = string => promise<string>
 type confirmWithCustomerLastUsedPaymentMethod = string => promise<string>
 type confirmWithCustomerPaymentToken = string => promise<string>
 
+
+type confirmPayment = (int, paymentResult  => unit) => unit
+
 type nativeHyperswitchSdk = {
   initialise: initialise,
   initPaymentSession: initPaymentSession,
   presentPaymentSheet: presentPaymentSheet,
   // New methods
-  confirmPayment: confirmPayment,
-  confirmCardPayment: confirmCardPayment,
-  retrievePaymentIntent: retrievePaymentIntent,
-  completeUpdateIntent: completeUpdateIntent,
+  // confirmPayment: confirmPayment,
+  // completeUpdateIntent: completeUpdateIntent,
   // Headless Payment Methods
   getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
   getCustomerDefaultSavedPaymentMethodData: getCustomerDefaultSavedPaymentMethodData,
@@ -135,3 +115,35 @@ type nativeHyperswitchSdk = {
 
 @module("../specs/NativeHyperswitchSdkReactNative")
 external nativeHyperswitchSdk: nativeHyperswitchSdk = "default"
+
+
+
+// Nativemodule with NativePaymentWidget 
+
+type nativePaymentWidget = {
+  // New methods
+  confirmPayment: confirmPayment,
+}
+
+
+let nativePaymentWidgetDict =
+  Dict.get(ReactNative.NativeModules.nativeModules, "NativePaymentWidget")
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.getOr(Dict.make())
+
+let getFunctionFromModule = (dict: Dict.t<'a>, key: string, default) => {
+  switch dict->Dict.get(key) {
+  | Some(fn) => Obj.magic(fn)
+  | None => default
+  }
+}
+
+let nativePaymentWidget = {
+  confirmPayment: getFunctionFromModule(nativePaymentWidgetDict, "confirmPayment", (_, _) => ()),
+}
+
+let confirmPayment = (viewId: int, callback: paymentResult => unit) => {
+  nativePaymentWidget.confirmPayment(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}

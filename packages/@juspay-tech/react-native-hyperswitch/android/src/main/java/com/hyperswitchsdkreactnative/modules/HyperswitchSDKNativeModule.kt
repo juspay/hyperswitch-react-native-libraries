@@ -3,6 +3,7 @@ package com.hyperswitchsdkreactnative.modules
 import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.bridge.Arguments
@@ -10,20 +11,31 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
-import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resetView
-import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resolvePromise
-import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resetView
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resolvePromise
+import com.hyperswitchsdkreactnative.provider.HyperFragment
 import io.hyperswitch.payments.GooglePayCallbackManager
+
 /**
  * HyperModules TurboModule implementation that bridges the bundle's expectations
  * with the existing HyperswitchSdkModule functionality
  */
+
+enum class EventName {
+  CONFIRM_PAYMENT_ACTION
+}
+
 class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkNativeSpec(reactContext) {
 
   override fun getName(): String {
     return NAME
   }
+
+  init {
+    reactContextInstance = reactContext
+  }
+
 
   override fun sendMessageToNative(message: String) {
   }
@@ -69,6 +81,15 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+
+  override fun notifyWidgetPaymentResult(rootTag: Int, result: String) {
+    try {
+      HyperFragment.resolveConfirmPayment(rootTag, result)
+    } catch (_: Exception) {
+      Log.i("HyperModule", "Error in notifyWidgetPaymentResult")
+    }
+  }
+
   override fun exitWidget(result: String, widgetType: String) {
     try {
       resolvePromise(result)
@@ -87,8 +108,12 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun exitWidgetPaymentsheet(rootTag: Double, widgetId: String, result: String, reset: Boolean) {
-    WidgetCallbackManager.executeCallback(result, widgetId)
+  override fun exitWidgetPaymentsheet(
+    rootTag: Double,
+    result: String,
+    reset: Boolean
+  ) {
+    HyperFragment.onPaymentResultEvent(rootTag.toInt(), result)
   }
 
   override fun launchWidgetPaymentSheet(requestObj: String, callback: Callback) {
@@ -131,7 +156,17 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     return writableMap
   }
 
+
+  override fun addListener(eventName: String?) {
+
+  }
+
+  override fun removeListeners(count: Double?) {
+  }
+
+
   companion object {
     const val NAME = "HyperModule"
+    private var reactContextInstance: ReactContext? = null
   }
 }

@@ -8,7 +8,8 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
 import com.hyperswitchsdkreactnative.headless.HyperHeadlessModule
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkNativeModule
-import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule
+import com.hyperswitchsdkreactnative.modules.NativePaymentWidgetNativeModule
 import com.hyperswitchsdkreactnative.views.GooglePayButtonViewManager
 import com.hyperswitchsdkreactnative.views.PaymentWidgetViewManager
 import java.util.ArrayList
@@ -16,8 +17,9 @@ import java.util.ArrayList
 class HyperswitchSdkReactNativePackage : BaseReactPackage() {
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return when (name) {
-      HyperswitchSdkReactNativeModule.NAME -> HyperswitchSdkReactNativeModule(reactContext)
+      HyperswitchRNWrapperNativeModule.NAME -> HyperswitchRNWrapperNativeModule(reactContext)
       HyperswitchSdkNativeModule.NAME -> HyperswitchSdkNativeModule(reactContext)
+      NativePaymentWidgetNativeModule.NAME -> NativePaymentWidgetNativeModule(reactContext)
       HyperHeadlessModule.NAME -> HyperHeadlessModule(reactContext)
       else -> null
     }
@@ -32,7 +34,11 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
 
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
-      arrayOf(HyperswitchSdkReactNativeModule.NAME, HyperswitchSdkNativeModule.NAME, HyperHeadlessModule.NAME).associateWith {
+      arrayOf(
+        HyperswitchRNWrapperNativeModule.NAME,
+        HyperswitchSdkNativeModule.NAME,
+        NativePaymentWidgetNativeModule.NAME
+      , HyperHeadlessModule.NAME).associateWith {
         ReactModuleInfo(it, it, false, false, false, true)
       }.toMutableMap()
     }

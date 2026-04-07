@@ -213,11 +213,8 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
   };
 
   return (
-    <ScrollView style={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Headless Mode</Text>
-        
-        <TextInput
+    <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
+      <TextInput
           style={styles.textInput}
           placeholder="Enter base URL"
           value={baseURL}
@@ -277,12 +274,11 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
           </Text>
         </TouchableOpacity>
 
-        {loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
+      {loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
 
-        <View style={styles.status}>
-          <Text style={styles.statusText}>{status}</Text>
-          {message && <Text style={styles.messageText}>{message}</Text>}
-        </View>
+      <View style={styles.status}>
+        <Text style={styles.statusText}>{status}</Text>
+        {message && <Text style={styles.messageText}>{message}</Text>}
       </View>
     </ScrollView>
   );

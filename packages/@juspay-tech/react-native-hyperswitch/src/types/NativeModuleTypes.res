@@ -33,9 +33,7 @@ type paymentMethodStatusEvent = {
 }
 
 @genType
-type formStatusEvent = {
-  status: string,
-}
+type formStatusEvent = {status: string}
 
 @genType
 type paymentMethodInfoAddress = {
@@ -73,6 +71,7 @@ type paymentResultInternal = {result?: string}
 
 type nativeEvent = {nativeEvent: paymentResultInternal}
 
+@genType
 type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
   widgetId: string, // sessionId

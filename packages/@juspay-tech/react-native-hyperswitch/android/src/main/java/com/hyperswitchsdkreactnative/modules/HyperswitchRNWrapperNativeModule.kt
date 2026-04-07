@@ -1,8 +1,8 @@
 package com.hyperswitchsdkreactnative.modules
 
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
@@ -14,7 +14,8 @@ import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 import org.json.JSONObject
 
-class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
+
+class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
 
   private var hyperProvider: HyperProvider? = null
@@ -260,7 +261,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "HyperswitchSdkReactNative"
     private var sheetPromise: Promise? = null
-    private var currentInstance: HyperswitchSdkReactNativeModule? = null
+    private var currentInstance: HyperswitchRNWrapperNativeModule? = null
     private var hostReactContext: ReactApplicationContext? = null
     private var clientSecret: String? = null
     @Volatile
