@@ -47,38 +47,43 @@ let make = React.forwardRef((
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let (hyperElementsContext, _) = HyperElements.useHyperElements()
-  let pendingConfirmationRef: React.ref<option<pendingConfirmation>> = React.useRef(None)
+  let isRegisteredRef = React.useRef(false)
+  let mountCountRef = React.useRef(0)
 
+  // Effect to detect when native view is mounted and get its node handle
   React.useEffect(() => {
-    switch Js.Nullable.toOption(viewRef.current) {
-    | Some(_) =>
-      setViewId(_ => Some(findNodeHandle(viewRef.current)))
-      ()
-    | None => ()
-    }
-    None
-  }, [])
-
-  let onConfirmationResult = (event: NativeModuleTypes.nativeEvent) => {
-    let result = event.nativeEvent.result
-    let parsedResult = result->Option.getOr("")->parse
-    switch pendingConfirmationRef.current {
-    | Some({resolve}) => {
-        pendingConfirmationRef.current = None
-        let response: HyperTypes.nativeResponse = {
-          status: switch parsedResult.status->Option.getOr("") {
-          | "succeeded" => HyperTypes.Succeeded
-          | "failed" => HyperTypes.Failed
-          | "cancelled" => HyperTypes.Cancelled
-          | _ => HyperTypes.Error
-          },
-          message: parsedResult.errorMessage->Option.getOr("Payment completed"),
+    let checkAndRegister = () => {
+      switch Js.Nullable.toOption(viewRef.current) {
+      | Some(_) => {
+          let id = findNodeHandle(viewRef.current)
+          if id != -1 {
+            setViewId(_ => Some(id))
+          }
         }
-        resolve(response)
+      | None => ()
       }
-    | None => onPaymentResult(parsedResult)
     }
-  }
+    // Delay slightly to ensure native view is mounted
+    let timeoutId = Js.Global.setTimeout(checkAndRegister, 100)
+    Some(() => Js.Global.clearTimeout(timeoutId))
+  }, [mountCountRef.current])
+
+  // Registration effect - runs when viewId becomes available
+  React.useEffect(() => {
+    switch viewId {
+    | Some(id) => {
+        WidgetRegistry.registerWidget(widgetId, id)
+        isRegisteredRef.current = true
+        Some(() => {
+          if isRegisteredRef.current {
+            WidgetRegistry.unregisterWidget(widgetId)
+            isRegisteredRef.current = false
+          }
+        })
+      }
+    | None => None
+    }
+  }, [viewId])
 
   React.useImperativeHandle(
     ref,
@@ -86,33 +91,28 @@ let make = React.forwardRef((
       {
         confirmPayment: (): promise<HyperTypes.nativeResponse> => {
           switch Nullable.toOption(viewRef.current) {
+          | None =>
+            Promise.resolve(
+              ({status: HyperTypes.Failed, message: "Widget not ready"}: HyperTypes.nativeResponse),
+            )
           | Some(_) =>
-            switch Some(findNodeHandle(viewRef.current)) {
-            | Some(id) => {
-                let promise = Promise.make((resolve, reject) => {
-                  pendingConfirmationRef.current = Some({resolve, reject})
+            let id = findNodeHandle(viewRef.current)
+            if id == -1 {
+              Promise.resolve(
+                ({status: HyperTypes.Failed, message: "Widget not ready"}: HyperTypes.nativeResponse),
+              )
+            } else {
+              Promise.make((resolve, _) => {
+                NativeHyperswitchSdk.nativeHyperswitchSdk.confirmPayment(id, (result: NativeHyperswitchSdk.paymentResult) => {
+                  let status = switch result.status {
+                  | "succeeded" => HyperTypes.Succeeded
+                  | "failed" => HyperTypes.Failed
+                  | "cancelled" => HyperTypes.Cancelled
+                  | _ => HyperTypes.Error
+                  }
+                  resolve(({status, message: result.message}: HyperTypes.nativeResponse))
                 })
-                ReactNativeUtils.dispatchViewManagerCommand(
-                  ~viewId=id,
-                  ~commandId=2,
-                  ~commandArgs=[],
-                )
-                promise
-              }
-            | None => {
-                let response: HyperTypes.nativeResponse = {
-                  status: HyperTypes.Failed,
-                  message: "Widget not ready",
-                }
-                Promise.resolve(response)
-              }
-            }
-          | None => {
-              let response: HyperTypes.nativeResponse = {
-                status: HyperTypes.Failed,
-                message: "Widget not ready",
-              }
-              Promise.resolve(response)
+              })
             }
           }
         },
@@ -124,7 +124,6 @@ let make = React.forwardRef((
   React.useEffect(() => {
     switch viewId {
     | Some(id) => {
-        WidgetRegistry.registerWidget(widgetId, id)
         createView(id)
       }
     | None => ()
@@ -133,7 +132,6 @@ let make = React.forwardRef((
   }, [viewId])
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
-    Console.log("############### Flow reached onPaymentResultInternal ###############")
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
@@ -148,7 +146,6 @@ let make = React.forwardRef((
         widgetId={widgetId}
         widgetType={"widgetPaymentSheet"}
         clientSecret={clientSecret}
-        onConfirmationResult={onConfirmationResult}
         onPaymentResult={onPaymentResultInternal}
         ?options
         ?style

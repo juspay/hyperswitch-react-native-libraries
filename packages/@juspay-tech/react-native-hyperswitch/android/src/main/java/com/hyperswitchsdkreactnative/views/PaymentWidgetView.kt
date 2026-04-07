@@ -4,15 +4,18 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.FrameLayout
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReadableMap
 import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.modules.HyperswitchSdkNativeModule
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 import com.hyperswitchsdkreactnative.utils.EventCallback
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
 import com.hyperswitchsdkreactnative.provider.ReactNativeController
 import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
+import org.greenrobot.eventbus.Logger
 import java.util.UUID
 
 class PaymentWidgetView : FrameLayout {
@@ -123,6 +126,10 @@ class PaymentWidgetView : FrameLayout {
       widgetId = this.widgetId
     )
 
+  fun confirmPayment(callback: Callback){
+    val requestId = UUID.randomUUID().toString()
+    HyperswitchSdkNativeModule.emitConfirmPaymentEvent(requestId)
+  }
 
   fun setPaymentIntent(clientSecret: String) {
     this.clientSecret = clientSecret

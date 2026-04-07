@@ -1,10 +1,19 @@
 package com.hyperswitchsdkreactnative.modules
 
-import com.facebook.react.bridge.ReactApplicationContext
+import android.util.Log
+import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.NativeViewHierarchyManager
+import com.facebook.react.uimanager.UIBlock
+import com.facebook.react.uimanager.UIManagerModule
+import com.facebook.react.uimanager.ViewManager
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
+import com.hyperswitchsdkreactnative.views.PaymentWidgetView
+
 
 class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
@@ -62,7 +71,29 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       promise?.reject("PRESENT_ERROR", "Failed to present payment sheet: ${e.message}")
     }
   }
-  
+
+  override fun confirmPayment(reactTag: Int, callback: Callback) {
+    Log.i("Manideep", reactTag.toString())
+    val uiManagerModule =
+      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
+    uiManagerModule?.addUIBlock { nvhm ->
+      try {
+        val view = nvhm.resolveView(reactTag)
+        if (view is PaymentWidgetView) {
+          val resultCallback = { it : Any ->
+            callback.invoke(it)
+            resetView()
+          }
+          view.confirmPayment(callback)
+        } else {
+          callback.invoke("ERROR", "Invalid view type")
+        }
+      } catch (e: IllegalViewOperationException) {
+        callback.invoke("ERROR", "View not found: ${e.message}")
+      }
+    }
+  }
+
   fun resetView() {
     hyperProvider?.removeSheetView(true)
   }

@@ -84,4 +84,10 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
   @ReactMethod
   @DoNotStrip
   public abstract void onAddPaymentMethod(String data);
+
+  @ReactMethod
+  public abstract void addListener(String eventName);
+
+  @ReactMethod
+  public abstract void removeListeners(Double count);
 }

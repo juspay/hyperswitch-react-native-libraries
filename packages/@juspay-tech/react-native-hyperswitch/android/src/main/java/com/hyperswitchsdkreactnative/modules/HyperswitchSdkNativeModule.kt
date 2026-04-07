@@ -1,25 +1,40 @@
 package com.hyperswitchsdkreactnative.modules
 
+import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.ReactContext
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resetView
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resolvePromise
 import com.hyperswitchsdkreactnative.utils.WidgetCallbackManager
 import io.hyperswitch.payments.GooglePayCallbackManager
+
 /**
  * HyperModules TurboModule implementation that bridges the bundle's expectations
  * with the existing HyperswitchSdkModule functionality
  */
+
+enum class EventName {
+  CONFIRM_PAYMENT_EVENT
+}
+
 class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkNativeSpec(reactContext) {
 
   override fun getName(): String {
     return NAME
   }
+
+  init {
+    reactContextInstance = reactContext
+  }
+
 
   override fun sendMessageToNative(message: String) {
   }
@@ -83,7 +98,12 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun exitWidgetPaymentsheet(rootTag: Double, widgetId: String, result: String, reset: Boolean) {
+  override fun exitWidgetPaymentsheet(
+    rootTag: Double,
+    widgetId: String,
+    result: String,
+    reset: Boolean
+  ) {
     WidgetCallbackManager.executeCallback(result, widgetId)
   }
 
@@ -113,7 +133,25 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     return writableMap
   }
 
+  override fun addListener(eventName: String?) {
+    Log.i("Manideep", eventName.toString())
+  }
+
+  override fun removeListeners(count: Double?) {
+  }
+
+
   companion object {
     const val NAME = "HyperModule"
+    private var reactContextInstance: ReactContext? = null
+
+    fun emitEventToJS(eventName: String, payload: Any) {
+      reactContextInstance?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        ?.emit(eventName, payload)
+    }
+
+    fun emitConfirmPaymentEvent(requestId: String) {
+      emitEventToJS(EventName.CONFIRM_PAYMENT_EVENT.name, requestId)
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import {
   PaymentWidget,
@@ -26,18 +26,18 @@ function WidgetContent({
 }) {
   const widget = useWidget();
   const [isConfirming, setIsConfirming] = useState(false);
-
+  const widgetRef = React.useRef(null);
   const handleConfirmPayment = async () => {
-    if (!widget.isReady) {
-      onStatusUpdate('Error', 'Widget is not ready');
-      return;
-    }
+    // if (!widget.isReady) {
+    //   onStatusUpdate('Error', 'Widget is not ready');
+    //   return;
+    // }
 
     try {
       setIsConfirming(true);
       onStatusUpdate('Confirming...', 'Payment confirmation in progress');
       // Call confirmPayment with widgetId
-      const result = await widget.confirmPayment('payment-widget');
+      const result = await widget.confirmPayment("payment-widget");
       
       // Parse the result
       const status = result?.status || 'unknown';
@@ -54,6 +54,7 @@ function WidgetContent({
   return (
     <>
       <PaymentWidget
+      ref= {widgetRef}
         widgetId="payment-widget"
         onPaymentResult={(result: any) => {
           if (result.errorMessage) {
@@ -73,10 +74,10 @@ function WidgetContent({
         style={[
           styles.button, 
           styles.confirmButton,
-          (!widget.isReady || widget.isConfirmDisabled || isConfirming) && styles.buttonDisabled
+          (isConfirming) && styles.buttonDisabled
         ]} 
         onPress={handleConfirmPayment}
-        disabled={!widget.isReady || widget.isConfirmDisabled || isConfirming}
+        disabled={ isConfirming}
       >
         <Text style={styles.buttonText}>
           {
@@ -88,7 +89,7 @@ function WidgetContent({
       </TouchableOpacity>
 
       {/* Widget Status */}
-      <View style={styles.widgetStatus}>
+      {/* <View style={styles.widgetStatus}>
         <Text style={styles.widgetStatusText}>
           Widget Status: {widget.isReady ? 'Ready' : 'Initializing'}
         </Text>
@@ -96,7 +97,7 @@ function WidgetContent({
           Loading: {widget.isLoading ? 'Yes' : 'No'} | 
           Disabled: {widget.isConfirmDisabled ? 'Yes' : 'No'}
         </Text>
-      </View>
+      </View> */}
     </>
   );
 }

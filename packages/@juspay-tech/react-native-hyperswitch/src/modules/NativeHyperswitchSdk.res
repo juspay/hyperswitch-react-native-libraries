@@ -7,8 +7,7 @@ type initialise = (
 ) => promise<unit>
 
 
-// New method types for the updated API
-type confirmPayment = string => promise<string>
+
 // type completeUpdateIntent = Js.Json.t => promise<string>
 
 type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string>
@@ -93,6 +92,9 @@ type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
 type getCustomerLastUsedPaymentMethodData = unit => promise<string>
 type confirmWithCustomerDefaultPaymentMethod = unit => promise<string>
 type confirmWithCustomerLastUsedPaymentMethod = unit => promise<string>
+
+
+type confirmPayment = (int, paymentResult  => unit) => unit
 
 type nativeHyperswitchSdk = {
   initialise: initialise,

@@ -50,7 +50,13 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   override fun onAfterUpdateTransaction(view: PaymentWidgetView) {
     super.onAfterUpdateTransaction(view)
-
+    val tag = "HyperPaymentSheet_${view.id}"
+    val activity = context?.currentActivity as? FragmentActivity ?: return
+    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
+    if (existingFragment != null) {
+      removeWidget(view)
+      view.post { showWidgetInternal(view) }
+    }
     view.onPaymentResult { result ->
       val event = Arguments.createMap().apply {
         putString("result", result[0] as String?)
@@ -86,6 +92,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     clientSecret ?: return
     if (view.getClientSecret() == clientSecret) return
     view.setPaymentIntent(clientSecret)
+    view.post { showWidgetInternal(view) }
   }
 
   @ReactProp(name = "options")
@@ -94,18 +101,20 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     val map = options.asMap()
     view.configuration(map)
 
-    // If fragment already exists, tear it down and re-show
-    val tag = "HyperPaymentSheet_${view.id}"
-    val activity = context?.currentActivity as? FragmentActivity ?: return
-    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
-    if (existingFragment != null) {
-      removeWidget(view)
-      view.post { showWidgetInternal(view) }
-    }
+//     If fragment already exists, tear it down and re-show
+//    val tag = "HyperPaymentSheet_${view.id}"
+//    val activity = context?.currentActivity as? FragmentActivity ?: return
+//    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
+//    if (existingFragment != null) {
+//      removeWidget(view)
+//      view.post { showWidgetInternal(view) }
+//    }
   }
 
   override fun getCommandsMap() = mapOf(
-    "showWidget" to SHOW_WIDGET, "removeWidget" to REMOVE_WIDGET, "default" to DEFAULT
+    "showWidget" to SHOW_WIDGET,
+    "removeWidget" to REMOVE_WIDGET,
+    "default" to DEFAULT
   )
 
   @Deprecated("Deprecated in Java")
@@ -214,8 +223,8 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   companion object {
     const val NAME = "NativePaymentWidget"
-    private const val SHOW_WIDGET = 1
-    private const val REMOVE_WIDGET = 2
+    private const val SHOW_WIDGET = 0
+    private const val REMOVE_WIDGET = 1
     private const val DEFAULT = -1
   }
 }
