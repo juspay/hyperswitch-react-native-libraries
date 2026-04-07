@@ -10,10 +10,12 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.facebook.react.ReactFragment
 import com.facebook.react.ReactHost
+import com.facebook.react.ReactInstanceEventListener
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactRootView
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
@@ -23,18 +25,44 @@ import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
 import io.hyperswitch.redirect.RedirectEvent
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
+data class OnEventResult(
+  val eventName: String,
+  val payload: String? = null
+)
+
+typealias EventCallback = (OnEventResult) -> Unit
+
 class HyperFragment : ReactFragment() {
+  private lateinit var onPaymentResult : Callback
 
 
+  private lateinit var eventResultCallback : EventCallback
+  fun setOnPaymentResult(callback: Callback){
+    this.onPaymentResult = callback
+  }
+
+  fun setOnEventCallback(eventCallback: EventCallback){
+    this.eventResultCallback = eventCallback
+  }
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     registerEventBus()
+    reactDelegate.reactInstanceManager?.addReactInstanceEventListener(listener)
   }
 
-
+  private val listener = object : ReactInstanceEventListener {
+    override fun onReactContextInitialized(reactContext: ReactContext) {
+      val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+      if(::onPaymentResult.isInitialized) {
+        paymentEventCallbacks[rootTag] = onPaymentResult
+      }
+      if(::eventResultCallback.isInitialized) {
+        onEventCallBacks[rootTag] = eventResultCallback
+      }
+    }
+  }
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
@@ -49,24 +77,25 @@ class HyperFragment : ReactFragment() {
           // Once RN tree is mounted, fix scroll interception for all ReactScrollViews
           view.post { fixScrollInterception(reactRootView) }
         }
+
         override fun onChildViewRemoved(parent: View?, child: View?) {}
       }
     )
   }
 
-  fun confirmPayment(callback: Callback){
+  fun confirmPayment(callback: Callback) {
     val rootTag = view?.id ?: -1
-    if(paymentCallbacks.get(rootTag) != null){
+    if (confirmActionCallbacks.get(rootTag) != null) {
       callback.invoke("ERROR", "ALREADY_IN_PROGRESS")
       return
     }
-    paymentCallbacks[rootTag] = callback
+    confirmActionCallbacks[rootTag] = callback
     val map = Arguments.createMap()
     map.putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
     map.putInt("rootTag", rootTag)
     reactDelegate.currentReactContext
-    ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-    ?.emit("triggerWidgetAction", map)
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("triggerWidgetAction", map)
   }
 
 
@@ -91,6 +120,7 @@ class HyperFragment : ReactFragment() {
             // Tell parent to not intercept - we want to handle this scroll
             v.parent?.requestDisallowInterceptTouchEvent(true)
           }
+
           MotionEvent.ACTION_UP,
           MotionEvent.ACTION_CANCEL -> {
             // Release the intercept lock
@@ -174,11 +204,40 @@ class HyperFragment : ReactFragment() {
 
   companion object {
     @Volatile
-    private var paymentCallbacks = ConcurrentHashMap<Int, Callback>()
-    fun resolveConfirmPayment(rootTag: Int, result: String){
-      try{
-        paymentCallbacks[rootTag]?.invoke(result)
-      }catch(_: Exception){
+    private var confirmActionCallbacks = ConcurrentHashMap<Int, Callback>()
+    @Volatile
+    private var paymentEventCallbacks = ConcurrentHashMap<Int, Callback>()
+    @Volatile
+    private var onEventCallBacks = ConcurrentHashMap<Int, EventCallback>()
+    fun onPaymentResultEvent(rootTag: Int, result: String) {
+      try {
+        if(confirmActionCallbacks[rootTag] != null){
+          confirmActionCallbacks[rootTag]?.invoke(result)
+        }else {
+          paymentEventCallbacks[rootTag]?.invoke(result)
+        }
+      } catch (_: Exception) {
+        Log.e("HyperModule", "Error in resolveConfirmPayment")
+      }
+    }
+
+    fun onEvents(rootTag: Int, result: String){
+      try {
+        onEventCallBacks[rootTag]?.invoke(
+          OnEventResult(
+            result
+          )
+        )
+      } catch (_: Exception) {
+        Log.e("HyperModule", "Error in resolveConfirmPayment")
+      }
+    }
+
+    fun resolveConfirmPayment(rootTag: Int, result: String) {
+      try {
+        confirmActionCallbacks[rootTag]?.invoke(result)
+        confirmActionCallbacks.remove(rootTag)
+      } catch (_: Exception) {
         Log.e("HyperModule", "Error in resolveConfirmPayment")
       }
     }

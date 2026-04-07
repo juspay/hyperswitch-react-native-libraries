@@ -1,21 +1,13 @@
 package com.hyperswitchsdkreactnative.modules
 
-import android.util.Log
-import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.uimanager.IllegalViewOperationException
-import com.facebook.react.uimanager.NativeViewHierarchyManager
-import com.facebook.react.uimanager.UIBlock
-import com.facebook.react.uimanager.UIManagerModule
-import com.facebook.react.uimanager.ViewManager
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.views.PaymentWidgetView
 
 
-class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
+class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
 
   private var hyperProvider: HyperProvider? = null
@@ -80,7 +72,7 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "HyperswitchSdkReactNative"
     private var sheetPromise: Promise? = null
-    private var currentInstance: HyperswitchSdkReactNativeModule? = null
+    private var currentInstance: HyperswitchRNWrapperNativeModule? = null
 
     fun resolvePromise(data: Any?) {
       try {

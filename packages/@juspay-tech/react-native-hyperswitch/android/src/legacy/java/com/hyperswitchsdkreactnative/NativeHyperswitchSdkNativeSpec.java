@@ -67,7 +67,7 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
-  public abstract void notifyWidgetPaymentResult(Integer rootTag, String  requestId, String result);
+  public abstract void notifyWidgetPaymentResult(Integer rootTag, String result);
 
   @ReactMethod
   @DoNotStrip
@@ -75,7 +75,7 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
-  public abstract void exitWidgetPaymentsheet(double rootTag, String widgetId, String result, boolean reset);
+  public abstract void exitWidgetPaymentsheet(double rootTag, String result, boolean reset);
 
   @ReactMethod
   @DoNotStrip

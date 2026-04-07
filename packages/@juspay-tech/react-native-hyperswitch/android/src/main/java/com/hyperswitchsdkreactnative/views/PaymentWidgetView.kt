@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
@@ -15,12 +16,11 @@ import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.ThemedReactContext
 import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.provider.EventCallback
 import com.hyperswitchsdkreactnative.provider.HyperFragment
 import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.utils.EventCallback
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
 import com.hyperswitchsdkreactnative.provider.ReactNativeController
-import com.hyperswitchsdkreactnative.utils.CallbackManager
 import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
 import java.util.UUID
 import kotlin.math.abs
@@ -34,8 +34,36 @@ class PaymentWidgetView : FrameLayout {
   private var profileId: String? = null
   private var widgetId = UUID.randomUUID().toString()
   private var clientSecret: String = ""
+
+  private var callback : Callback? = null
+
+  private var onEventCallback : EventCallback? = null
   private val choreographerCallbacks = mutableMapOf<Int, Choreographer.FrameCallback>()
 
+  constructor(context: Context?) : super(context!!) {
+    init(context)
+  }
+
+  constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+    init(context)
+  }
+
+  constructor(
+    context: Context, attrs: AttributeSet?, defStyleAttr: Int
+  ) : super(context, attrs, defStyleAttr) {
+    init(context)
+  }
+
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    initWidget(HyperProvider.publishableKey ?: "")
+  }
+
+  private fun init(context: Context) {
+    this.context = context
+    launchOptions = LaunchOptions(context.applicationContext, BuildConfig.VERSION_NAME)
+    this.publishableKey = HyperProvider.publishableKey
+  }
   fun setFragment(fragment: HyperFragment){
     this.fragment = fragment
   }
@@ -58,26 +86,6 @@ class PaymentWidgetView : FrameLayout {
     this.widgetId = widgetId
   }
 
-
-  constructor(context: Context?) : super(context!!) {
-    init(context)
-  }
-
-  constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-    init(context)
-  }
-
-  constructor(
-    context: Context, attrs: AttributeSet?, defStyleAttr: Int
-  ) : super(context, attrs, defStyleAttr) {
-    init(context)
-  }
-
-  private fun init(context: Context) {
-    this.context = context
-    launchOptions = LaunchOptions(context.applicationContext, BuildConfig.VERSION_NAME)
-    this.publishableKey = HyperProvider.publishableKey
-  }
 
   fun initWidget(publishableKey: String) {
     initWidget(publishableKey, this.profileId ?: "")
@@ -117,17 +125,13 @@ class PaymentWidgetView : FrameLayout {
   }
 
   fun onPaymentResult(callback: Callback) {
-    CallbackManager.setCallback(callback, true, this.widgetId)
+    this.callback = callback
   }
 
   fun onEvent(eventCallback: EventCallback) {
-    CallbackManager.setEventCallback(this.widgetId, eventCallback)
+    this.onEventCallback = eventCallback
   }
 
-  override fun onAttachedToWindow() {
-    super.onAttachedToWindow()
-    initWidget(HyperProvider.publishableKey ?: "")
-  }
 
   fun getLaunchOptions() : Bundle =
     this.launchOptions.getBundle(
@@ -185,8 +189,9 @@ class PaymentWidgetView : FrameLayout {
 
       frameLayout.post { this.getFragment()?.view?.requestLayout() }
     }
+    callback?.let { it -> this.fragment?.setOnPaymentResult(it)}
+    onEventCallback?.let { it -> this.fragment?.setOnEventCallback(it) }
   }
-
   private fun setupLayout(view: View) {
     val callback = object : Choreographer.FrameCallback {
       override fun doFrame(frameTimeNanos: Long) {

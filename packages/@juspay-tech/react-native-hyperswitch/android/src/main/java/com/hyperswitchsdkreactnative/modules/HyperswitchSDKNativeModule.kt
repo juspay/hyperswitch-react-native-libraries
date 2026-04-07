@@ -1,24 +1,16 @@
 package com.hyperswitchsdkreactnative.modules
 
 import android.util.Log
-import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactContext
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.UIManager
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
-import com.facebook.react.modules.core.DeviceEventManagerModule
-import com.facebook.react.uimanager.IllegalViewOperationException
-import com.facebook.react.uimanager.UIManagerModule
 import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
-import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resetView
-import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resolvePromise
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resetView
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resolvePromise
 import com.hyperswitchsdkreactnative.provider.HyperFragment
-import com.hyperswitchsdkreactnative.utils.CallbackManager
-import com.hyperswitchsdkreactnative.views.PaymentWidgetView
 import io.hyperswitch.payments.GooglePayCallbackManager
 
 /**
@@ -87,7 +79,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   }
 
 
-  override fun notifyWidgetPaymentResult(rootTag: Int, requestId: String, result: String) {
+  override fun notifyWidgetPaymentResult(rootTag: Int, result: String) {
     try {
       HyperFragment.resolveConfirmPayment(rootTag, result)
     } catch (_: Exception) {
@@ -115,11 +107,10 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
 
   override fun exitWidgetPaymentsheet(
     rootTag: Double,
-    widgetId: String,
     result: String,
     reset: Boolean
   ) {
-    CallbackManager.executeCallback(result, widgetId)
+    HyperFragment.onPaymentResultEvent(rootTag.toInt(), result)
   }
 
   override fun launchWidgetPaymentSheet(requestObj: String, callback: Callback) {

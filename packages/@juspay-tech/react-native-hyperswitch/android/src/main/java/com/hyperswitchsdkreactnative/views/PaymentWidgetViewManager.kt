@@ -1,11 +1,6 @@
 package com.hyperswitchsdkreactnative.views
 
 import android.util.Log
-import android.view.Choreographer
-import android.view.View
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.FrameLayout
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Dynamic
@@ -16,12 +11,10 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.uimanager.events.RCTEventEmitter
+import com.facebook.react.uimanager.events.RCTModernEventEmitter
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerDelegate
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerInterface
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.provider.HyperFragment
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
 import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
 import java.util.UUID
@@ -41,7 +34,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   private var context: ReactApplicationContext? = null
   private lateinit var view : PaymentWidgetView
 
-  // Track choreographer callbacks per view to allow cleanup
 
   override fun createViewInstance(reactContext: ThemedReactContext): PaymentWidgetView {
     launchOptions = LaunchOptions(reactContext.applicationContext, BuildConfig.VERSION_NAME)
@@ -63,11 +55,10 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
       val event = Arguments.createMap().apply {
         putString("result", result[0] as String?)
       }
-
       try {
         val reactContext = view.context as? ReactContext
-        reactContext?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
-          view.id, "topPaymentResult", event
+        reactContext?.getJSModule(RCTModernEventEmitter::class.java)?.receiveEvent(
+          view.id, "onPaymentResult", event
         )
       } catch (e: Exception) {
         Log.e("PaymentWidgetManager", "Failed to send payment result event", e)
@@ -102,15 +93,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     options ?: return
     val map = options.asMap()
     view.configuration(map)
-
-//     If fragment already exists, tear it down and re-show
-//    val tag = "HyperPaymentSheet_${view.id}"
-//    val activity = context?.currentActivity as? FragmentActivity ?: return
-//    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
-//    if (existingFragment != null) {
-//      removeWidget(view)
-//      view.post { showWidgetInternal(view) }
-//    }
   }
 
   override fun getCommandsMap() = mapOf(
@@ -130,7 +112,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   }
 
   override fun getExportedCustomDirectEventTypeConstants() = mapOf(
-    "topPaymentResult" to mapOf(
+    "onPaymentResult" to mapOf(
       "registrationName" to "onPaymentResult"
     )
   )
