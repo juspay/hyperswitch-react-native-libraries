@@ -143,7 +143,7 @@ class HyperHeadlessModule internal constructor(private val rct: ReactApplication
     }
 
     @ReactMethod
-    fun exitHeadless(rootTag: Double, widgetId: String, status: String) {
+    fun exitHeadless(status: String) {
         ExitHeadlessCallBackManager.executeCallback(status)
         // Reset confirm guard so the widget is ready for the next payment cycle.
         HeadlessFlowController.resetConfirmState()
