@@ -28,16 +28,16 @@ import kotlin.math.abs
 class PaymentWidgetView : FrameLayout {
   private var configuration: ReadableMap? = null
   private lateinit var launchOptions: LaunchOptions
-  private var fragment : HyperFragment? =null
+  private var fragment: HyperFragment? = null
   private lateinit var context: Context
   private var publishableKey: String? = null
   private var profileId: String? = null
   private var widgetId = UUID.randomUUID().toString()
   private var clientSecret: String = ""
 
-  private var callback : Callback? = null
+  private var callback: Callback? = null
 
-  private var onEventCallback : EventCallback? = null
+  private var onEventCallback: EventCallback? = null
   private val choreographerCallbacks = mutableMapOf<Int, Choreographer.FrameCallback>()
 
   constructor(context: Context?) : super(context!!) {
@@ -64,7 +64,8 @@ class PaymentWidgetView : FrameLayout {
     launchOptions = LaunchOptions(context.applicationContext, BuildConfig.VERSION_NAME)
     this.publishableKey = HyperProvider.publishableKey
   }
-  fun setFragment(fragment: HyperFragment){
+
+  fun setFragment(fragment: HyperFragment) {
     this.fragment = fragment
   }
 
@@ -72,11 +73,11 @@ class PaymentWidgetView : FrameLayout {
     return this.fragment
   }
 
-  fun getConfiguration(): ReadableMap?{
+  fun getConfiguration(): ReadableMap? {
     return this.configuration
   }
 
-  fun getClientSecret():String{
+  fun getClientSecret(): String {
     return this.clientSecret
   }
 
@@ -112,9 +113,10 @@ class PaymentWidgetView : FrameLayout {
   }
 
 
-  fun isClientSecretEmpty():Boolean {
+  fun isClientSecretEmpty(): Boolean {
     return this.clientSecret.isEmpty()
   }
+
   fun setWidgetType(widgetType: String?) {
     this.widgetType = widgetType
   }
@@ -133,7 +135,7 @@ class PaymentWidgetView : FrameLayout {
   }
 
 
-  fun getLaunchOptions() : Bundle =
+  fun getLaunchOptions(): Bundle =
     this.launchOptions.getBundle(
       publishableKey = HyperProvider.publishableKey,
       clientSecret = this.clientSecret,
@@ -145,14 +147,13 @@ class PaymentWidgetView : FrameLayout {
       widgetId = this.widgetId
     )
 
-  fun confirmPayment(callback: Callback){
+  fun confirmPayment(callback: Callback) {
     this.fragment?.confirmPayment(callback)
   }
 
   fun setPaymentIntent(clientSecret: String) {
     this.clientSecret = clientSecret
   }
-
 
   fun showWidgetInternal() {
     if (this.isClientSecretEmpty()) {
@@ -161,37 +162,50 @@ class PaymentWidgetView : FrameLayout {
     }
     this.initWidget(HyperProvider.publishableKey ?: "")
 
-    val activity = (context as ThemedReactContext).reactApplicationContext.currentActivity as? FragmentActivity
-      ?: throw IllegalStateException("PaymentWidget must be attached to a FragmentActivity")
+    val activity =
+      (context as ThemedReactContext).reactApplicationContext.currentActivity as? FragmentActivity
 
-    if (activity.isFinishing || activity.isDestroyed) return
+    activity?.let {
+      if (activity.isFinishing || activity.isDestroyed) return
 
-    val tag = "HyperPaymentSheet_${this.id}"
-    HyperFragmentManager.cancelPending(tag)
-    this.setFragment(HyperFragment.Builder().setComponentName("hyperSwitch")
-      .setLaunchOptions(this.getLaunchOptions()).build())
-
-    val frameLayout = FrameLayout(activity).apply {
-      layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-    }
-    this.addView(frameLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-    frameLayout.post {
-      frameLayout.measure(
-        View.MeasureSpec.makeMeasureSpec(this.width, View.MeasureSpec.EXACTLY),
-        View.MeasureSpec.makeMeasureSpec(this.height, View.MeasureSpec.EXACTLY)
-      )
-      frameLayout.layout(0, 0, frameLayout.measuredWidth, frameLayout.measuredHeight)
-      setupLayout(frameLayout)
-
-      HyperFragmentManager.addOrReplace(
-        activity = activity, container = frameLayout, fragment = this.getFragment() as Fragment, tag = tag
+      val tag = "HyperPaymentSheet_${this.id}"
+      HyperFragmentManager.cancelPending(tag)
+      this.setFragment(
+        HyperFragment.Builder().setComponentName("hyperSwitch")
+          .setLaunchOptions(this.getLaunchOptions()).build()
       )
 
-      frameLayout.post { this.getFragment()?.view?.requestLayout() }
+      val frameLayout = FrameLayout(activity).apply {
+        layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+      }
+      this.addView(frameLayout, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+      frameLayout.post {
+        frameLayout.measure(
+          View.MeasureSpec.makeMeasureSpec(this.width, View.MeasureSpec.EXACTLY),
+          View.MeasureSpec.makeMeasureSpec(this.height, View.MeasureSpec.EXACTLY)
+        )
+        frameLayout.layout(0, 0, frameLayout.measuredWidth, frameLayout.measuredHeight)
+        setupLayout(frameLayout)
+
+        HyperFragmentManager.addOrReplace(
+          activity = activity,
+          container = frameLayout,
+          fragment = this.getFragment() as Fragment,
+          tag = tag
+        )
+
+        frameLayout.post { this.getFragment()?.view?.requestLayout() }
+      }
+      callback?.let { originalCallback ->
+        this.fragment?.setOnPaymentResult { args ->
+          originalCallback.invoke(*args)
+          removeWidget()
+        }
+      }
+      onEventCallback?.let { it -> this.fragment?.setOnEventCallback(it) }
     }
-    callback?.let { it -> this.fragment?.setOnPaymentResult(it)}
-    onEventCallback?.let { it -> this.fragment?.setOnEventCallback(it) }
   }
+
   private fun setupLayout(view: View) {
     val callback = object : Choreographer.FrameCallback {
       override fun doFrame(frameTimeNanos: Long) {
@@ -218,13 +232,15 @@ class PaymentWidgetView : FrameLayout {
     try {
       this.cancelPendingInputEvents()
       stopLayout()
-      val activity = (context as ThemedReactContext).reactApplicationContext as? FragmentActivity
+      val activity =
+        (context as ThemedReactContext).reactApplicationContext.currentActivity as? FragmentActivity
       val tag = "HyperPaymentSheet_${this.id}"
       activity?.let { HyperFragmentManager.remove(it, tag) }
     } catch (_: Exception) {
       // Handle the errors
     }
   }
+
   private fun manuallyLayoutChildren(view: View) {
     view.measure(
       View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY),
@@ -258,6 +274,7 @@ class PaymentWidgetView : FrameLayout {
         // Tell parent RN ScrollView to back off - let fragment handle it initially
         parent?.requestDisallowInterceptTouchEvent(true)
       }
+
       MotionEvent.ACTION_MOVE -> {
         val dy = abs(ev.y - startY)
         val dx = abs(ev.x - startX)
@@ -269,6 +286,7 @@ class PaymentWidgetView : FrameLayout {
           parent?.requestDisallowInterceptTouchEvent(false)
         }
       }
+
       MotionEvent.ACTION_UP,
       MotionEvent.ACTION_CANCEL -> {
         parent?.requestDisallowInterceptTouchEvent(false)

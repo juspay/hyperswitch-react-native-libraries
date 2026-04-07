@@ -11,7 +11,7 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.uimanager.events.RCTModernEventEmitter
+import com.facebook.react.uimanager.events.RCTEventEmitter
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerDelegate
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerInterface
 import com.hyperswitchsdkreactnative.BuildConfig
@@ -57,7 +57,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
       }
       try {
         val reactContext = view.context as? ReactContext
-        reactContext?.getJSModule(RCTModernEventEmitter::class.java)?.receiveEvent(
+        reactContext?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
           view.id, "onPaymentResult", event
         )
       } catch (e: Exception) {

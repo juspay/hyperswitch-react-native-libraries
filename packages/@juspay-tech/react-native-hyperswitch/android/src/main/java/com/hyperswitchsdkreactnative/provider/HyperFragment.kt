@@ -35,17 +35,18 @@ data class OnEventResult(
 typealias EventCallback = (OnEventResult) -> Unit
 
 class HyperFragment : ReactFragment() {
-  private lateinit var onPaymentResult : Callback
+  private lateinit var onPaymentResult: Callback
 
 
-  private lateinit var eventResultCallback : EventCallback
-  fun setOnPaymentResult(callback: Callback){
+  private lateinit var eventResultCallback: EventCallback
+  fun setOnPaymentResult(callback: Callback) {
     this.onPaymentResult = callback
   }
 
-  fun setOnEventCallback(eventCallback: EventCallback){
+  fun setOnEventCallback(eventCallback: EventCallback) {
     this.eventResultCallback = eventCallback
   }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     registerEventBus()
@@ -55,10 +56,10 @@ class HyperFragment : ReactFragment() {
   private val listener = object : ReactInstanceEventListener {
     override fun onReactContextInitialized(reactContext: ReactContext) {
       val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
-      if(::onPaymentResult.isInitialized) {
+      if (::onPaymentResult.isInitialized) {
         paymentEventCallbacks[rootTag] = onPaymentResult
       }
-      if(::eventResultCallback.isInitialized) {
+      if (::eventResultCallback.isInitialized) {
         onEventCallBacks[rootTag] = eventResultCallback
       }
     }
@@ -84,12 +85,17 @@ class HyperFragment : ReactFragment() {
   }
 
   fun confirmPayment(callback: Callback) {
-    val rootTag = view?.id ?: -1
+    val rootTag = view?.id
+    if(rootTag == -1){
+      callback.invoke("ERROR","FAILED")
+      return
+    }
+
     if (confirmActionCallbacks.get(rootTag) != null) {
       callback.invoke("ERROR", "ALREADY_IN_PROGRESS")
       return
     }
-    confirmActionCallbacks[rootTag] = callback
+    confirmActionCallbacks[rootTag as Int] = callback
     val map = Arguments.createMap()
     map.putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
     map.putInt("rootTag", rootTag)
@@ -97,7 +103,6 @@ class HyperFragment : ReactFragment() {
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("triggerWidgetAction", map)
   }
-
 
 
   /**
@@ -132,6 +137,7 @@ class HyperFragment : ReactFragment() {
       }
     }
   }
+
   /**
    * Recursively find all ReactScrollViews and ReactHorizontalScrollViews in the view hierarchy.
    */
@@ -205,23 +211,23 @@ class HyperFragment : ReactFragment() {
   companion object {
     @Volatile
     private var confirmActionCallbacks = ConcurrentHashMap<Int, Callback>()
+
     @Volatile
     private var paymentEventCallbacks = ConcurrentHashMap<Int, Callback>()
+
     @Volatile
     private var onEventCallBacks = ConcurrentHashMap<Int, EventCallback>()
     fun onPaymentResultEvent(rootTag: Int, result: String) {
       try {
-        if(confirmActionCallbacks[rootTag] != null){
-          confirmActionCallbacks[rootTag]?.invoke(result)
-        }else {
-          paymentEventCallbacks[rootTag]?.invoke(result)
-        }
-      } catch (_: Exception) {
-        Log.e("HyperModule", "Error in resolveConfirmPayment")
+        confirmActionCallbacks[rootTag]?.invoke(result)
+        paymentEventCallbacks[rootTag]?.invoke(result)
+      } catch (e: Exception) {
+        e.printStackTrace()
+        Log.e("HyperModule", "Error in paymentResult")
       }
     }
 
-    fun onEvents(rootTag: Int, result: String){
+    fun onEvents(rootTag: Int, result: String) {
       try {
         onEventCallBacks[rootTag]?.invoke(
           OnEventResult(
@@ -229,6 +235,7 @@ class HyperFragment : ReactFragment() {
           )
         )
       } catch (_: Exception) {
+
         Log.e("HyperModule", "Error in resolveConfirmPayment")
       }
     }
@@ -237,7 +244,8 @@ class HyperFragment : ReactFragment() {
       try {
         confirmActionCallbacks[rootTag]?.invoke(result)
         confirmActionCallbacks.remove(rootTag)
-      } catch (_: Exception) {
+      } catch (e: Exception) {
+        e.printStackTrace()
         Log.e("HyperModule", "Error in resolveConfirmPayment")
       }
     }
