@@ -24,16 +24,16 @@ let emitUnknownEventWarning = (callback: paymentEvent => unit, invalidEvents: ar
   })
 }
 
-let getError: (~error: string=?) => presentPaymentSheetResult = (
-  ~error="Unknown error occurred while presenting payment sheet",
-) => {
-  {
-    error: {
-      code: "failed",
-      message: error,
-    },
-  }
-}
+// let getError: (~error: string=?) => presentPaymentSheetResult = (
+//   ~error="Unknown error occurred while presenting payment sheet",
+// ) => {
+//   {
+//     error: {
+//       code: "failed",
+//       message: error,
+//     },
+//   }
+// }
 
 let _initPaymentSession = async (params: initPaymentSessionParams): initPaymentSessionResult => {
   try {
@@ -73,26 +73,27 @@ let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
     let typeData = decodedObject->getData(~key="type", ~fallback="")
     let message = decodedObject->getData(~key="message", ~fallback="failed")
 
-    let paymentResult = {
-      status,
-      message,
-      error: errorMessage,
-      \"type": typeData,
-    }
-    let error = {
-      code,
-      message: errorMessage,
-    }
+//     let paymentResult = {
+//       status,
+//       message,
+//       error: errorMessage,
+//       type_: typeData,
+//     }
 
-    if errorMessage != "" {
-      {error, paymentResult}
-    } else {
-      {paymentResult: paymentResult}
-    }
-  } catch {
-  | _ => getError(~error="Failed to parse payment sheet result")
-  }
-}
+//     let error = {
+//       code,
+//       message: errorMessage,
+//     }
+
+//     if errorMessage != "" {
+//       {error, paymentResult}
+//     } else {
+//       {paymentResult: paymentResult}
+//     }
+//   } catch {
+//   | _ => getError(~error="Failed to parse payment sheet result")
+//   }
+// }
 
 let _presentPaymentSheet = async (params: presentPaymentSheetParams): presentPaymentSheetResult => {
   try {
@@ -166,8 +167,8 @@ let useHyper = () => {
     [isReady],
   )
 
-  {
-    initPaymentSession,
-    presentPaymentSheet,
-  }
-}
+//   {
+//     initPaymentSession,
+//     presentPaymentSheet,
+//   }
+// }
