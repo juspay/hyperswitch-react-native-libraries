@@ -1,7 +1,5 @@
 let widgetHashMap = ref(Dict.make())
 
-
-
 // Register widget
 let registerWidget = (widgetId: string, nativeViewId) => {
   widgetHashMap.contents->Dict.set(widgetId, nativeViewId)
@@ -16,31 +14,22 @@ let unregisterWidget = (widgetId: string) => {
   widgetHashMap.contents->Dict.delete(widgetId)
 }
 
-type commands = {createView: string}
-
-type viewManagerConfig = {\"Commands": commands}
-
-let nativeConfirmPayment = viewId => {
-  ReactNativeUtils.dispatchViewManagerCommand(~viewId, ~commandId=3, ~commandArgs=[])
-}
-
 // Confirm — safe, handles missing id
-let confirmPayment = (widgetId: string): promise<HyperTypes.nativeResponse> => {
+let confirmPayment = (widgetId: string): promise<NativeHyperswitchSdk.paymentResult> => {
   switch widgetHashMap.contents->Dict.get(widgetId) {
-  | Some(nativeId) => {
-      nativeConfirmPayment(nativeId)
-      let response: HyperTypes.nativeResponse = {
-        status: HyperTypes.Succeeded,
-        message: "Payment confirmation triggered",
-      }
-      Promise.resolve(response)
-    }
+  | Some(nativeId) => Promise.make((resolve, _) => {
+      NativeHyperswitchSdk.confirmPayment(nativeId, (
+        result: NativeHyperswitchSdk.paymentResult,
+      ) => {
+        resolve(({status : result.status, message: result.message}: NativeHyperswitchSdk.paymentResult))
+      })
+    })
   | None => {
       let message = "Widget " ++ widgetId ++ " not found or not mounted"
       Console.warn(message)
-      let response: HyperTypes.nativeResponse = {
-        status: HyperTypes.Failed,
-        message: message,
+      let response: NativeHyperswitchSdk.paymentResult = {
+        status: "failed",
+        message,
       }
       Promise.resolve(response)
     }

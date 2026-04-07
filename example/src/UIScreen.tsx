@@ -1,11 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import {
   PaymentWidget,
   HyperElements,
@@ -33,11 +27,8 @@ function WidgetContent({
 }) {
   const widget = useWidget();
   const [isConfirming, setIsConfirming] = useState(false);
-  const ref = useRef<paymentWidgetRef>(null);
-
+  const widgetRef = React.useRef(null);
   const handleConfirmPayment = async () => {
-    onStatusUpdate('Confirming...', 'Payment confirmation in progress');
-
     // if (!widget.isReady) {
     //   onStatusUpdate('Error', 'Widget is not ready');
     //   return;
@@ -47,10 +38,7 @@ function WidgetContent({
       setIsConfirming(true);
       onStatusUpdate('Confirming...', 'Payment confirmation in progress');
       // Call confirmPayment with widgetId
-      // const result = await widget.confirmPayment('payment-widget');
-      const result = await ref.current?.confirmPayment();
-      console.log('--- Payment confirmation result:', result);
-
+      const result = await widgetRef.current?.confirmPayment();
       // Parse the result
       const status = result?.status || 'unknown';
       const message = result?.message || 'Payment confirmation completed';
@@ -65,9 +53,9 @@ function WidgetContent({
 
   return (
     <>
-      <PaymentWidget
-        ref={ref}
-        widgetId="payment-widget"
+        <PaymentWidget
+      ref= {widgetRef}
+        widgetId="payment-widget-2"
         onPaymentResult={(result: any) => {
           console.log('--- Payment result:', result);
           if (result.errorMessage) {
@@ -81,17 +69,15 @@ function WidgetContent({
           ...getCustomisationOptions('accordion'),
         }}
       />
-
       {/* Confirm Payment Button */}
       <TouchableOpacity
         style={[
           styles.button,
           styles.confirmButton,
-          (!widget.isReady || widget.isConfirmDisabled || isConfirming) &&
-            styles.buttonDisabled,
-        ]}
+          (isConfirming) && styles.buttonDisabled
+        ]} 
         onPress={handleConfirmPayment}
-        disabled={!widget.isReady || widget.isConfirmDisabled || isConfirming}
+        disabled={ isConfirming}
       >
         <Text style={styles.buttonText}>
           {isConfirming
@@ -103,7 +89,7 @@ function WidgetContent({
       </TouchableOpacity>
 
       {/* Widget Status */}
-      <View style={styles.widgetStatus}>
+      {/* <View style={styles.widgetStatus}>
         <Text style={styles.widgetStatusText}>
           Widget Status: {widget.isReady ? 'Ready' : 'Initializing'}
         </Text>
@@ -111,7 +97,7 @@ function WidgetContent({
           Loading: {widget.isLoading ? 'Yes' : 'No'} | Disabled:{' '}
           {widget.isConfirmDisabled ? 'Yes' : 'No'}
         </Text>
-      </View>
+      </View> */}
     </>
   );
 }

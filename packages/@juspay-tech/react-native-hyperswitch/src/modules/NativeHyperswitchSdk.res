@@ -7,8 +7,7 @@ type initialise = (
 ) => promise<unit>
 
 
-// New method types for the updated API
-type confirmPayment = string => promise<string>
+
 // type completeUpdateIntent = Js.Json.t => promise<string>
 
 type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string>
@@ -94,12 +93,15 @@ type getCustomerLastUsedPaymentMethodData = unit => promise<string>
 type confirmWithCustomerDefaultPaymentMethod = unit => promise<string>
 type confirmWithCustomerLastUsedPaymentMethod = unit => promise<string>
 
+
+type confirmPayment = (int, paymentResult  => unit) => unit
+
 type nativeHyperswitchSdk = {
   initialise: initialise,
   initPaymentSession: initPaymentSession,
   presentPaymentSheet: presentPaymentSheet,
   // New methods
-  confirmPayment: confirmPayment,
+  // confirmPayment: confirmPayment,
   // completeUpdateIntent: completeUpdateIntent,
   // Headless Payment Methods
   getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
@@ -111,3 +113,35 @@ type nativeHyperswitchSdk = {
 
 @module("../specs/NativeHyperswitchSdkReactNative")
 external nativeHyperswitchSdk: nativeHyperswitchSdk = "default"
+
+
+
+// Nativemodule with NativePaymentWidget 
+
+type nativePaymentWidget = {
+  // New methods
+  confirmPayment: confirmPayment,
+}
+
+
+let nativePaymentWidgetDict =
+  Dict.get(ReactNative.NativeModules.nativeModules, "NativePaymentWidget")
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.getOr(Dict.make())
+
+let getFunctionFromModule = (dict: Dict.t<'a>, key: string, default) => {
+  switch dict->Dict.get(key) {
+  | Some(fn) => Obj.magic(fn)
+  | None => default
+  }
+}
+
+let nativePaymentWidget = {
+  confirmPayment: getFunctionFromModule(nativePaymentWidgetDict, "confirmPayment", (_, _) => ()),
+}
+
+let confirmPayment = (viewId: int, callback: paymentResult => unit) => {
+  nativePaymentWidget.confirmPayment(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}

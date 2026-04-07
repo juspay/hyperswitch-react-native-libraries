@@ -13,6 +13,7 @@
 package com.hyperswitchsdkreactnative;
 
 import com.facebook.proguard.annotations.DoNotStrip;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
