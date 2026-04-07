@@ -159,7 +159,7 @@ public class HyperswitchModule: NSObject {
 
   @objc(confirmWithCustomerDefaultPaymentMethodWithWidgetId:withResolve:reject:)
   public func confirmWithCustomerDefaultPaymentMethod(
-    widgetId: String?,
+    widgetId: String,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -172,17 +172,24 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      if HyperswitchModule.isCvcWidgetActive && !(widgetId?.isEmpty ?? true) {
+      if HyperswitchModule.isCvcWidgetActive && !widgetId.isEmpty {
           // CvcWidget active — route through widget bridge
           let result = handler.getCustomerDefaultSavedPaymentMethodData()
           switch result {
           case .success(let paymentMethod):
-              HyperswitchModule.confirmViaWidget(
-                  widgetId: widgetId!,
-                  paymentToken: paymentMethod.paymentToken,
-                  paymentMethodId: paymentMethod.paymentMethodId,
-                  resolve: resolve
-              )
+              if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
+                  HyperswitchModule.confirmViaWidget(
+                      widgetId: widgetId,
+                      paymentToken: paymentMethod.paymentToken,
+                      paymentMethodId: paymentMethod.paymentMethodId,
+                      resolve: resolve
+                  )
+              } else {
+                  // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
+                  handler.confirmWithCustomerDefaultPaymentMethod { result in
+                      resolve(HyperswitchModule.paymentResultToDict(result))
+                  }
+              }
           case .failure(let error):
               resolve([
                   "status": "failed",
@@ -200,7 +207,7 @@ public class HyperswitchModule: NSObject {
 
   @objc(confirmWithCustomerLastUsedPaymentMethodWithWidgetId:withResolve:reject:)
   public func confirmWithCustomerLastUsedPaymentMethod(
-    widgetId: String?,
+    widgetId: String,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -213,17 +220,24 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      if HyperswitchModule.isCvcWidgetActive && !(widgetId?.isEmpty ?? true) {
+      if HyperswitchModule.isCvcWidgetActive && !widgetId.isEmpty {
           // CvcWidget active — route through widget bridge
           let result = handler.getCustomerLastUsedPaymentMethodData()
           switch result {
           case .success(let paymentMethod):
-              HyperswitchModule.confirmViaWidget(
-                  widgetId: widgetId!,
-                  paymentToken: paymentMethod.paymentToken,
-                  paymentMethodId: paymentMethod.paymentMethodId,
-                  resolve: resolve
-              )
+              if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
+                  HyperswitchModule.confirmViaWidget(
+                      widgetId: widgetId,
+                      paymentToken: paymentMethod.paymentToken,
+                      paymentMethodId: paymentMethod.paymentMethodId,
+                      resolve: resolve
+                  )
+              } else {
+                  // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
+                  handler.confirmWithCustomerLastUsedPaymentMethod { result in
+                      resolve(HyperswitchModule.paymentResultToDict(result))
+                  }
+              }
           case .failure(let error):
               resolve([
                   "status": "failed",

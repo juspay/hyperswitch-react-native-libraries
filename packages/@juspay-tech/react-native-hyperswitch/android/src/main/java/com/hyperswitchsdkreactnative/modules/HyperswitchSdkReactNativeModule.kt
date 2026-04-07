@@ -8,6 +8,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
 import com.hyperswitchsdkreactnative.headless.PMError
+import com.hyperswitchsdkreactnative.headless.PaymentMethodType
 import com.hyperswitchsdkreactnative.headless.PaymentResult
 import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
@@ -165,12 +166,19 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       val defaultData = handler.getCustomerDefaultSavedPaymentMethodData()
       defaultData.fold(
         onSuccess = { pm ->
-          HeadlessFlowController.confirmViaWidget(
-            widgetId = widgetId,
-            paymentToken = pm.paymentToken,
-            paymentMethodId = pm.paymentMethodId,
-            resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
-          )
+          if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
+            HeadlessFlowController.confirmViaWidget(
+              widgetId = widgetId,
+              paymentToken = pm.paymentToken,
+              paymentMethodId = pm.paymentMethodId,
+              resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
+            )
+          } else {
+            // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
+            handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
+              promise?.resolve(paymentResultToString(result))
+            }
+          }
         },
         onFailure = { error ->
           val pmError = error as? PMError
@@ -199,14 +207,22 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     if (isCvcWidgetActive && !(widgetId.isNullOrEmpty())) {
       // CvcWidget is active — route card confirm through CvcWidget's JS context
       val lastUsedData = handler.getCustomerLastUsedPaymentMethodData()
+
       lastUsedData.fold(
         onSuccess = { pm ->
-          HeadlessFlowController.confirmViaWidget(
-            widgetId = widgetId,
-            paymentToken = pm.paymentToken,
-            paymentMethodId = pm.paymentMethodId,
-            resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
-          )
+          if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
+            HeadlessFlowController.confirmViaWidget(
+              widgetId = widgetId,
+              paymentToken = pm.paymentToken,
+              paymentMethodId = pm.paymentMethodId,
+              resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
+            )
+          } else {
+            // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
+            handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
+              promise?.resolve(paymentResultToString(result))
+            }
+          }
         },
         onFailure = { error ->
           val pmError = error as? PMError

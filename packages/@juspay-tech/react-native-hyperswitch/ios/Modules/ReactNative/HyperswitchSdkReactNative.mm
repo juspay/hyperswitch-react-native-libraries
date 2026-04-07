@@ -54,14 +54,14 @@ RCT_EXPORT_METHOD(getCustomerLastUsedPaymentMethodData:(RCTPromiseResolveBlock)r
   [HyperswitchModule.shared getCustomerLastUsedPaymentMethodDataWithResolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(nullable NSString *)widgetId
+RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(nonnull NSString *)widgetId
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
   [HyperswitchModule.shared confirmWithCustomerDefaultPaymentMethodWithWidgetId:widgetId withResolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(nullable NSString *)widgetId
+RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(nonnull NSString *)widgetId
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
