@@ -18,7 +18,7 @@ let unregisterWidget = (widgetId: string) => {
 let confirmPayment = (widgetId: string): promise<NativeHyperswitchSdk.paymentResult> => {
   switch widgetHashMap.contents->Dict.get(widgetId) {
   | Some(nativeId) => Promise.make((resolve, _) => {
-      NativeHyperswitchSdk.nativeHyperswitchSdk.confirmPayment(nativeId, (
+      NativeHyperswitchSdk.confirmPayment(nativeId, (
         result: NativeHyperswitchSdk.paymentResult,
       ) => {
         resolve(({status : result.status, message: result.message}: NativeHyperswitchSdk.paymentResult))

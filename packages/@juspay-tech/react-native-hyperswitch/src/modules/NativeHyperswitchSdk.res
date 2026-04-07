@@ -101,7 +101,7 @@ type nativeHyperswitchSdk = {
   initPaymentSession: initPaymentSession,
   presentPaymentSheet: presentPaymentSheet,
   // New methods
-  confirmPayment: confirmPayment,
+  // confirmPayment: confirmPayment,
   // completeUpdateIntent: completeUpdateIntent,
   // Headless Payment Methods
   getCustomerSavedPaymentMethods: getCustomerSavedPaymentMethods,
@@ -113,3 +113,35 @@ type nativeHyperswitchSdk = {
 
 @module("../specs/NativeHyperswitchSdkReactNative")
 external nativeHyperswitchSdk: nativeHyperswitchSdk = "default"
+
+
+
+// Nativemodule with NativePaymentWidget 
+
+type nativePaymentWidget = {
+  // New methods
+  confirmPayment: confirmPayment,
+}
+
+
+let nativePaymentWidgetDict =
+  Dict.get(ReactNative.NativeModules.nativeModules, "NativePaymentWidget")
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.getOr(Dict.make())
+
+let getFunctionFromModule = (dict: Dict.t<'a>, key: string, default) => {
+  switch dict->Dict.get(key) {
+  | Some(fn) => Obj.magic(fn)
+  | None => default
+  }
+}
+
+let nativePaymentWidget = {
+  confirmPayment: getFunctionFromModule(nativePaymentWidgetDict, "confirmPayment", (_, _) => ()),
+}
+
+let confirmPayment = (viewId: int, callback: paymentResult => unit) => {
+  nativePaymentWidget.confirmPayment(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}

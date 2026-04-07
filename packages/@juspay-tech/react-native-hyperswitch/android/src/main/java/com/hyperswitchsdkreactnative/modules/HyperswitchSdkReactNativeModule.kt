@@ -72,25 +72,6 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun confirmPayment(reactTag: Int, callback: Callback) {
-    val uiManagerModule =
-      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
-    uiManagerModule?.addUIBlock { nvhm ->
-      try {
-        val view = nvhm.resolveView(reactTag)
-        if (view is PaymentWidgetView) {
-          val resultCallback = { it : Any ->
-            callback.invoke(it)
-          }
-          view.confirmPayment(resultCallback)
-        } else {
-          callback.invoke("ERROR", "Invalid view type")
-        }
-      } catch (e: IllegalViewOperationException) {
-        callback.invoke("ERROR", "View not found: ${e.message}")
-      }
-    }
-  }
 
   fun resetView() {
     hyperProvider?.removeSheetView(true)

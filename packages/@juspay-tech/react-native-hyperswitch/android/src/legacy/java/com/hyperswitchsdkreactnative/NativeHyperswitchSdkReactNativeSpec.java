@@ -46,8 +46,4 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
   @ReactMethod
   @DoNotStrip
   public abstract void presentPaymentSheet(ReadableMap configuration, Promise promise);
-
-  @ReactMethod
-  @DoNotStrip
-  public abstract  void confirmPayment(Integer reactTag, Callback callback);
 }

@@ -8,6 +8,7 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkNativeModule
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule
+import com.hyperswitchsdkreactnative.modules.NativePaymentWidgetNativeModule
 import com.hyperswitchsdkreactnative.views.GooglePayButtonViewManager
 import com.hyperswitchsdkreactnative.views.PaymentWidgetViewManager
 import java.util.ArrayList
@@ -17,6 +18,7 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
     return when (name) {
       HyperswitchSdkReactNativeModule.NAME -> HyperswitchSdkReactNativeModule(reactContext)
       HyperswitchSdkNativeModule.NAME -> HyperswitchSdkNativeModule(reactContext)
+      NativePaymentWidgetNativeModule.NAME -> NativePaymentWidgetNativeModule(reactContext)
       else -> null
     }
   }
@@ -30,7 +32,11 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
 
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
-      arrayOf(HyperswitchSdkReactNativeModule.NAME, HyperswitchSdkNativeModule.NAME).associateWith {
+      arrayOf(
+        HyperswitchSdkReactNativeModule.NAME,
+        HyperswitchSdkNativeModule.NAME,
+        NativePaymentWidgetNativeModule.NAME
+      ).associateWith {
         ReactModuleInfo(it, it, false, false, false, true)
       }.toMutableMap()
     }

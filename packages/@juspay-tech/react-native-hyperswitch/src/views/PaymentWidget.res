@@ -1,38 +1,13 @@
-@module("react-native") @scope("UIManager")
-external dispatchViewManagerCommand: (
-  ~viewId: int,
-  ~commandId: int,
-  ~commandArgs: array<int>,
-) => unit = "dispatchViewManagerCommand"
-
-@module("react-native")
-external findNodeHandle: Js.Nullable.t<unit> => int = "findNodeHandle"
-
 @scope("JSON") @val external parse: string => NativeModuleTypes.paymentResult = "parse"
-
-type commands = {createView: string}
-
-type viewManagerConfig = {\"Commands": commands}
-
-// @module("react-native") @scope("UIManager")
-// external getViewManagerConfig: string => viewManagerConfig = "getViewManagerConfig"
-// @send external commands: Js.t<{..}> => Js.t<{..}> = "Commands"
-// @send external createViewCmd: Js.t<{..}> => string = "createView"
-
-// @val external toString: 't => string = "toString"
-
-// let getCreateViewCommand = () => {
-//   getViewManagerConfig("NativePaymentWidget").\"Commands".createView->toString
-//   }
 
 let createView = viewId => {
   ReactNativeUtils.dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
 }
 
-type paymentWidgetRef = {confirmPayment: unit => promise<HyperTypes.nativeResponse>}
+type paymentWidgetRef = {confirmPayment: unit => promise<NativeHyperswitchSdk.paymentResult>}
 
 type pendingConfirmation = {
-  resolve: HyperTypes.nativeResponse => unit,
+  resolve: NativeHyperswitchSdk.paymentResult => unit,
   reject: exn => unit,
 }
 
@@ -55,7 +30,7 @@ let make = React.forwardRef((
     let checkAndRegister = () => {
       switch Js.Nullable.toOption(viewRef.current) {
       | Some(_) => {
-          let id = findNodeHandle(viewRef.current)
+          let id = ReactNativeUtils.findNodeHandle(viewRef.current)
           if id != -1 {
             setViewId(_ => Some(id))
           }
@@ -89,28 +64,23 @@ let make = React.forwardRef((
     ref,
     () => {
       {
-        confirmPayment: (): promise<HyperTypes.nativeResponse> => {
+        confirmPayment: (): promise<NativeHyperswitchSdk.paymentResult> => {
           switch Nullable.toOption(viewRef.current) {
           | None =>
             Promise.resolve(
-              ({status: HyperTypes.Failed, message: "Widget not ready"}: HyperTypes.nativeResponse),
+              ({status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult),
             )
           | Some(_) =>
-            let id = findNodeHandle(viewRef.current)
+            let id = ReactNativeUtils.findNodeHandle(viewRef.current)
             if id == -1 {
               Promise.resolve(
-                ({status: HyperTypes.Failed, message: "Widget not ready"}: HyperTypes.nativeResponse),
+                ({status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult ),
               )
             } else {
               Promise.make((resolve, _) => {
-                NativeHyperswitchSdk.nativeHyperswitchSdk.confirmPayment(id, (result: NativeHyperswitchSdk.paymentResult) => {
-                  let status = switch result.status {
-                  | "succeeded" => HyperTypes.Succeeded
-                  | "failed" => HyperTypes.Failed
-                  | "cancelled" => HyperTypes.Cancelled
-                  | _ => HyperTypes.Error
-                  }
-                  resolve(({status, message: result.message}: HyperTypes.nativeResponse))
+                NativeHyperswitchSdk.confirmPayment(id, (result: NativeHyperswitchSdk.paymentResult) => {
+                  let status = result.status 
+                  resolve(({status, message: result.message}: NativeHyperswitchSdk.paymentResult))
                 })
               })
             }

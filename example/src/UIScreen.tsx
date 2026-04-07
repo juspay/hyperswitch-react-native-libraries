@@ -37,8 +37,7 @@ function WidgetContent({
       setIsConfirming(true);
       onStatusUpdate('Confirming...', 'Payment confirmation in progress');
       // Call confirmPayment with widgetId
-      const result = await widget.confirmPayment("payment-widget");
-      
+      const result = await widgetRef.current?.confirmPayment();
       // Parse the result
       const status = result?.status || 'unknown';
       const message = result?.message || 'Payment confirmation completed';
@@ -53,9 +52,9 @@ function WidgetContent({
 
   return (
     <>
-      <PaymentWidget
+        <PaymentWidget
       ref= {widgetRef}
-        widgetId="payment-widget"
+        widgetId="payment-widget-2"
         onPaymentResult={(result: any) => {
           if (result.errorMessage) {
             onStatusUpdate(`Payment failed: ${result.errorMessage}`);
@@ -68,7 +67,6 @@ function WidgetContent({
           ...getCustomisationOptions('accordion'), 
         }}
       />
-      
       {/* Confirm Payment Button */}
       <TouchableOpacity 
         style={[

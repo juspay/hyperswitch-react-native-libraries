@@ -1,18 +1,24 @@
 package com.hyperswitchsdkreactnative.modules
 
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.UIManager
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.UIManagerModule
 import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resetView
 import com.hyperswitchsdkreactnative.modules.HyperswitchSdkReactNativeModule.Companion.resolvePromise
+import com.hyperswitchsdkreactnative.provider.HyperFragment
 import com.hyperswitchsdkreactnative.utils.CallbackManager
+import com.hyperswitchsdkreactnative.views.PaymentWidgetView
 import io.hyperswitch.payments.GooglePayCallbackManager
 
 /**
@@ -21,7 +27,7 @@ import io.hyperswitch.payments.GooglePayCallbackManager
  */
 
 enum class EventName {
-  CONFIRM_PAYMENT_EVENT
+  CONFIRM_PAYMENT_ACTION
 }
 
 class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
@@ -80,6 +86,15 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+
+  override fun notifyWidgetPaymentResult(rootTag: Int, requestId: String, result: String) {
+    try {
+      HyperFragment.resolveConfirmPayment(rootTag, result)
+    } catch (_: Exception) {
+      Log.i("HyperModule", "Error in notifyWidgetPaymentResult")
+    }
+  }
+
   override fun exitWidget(result: String, widgetType: String) {
     try {
       resolvePromise(result)
@@ -135,7 +150,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
 
 
   override fun addListener(eventName: String?) {
-    Log.i("Manideep", eventName.toString())
+
   }
 
   override fun removeListeners(count: Double?) {
@@ -145,14 +160,5 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "HyperModule"
     private var reactContextInstance: ReactContext? = null
-
-    fun emitEventToJS(eventName: String, payload: Any) {
-      reactContextInstance?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-        ?.emit(eventName, payload)
-    }
-
-    fun emitConfirmPaymentEvent(requestId: String) {
-      emitEventToJS(EventName.CONFIRM_PAYMENT_EVENT.name, requestId)
-    }
   }
 }
