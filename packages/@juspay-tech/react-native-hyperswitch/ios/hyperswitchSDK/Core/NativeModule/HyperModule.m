@@ -9,6 +9,7 @@ RCT_EXTERN_METHOD(exitPaymentMethodManagement: (nonnull NSNumber *)reactTag :(NS
 RCT_EXTERN_METHOD(exitCardForm: (NSString)rnMessage)
 RCT_EXTERN_METHOD(launchWidgetPaymentSheet: (NSDictionary) rnMessage :(RCTResponseSenderBlock)rnCallback)
 RCT_EXTERN_METHOD(onAddPaymentMethod: (NSString)rnMessage)
+RCT_EXTERN_METHOD(emitConfirmPayment: (NSDictionary)data)
 RCT_EXTERN_METHOD(exitWidgetPaymentsheet: (nonnull NSNumber *)reactTag :(NSString)rnMessage :(BOOL)reset)
 RCT_EXTERN_METHOD(exitWidgetPaymentsheet: (nonnull NSNumber *)rootTag :(NSString)widgetId :(NSString)result :(BOOL)reset)
 RCT_EXTERN_METHOD(launchApplePay: (NSString)rnMessage :(RCTResponseSenderBlock)rnCallback)

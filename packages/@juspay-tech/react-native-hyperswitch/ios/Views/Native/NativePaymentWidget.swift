@@ -44,6 +44,11 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
 
     @objc func didSetProps() {
         if let clientSecret = clientSecret {
+            // Track CVC widget active state
+            if widgetType == "cvcWidget" {
+                HyperswitchModule.isCvcWidgetActive = true
+            }
+
             RNViewManager.sharedInstance.responseHandler = self
             let hyperParams = HyperParams.getHyperParams()
             let props: [String : Any] = [
@@ -92,5 +97,14 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
             // TODO: temp 
             self.rootView?.removeFromSuperview()
         }
+    }
+
+    override func removeFromSuperview() {
+        if widgetType == "cvcWidget" {
+            HyperswitchModule.isCvcWidgetActive = false
+        }
+        rootView?.removeFromSuperview()
+        rootView = nil
+        super.removeFromSuperview()
     }
 }

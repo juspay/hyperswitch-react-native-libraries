@@ -14,6 +14,7 @@ public class HyperswitchModule: NSObject {
   @objc public static let shared: HyperswitchModule = HyperswitchModule()
   private var paymentSession: PaymentSession?
   private var paymentSessionHandler: PaymentSessionHandler?
+  @objc internal static var isCvcWidgetActive: Bool = false
 
   @objc(initialiseWithPublishableKey:customBackendUrl:customLogUrl:customParams:resolve:reject:)
   public func initialise(publishableKey: String,
@@ -156,8 +157,9 @@ public class HyperswitchModule: NSObject {
       }
   }
 
-  @objc
+  @objc(confirmWithCustomerDefaultPaymentMethodWithWidgetId:withResolve:reject:)
   public func confirmWithCustomerDefaultPaymentMethod(
+    widgetId: String?,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -170,32 +172,35 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      handler.confirmWithCustomerDefaultPaymentMethod { result in
+      if HyperswitchModule.isCvcWidgetActive && !(widgetId?.isEmpty ?? true) {
+          // CvcWidget active — route through widget bridge
+          let result = handler.getCustomerDefaultSavedPaymentMethodData()
           switch result {
-          case .completed(let data):
-              resolve([
-                  "status": "success",
-                  "message": "Payment confirmed successfully",
-                  "data": data
-              ])
-          case .failed(let error as NSError):
+          case .success(let paymentMethod):
+              HyperswitchModule.confirmViaWidget(
+                  widgetId: widgetId!,
+                  paymentToken: paymentMethod.paymentToken,
+                  paymentMethodId: paymentMethod.paymentMethodId,
+                  resolve: resolve
+              )
+          case .failure(let error):
               resolve([
                   "status": "failed",
-                  "code": error.domain,
-                  "message": error.userInfo["message"] as? String ?? "Payment confirmation failed"
+                  "code": error.code,
+                  "message": error.message
               ])
-          case .canceled(let data):
-              resolve([
-                  "status": "cancelled",
-                  "message": "Payment confirmation cancelled",
-                  "data": data
-              ])
+          }
+      } else {
+          // No CvcWidget — confirm through HeadlessTask callback (cvc will be nil)
+          handler.confirmWithCustomerDefaultPaymentMethod { result in
+              resolve(HyperswitchModule.paymentResultToDict(result))
           }
       }
   }
 
-  @objc
+  @objc(confirmWithCustomerLastUsedPaymentMethodWithWidgetId:withResolve:reject:)
   public func confirmWithCustomerLastUsedPaymentMethod(
+    widgetId: String?,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -208,27 +213,88 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      handler.confirmWithCustomerLastUsedPaymentMethod { result in
+      if HyperswitchModule.isCvcWidgetActive && !(widgetId?.isEmpty ?? true) {
+          // CvcWidget active — route through widget bridge
+          let result = handler.getCustomerLastUsedPaymentMethodData()
           switch result {
-          case .completed(let data):
-              resolve([
-                  "status": "success",
-                  "message": "Payment confirmed successfully",
-                  "data": data
-              ])
-          case .failed(let error as NSError):
+          case .success(let paymentMethod):
+              HyperswitchModule.confirmViaWidget(
+                  widgetId: widgetId!,
+                  paymentToken: paymentMethod.paymentToken,
+                  paymentMethodId: paymentMethod.paymentMethodId,
+                  resolve: resolve
+              )
+          case .failure(let error):
               resolve([
                   "status": "failed",
-                  "code": error.domain,
-                  "message": error.userInfo["message"] as? String ?? "Payment confirmation failed"
-              ])
-          case .canceled(let data):
-              resolve([
-                  "status": "cancelled",
-                  "message": "Payment confirmation cancelled",
-                  "data": data
+                  "code": error.code,
+                  "message": error.message
               ])
           }
+      } else {
+          // No CvcWidget — confirm through HeadlessTask callback (cvc will be nil)
+          handler.confirmWithCustomerLastUsedPaymentMethod { result in
+              resolve(HyperswitchModule.paymentResultToDict(result))
+          }
+      }
+  }
+
+  // MARK: - CvcWidget Confirm Routing
+
+  /// Emit "confirmPayment" event on the widget bridge so CvcWidget.res handles the confirm.
+  /// CvcWidget reads CVC from CvcRegistry, calls confirmCardPayment, which calls exitHeadless
+  /// when done — routing back through PaymentSession.exitHeadless → completion → resolve.
+  private static func confirmViaWidget(
+      widgetId: String,
+      paymentToken: String,
+      paymentMethodId: String,
+      resolve: @escaping RCTPromiseResolveBlock
+  ) {
+      // Set PaymentSession.completion so exitHeadless routes back to this resolve
+      PaymentSession.setConfirmCompletion { result in
+          resolve(paymentResultToDict(result))
+      }
+
+      // Emit "confirmPayment" on the widget bridge
+      let payload: [String: Any] = [
+          "paymentToken": paymentToken,
+          "paymentMethodId": paymentMethodId,
+          "widgetId": widgetId
+      ]
+      DispatchQueue.main.async {
+          if let hyperModule = RNViewManager.sharedInstance.bridge.module(for: HyperModule.self) as? HyperModule {
+              hyperModule.emitConfirmPayment(data: payload)
+          } else {
+              resolve([
+                  "status": "failed",
+                  "code": "NO_WIDGET_BRIDGE",
+                  "message": "Widget bridge not available for CvcWidget confirm"
+              ])
+          }
+      }
+  }
+
+  /// Convert a PaymentResult to a dictionary suitable for RCTPromiseResolveBlock.
+  private static func paymentResultToDict(_ result: PaymentResult) -> [String: Any] {
+      switch result {
+      case .completed(let data):
+          return [
+              "status": "success",
+              "message": "Payment confirmed successfully",
+              "data": data
+          ]
+      case .failed(let error as NSError):
+          return [
+              "status": "failed",
+              "code": error.domain,
+              "message": error.userInfo["message"] as? String ?? "Payment confirmation failed"
+          ]
+      case .canceled(let data):
+          return [
+              "status": "cancelled",
+              "message": "Payment confirmation cancelled",
+              "data": data
+          ]
       }
   }
 }
