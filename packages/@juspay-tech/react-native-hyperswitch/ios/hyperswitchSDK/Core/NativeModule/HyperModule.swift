@@ -37,8 +37,8 @@ internal class HyperModule: RCTEventEmitter {
   }
 
   @objc
-  func confirmPayment(_ rootTag: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
-    let eventData: [String: String] = [
+  func confirmPayment(_ rootTag: NSNumber) {
+    let eventData: [String: Any] = [
       "rootTag": rootTag,
       "actionType": "confirmPayment"
     ]
@@ -106,11 +106,11 @@ internal class HyperModule: RCTEventEmitter {
   }
 
   @objc
-  private func exitWidgetPaymentsheet(_ rootTag: NSNumber,_ result: String, _ reset: Bool) {
-    NotificationCenter.default.post(
-      name: .hyperWidgetPaymentResult,
-      object: nil,
-      userInfo: ["rootTag": rootTag, "response": result, "shouldRemoveView": true]
+  private func exitWidgetPaymentsheet(_ rootTag: NSNumber, _ result: String, _ reset: Bool) {
+    WidgetResponseRegistry.shared.dispatch(
+      rootTag: rootTag,
+      response: result,
+      shouldRemoveView: true
     )
   }
 
@@ -148,10 +148,10 @@ internal class HyperModule: RCTEventEmitter {
 
   @objc
   private func notifyWidgetPaymentResult(_ rootTag: NSNumber, _ rnMessage: String) {
-    NotificationCenter.default.post(
-      name: .hyperWidgetPaymentResult,
-      object: nil,
-      userInfo: ["rootTag": rootTag, "response": rnMessage]
+    WidgetResponseRegistry.shared.dispatch(
+      rootTag: rootTag,
+      response: rnMessage,
+      shouldRemoveView: false
     )
   }
 

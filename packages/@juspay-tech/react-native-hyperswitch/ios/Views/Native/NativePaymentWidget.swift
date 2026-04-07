@@ -10,11 +10,9 @@ import UIKit
 
 @objc(NativePaymentWidget)
 internal class NativePaymentWidget: RCTViewManager {
-    private var nativePaymentWidgetView: NativePaymentWidgetView?
-    
+
     override func view() -> NativePaymentWidgetView {
-      self.nativePaymentWidgetView = NativePaymentWidgetView()
-      return self.nativePaymentWidgetView ?? NativePaymentWidgetView()
+        return NativePaymentWidgetView()
     }
 
     @objc override static func requiresMainQueueSetup() -> Bool {
@@ -36,17 +34,9 @@ internal class NativePaymentWidget: RCTViewManager {
     }
 
     @objc func confirmPayment(_ reactTag: NSNumber) {
-        bridge.uiManager.addUIBlock { uiManager, viewRegistry in
-          guard let _view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return
-          }
-          print("-- react Tag: ", reactTag);
-          print("-- root Tag from bundle: ", self.nativePaymentWidgetView?.id?.stringValue);
-          
-          HyperModule.shared?.confirmPayment(self.nativePaymentWidgetView?.id?.stringValue ?? "", resolve: {
-                response in print("-- confirm payment resposne: ", response)
-            }, reject: {
-                a, b, error in print("-- confirm payment error: ", a, b, error)
-            })
+        bridge.uiManager.addUIBlock { _, viewRegistry in
+            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
+            view.confirmPayment()
         }
     }
 }
@@ -54,15 +44,13 @@ internal class NativePaymentWidget: RCTViewManager {
 internal class NativePaymentWidgetView: UIView {
 
     @objc private var rootView: RCTRootView?
-    @objc private var widgetId: String? // TODO: to remove widgetId
     @objc private var widgetType: String?
     @objc private var clientSecret: String?
     @objc private var options: [String: Any]?
-    @objc internal var onPaymentResult: RCTDirectEventBlock?
-    internal var id: NSNumber?
+    @objc private var onPaymentResult: RCTDirectEventBlock?
+    internal var rctRootTag: NSNumber?
 
     @objc func didSetProps() {
-      print()
         if let clientSecret = clientSecret {
             let hyperParams = HyperParams.getHyperParams()
             var configuration = self.options ?? [:]
@@ -70,7 +58,6 @@ internal class NativePaymentWidgetView: UIView {
             let props: [String : Any] = [
                 "configuration": configuration,
                 "type": self.widgetType as Any,
-                "widgetId": self.reactTag as Any,
                 "clientSecret": clientSecret as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
@@ -82,14 +69,17 @@ internal class NativePaymentWidgetView: UIView {
             self.rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties:initialProperties as [String : Any])
 
             if let rootView = self.rootView {
-                self.id = rootView.reactTag
+                self.rctRootTag = rootView.reactTag
                 self.addSubview(rootView)
-                NotificationCenter.default.addObserver(
-                    self,
-                    selector: #selector(handleWidgetResponse(_:)),
-                    name: .hyperWidgetPaymentResult,
-                    object: nil
-                )
+
+                // Register callback with the WidgetResponseRegistry
+                WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag) { [weak self] response, shouldRemoveView in
+                    guard let self = self else { return }
+                    self.onPaymentResult?(["result": response])
+                    if shouldRemoveView {
+                        self.rootView?.removeFromSuperview()
+                    }
+                }
             }
         }
     }
@@ -113,20 +103,13 @@ internal class NativePaymentWidgetView: UIView {
         }
     }
 
-    @objc private func handleWidgetResponse(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let rootTag = userInfo["rootTag"] as? NSNumber,
-              let response = userInfo["response"] as? String,
-              rootTag == self.id else { return }
-        onPaymentResult?(["result": response])
-        let shouldRemoveView = userInfo["shouldRemoveView"] as? Bool ?? false
-        if shouldRemoveView {
-            self.rootView?.removeFromSuperview()
-            NotificationCenter.default.removeObserver(self, name: .hyperWidgetPaymentResult, object: nil)
-        }
+    internal func confirmPayment() {
+        HyperModule.shared?.confirmPayment(self.rctRootTag ?? -1)
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        if let tag = rctRootTag {
+            WidgetResponseRegistry.shared.unregister(rootTag: tag)
+        }
     }
 }

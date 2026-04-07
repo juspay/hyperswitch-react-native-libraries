@@ -11,7 +11,6 @@
 
 @interface RCT_EXTERN_MODULE(NativePaymentWidget, RCTViewManager)
 
-RCT_EXPORT_VIEW_PROPERTY(widgetId, NSString)
 RCT_EXPORT_VIEW_PROPERTY(widgetType, NSString)
 RCT_EXPORT_VIEW_PROPERTY(options, NSDictionary)
 RCT_EXPORT_VIEW_PROPERTY(clientSecret, NSString)
