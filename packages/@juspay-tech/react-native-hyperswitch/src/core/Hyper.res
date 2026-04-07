@@ -151,12 +151,16 @@ let initPaymentSession = (
             nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()
             ->Promise.thenResolve(parseResponse)
           },
-          confirmWithCustomerDefaultPaymentMethod: () => {
-            nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod()
+          confirmWithCustomerDefaultPaymentMethod: (widgetId) => {
+            nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(widgetId)
             ->Promise.thenResolve(parseResponse)
           },
-          confirmWithCustomerLastUsedPaymentMethod: () => {
-            nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod()
+          confirmWithCustomerLastUsedPaymentMethod: (widgetId) => {
+            nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(widgetId)
+            ->Promise.thenResolve(parseResponse)
+          },
+          confirmWithCustomerPaymentToken: (paymentToken) => {
+            nativeHyperswitchSdk.confirmWithCustomerPaymentToken(paymentToken)
             ->Promise.thenResolve(parseResponse)
           },
         }: HyperTypes.paymentSession)

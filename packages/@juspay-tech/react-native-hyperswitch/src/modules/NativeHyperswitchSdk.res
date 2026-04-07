@@ -111,8 +111,9 @@ type headlessResponse = {
 type getCustomerSavedPaymentMethods = unit => promise<string>
 type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
 type getCustomerLastUsedPaymentMethodData = unit => promise<string>
-type confirmWithCustomerDefaultPaymentMethod = unit => promise<string>
-type confirmWithCustomerLastUsedPaymentMethod = unit => promise<string>
+type confirmWithCustomerDefaultPaymentMethod = string => promise<string>
+type confirmWithCustomerLastUsedPaymentMethod = string => promise<string>
+type confirmWithCustomerPaymentToken = string => promise<string>
 
 type nativeHyperswitchSdk = {
   initialise: initialise,
@@ -129,6 +130,7 @@ type nativeHyperswitchSdk = {
   getCustomerLastUsedPaymentMethodData: getCustomerLastUsedPaymentMethodData,
   confirmWithCustomerDefaultPaymentMethod: confirmWithCustomerDefaultPaymentMethod,
   confirmWithCustomerLastUsedPaymentMethod: confirmWithCustomerLastUsedPaymentMethod,
+  confirmWithCustomerPaymentToken: confirmWithCustomerPaymentToken,
 }
 
 @module("../specs/NativeHyperswitchSdkReactNative")

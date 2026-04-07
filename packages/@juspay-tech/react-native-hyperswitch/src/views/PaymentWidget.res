@@ -55,7 +55,7 @@ let make = (
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let (hyperElementsContext, _) = HyperElements.useHyperElements()
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     switch Js.Nullable.toOption(viewRef.current) {
     | Some(_) =>
       setViewId(_ => Some(findNodeHandle(viewRef.current)))

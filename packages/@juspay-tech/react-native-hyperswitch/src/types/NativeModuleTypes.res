@@ -46,9 +46,10 @@ type paymentMethodInfoAddress = {
 
 @genType
 type cvcStatusEvent = {
-  requiresCvv: bool,
-  isCvcComplete: bool,
-  isFocused: bool,
+  isCvcFocused: bool,
+  isCvcBlur: bool,
+  isCvcEmpty: bool,
+  // isCvcComplete: bool,
 }
 
 type paymentEventPayload =

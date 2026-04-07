@@ -45,6 +45,11 @@ internal class HyperFragment : ReactFragment() {
     return ReactNativeController.getReactHost()
   }
 
+  override fun onDestroyView() {
+    (view as? ReactRootView)?.unmountReactApplication()
+    super.onDestroyView()
+  }
+
   override fun onDestroy() {
     super.onDestroy()
     unRegisterEventBus()

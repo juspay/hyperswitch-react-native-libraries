@@ -20,6 +20,8 @@ let createView = viewId => {
 let make = (
   ~options: PaymentSheetConfiguration.cvcWidgetOptions,
   ~onChange: option<NativeModuleTypes.paymentEventResult => unit>=?,
+  ~onFocus: option<unit => unit>=?,
+  ~onBlur: option<unit => unit>=?,
   ~style: option<ReactNative.Style.t>=?,
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
@@ -43,9 +45,51 @@ let make = (
   }, [viewId])
 
   let onPaymentEventInternal = (event: NativeModuleTypes.paymentEventNative) => {
+    // Forward the raw event to onChange
     switch onChange {
     | Some(callback) => callback(event.nativeEvent)
     | None => ()
+    }
+
+    // Route CVC_STATUS events to onFocus/onBlur convenience callbacks
+    switch event.nativeEvent.eventName {
+    | "CVC_STATUS" =>
+      try {
+        switch event.nativeEvent.payload->JSON.parseExn->JSON.Decode.object {
+        | Some(outerDict) =>
+          switch outerDict->Dict.get("cvcStatus")->Option.flatMap(JSON.Decode.object) {
+          | Some(cvcDict) => {
+              let isCvcFocused =
+                cvcDict
+                ->Dict.get("isCvcFocused")
+                ->Option.flatMap(JSON.Decode.bool)
+                ->Option.getOr(false)
+              let isCvcBlur =
+                cvcDict
+                ->Dict.get("isCvcBlur")
+                ->Option.flatMap(JSON.Decode.bool)
+                ->Option.getOr(false)
+              if isCvcFocused {
+                switch onFocus {
+                | Some(cb) => cb()
+                | None => ()
+                }
+              }
+              if isCvcBlur {
+                switch onBlur {
+                | Some(cb) => cb()
+                | None => ()
+                }
+              }
+            }
+          | None => ()
+          }
+        | None => ()
+        }
+      } catch {
+      | _ => ()
+      }
+    | _ => ()
     }
   }
 
@@ -54,7 +98,6 @@ let make = (
 
 
   let fullOptions: PaymentSheetConfiguration.options = {
-    clientSecret: ?Some(options.clientSecret),
     subscribedEvents: ?Some([CvcStatus]),
     appearance: ?fullAppearance,
     placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {cvv: ?Some(cvv)}),
@@ -64,7 +107,7 @@ let make = (
 
   <NativePaymentWidget
     ref={viewRef}
-    widgetId="cvc-widget"
+    widgetId={options.widgetId}
     widgetType="cvcWidget"
     clientSecret={options.clientSecret}
     onPaymentEvent={onPaymentEventInternal}

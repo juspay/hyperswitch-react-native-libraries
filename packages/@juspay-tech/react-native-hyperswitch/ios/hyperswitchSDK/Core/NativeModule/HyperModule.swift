@@ -28,7 +28,7 @@ internal class HyperModule: RCTEventEmitter {
 
     @objc
     internal override func supportedEvents() -> [String] {
-        return ["confirm", "confirmEC"]
+        return ["confirm", "confirmEC", "initHeadless"]
     }
 
     @objc

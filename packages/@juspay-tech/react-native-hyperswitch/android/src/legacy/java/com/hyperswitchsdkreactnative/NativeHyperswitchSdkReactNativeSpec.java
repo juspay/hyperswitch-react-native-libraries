@@ -45,4 +45,28 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
   @ReactMethod
   @DoNotStrip
   public abstract void presentPaymentSheet(ReadableMap configuration, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerSavedPaymentMethods(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerDefaultSavedPaymentMethodData(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerLastUsedPaymentMethodData(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerDefaultPaymentMethod(String widgetId, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerLastUsedPaymentMethod(String widgetId, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerPaymentToken(String paymentToken, Promise promise);
 }

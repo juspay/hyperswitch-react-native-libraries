@@ -149,20 +149,13 @@ export default function PaymentScreen() {
           onChange={(event: PaymentEvent) => {
             console.log('CvcWidget Event:', event.eventName, event.payload);
             if (event.eventName === 'CVC_STATUS') {
-              const payload = event.payload as {
-                requiresCvv: boolean;
-                isCvcComplete: boolean;
-                isFocused: boolean;
+              const parsed = JSON.parse(event.payload as string);
+              const cvcStatus = parsed.cvcStatus as {
+                isCvcFocused: boolean;
+                isCvcBlur: boolean;
+                isCvcEmpty: boolean;
               };
-              console.log('CVC Status:', JSON.stringify(payload, null, 2));
-            }
-            if (event.eventName === '') {
-              const payload = event.payload as {
-                requiresCvv: boolean;
-                isCvcComplete: boolean;
-                isFocused: boolean;
-              };
-              console.log('CVC Status:', JSON.stringify(payload, null, 2));
+              console.log('CVC Status:', JSON.stringify(cvcStatus, null, 2));
             }
           }}
         />

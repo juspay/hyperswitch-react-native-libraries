@@ -36,6 +36,7 @@ type headlessResponse = {
 type paymentSession = {
   getCustomerDefaultSavedPaymentMethodData: unit => promise<headlessResponse>,
   getCustomerLastUsedPaymentMethodData: unit => promise<headlessResponse>,
-  confirmWithCustomerDefaultPaymentMethod: unit => promise<headlessResponse>,
-  confirmWithCustomerLastUsedPaymentMethod: unit => promise<headlessResponse>,
+  confirmWithCustomerDefaultPaymentMethod: string => promise<headlessResponse>,
+  confirmWithCustomerLastUsedPaymentMethod: string => promise<headlessResponse>,
+  confirmWithCustomerPaymentToken: string => promise<headlessResponse>,
 }

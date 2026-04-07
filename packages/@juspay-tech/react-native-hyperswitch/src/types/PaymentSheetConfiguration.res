@@ -197,6 +197,7 @@ type cvcAppearance = {
 @genType
 type cvcWidgetOptions = {
   clientSecret: string,
+  widgetId: string,
   appearance?: cvcAppearance,
   placeholder?: string,
 }

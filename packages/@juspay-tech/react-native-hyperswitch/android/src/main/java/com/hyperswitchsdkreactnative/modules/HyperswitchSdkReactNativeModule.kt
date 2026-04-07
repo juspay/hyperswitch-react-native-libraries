@@ -6,7 +6,12 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
+import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
+import com.hyperswitchsdkreactnative.headless.PMError
+import com.hyperswitchsdkreactnative.headless.PaymentResult
+import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
+import org.json.JSONObject
 
 class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
@@ -45,7 +50,12 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
   override fun initPaymentSession(paymentIntentClientSecret: String, promise: Promise?) {
     try {
       hyperProvider?.let { provider ->
+        // Clean up stale state from any previous payment session.
+        HeadlessFlowController.reset()
+        paymentSessionHandler = null
+
         provider.initPaymentSession(clientSecret = paymentIntentClientSecret)
+        clientSecret = paymentIntentClientSecret
         promise?.resolve(null)
       } ?: run {
         promise?.reject("INIT_ERROR", "HyperProvider not initialized")
@@ -65,7 +75,168 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
       promise?.reject("PRESENT_ERROR", "Failed to present payment sheet: ${e.message}")
     }
   }
-  
+
+  override fun getCustomerSavedPaymentMethods(promise: Promise?) {
+    val secret = clientSecret
+    if (secret == null) {
+      promise?.resolve(
+        serializeResult("error", "NO_SESSION", "Payment session not initialized. Call initPaymentSession first.")
+      )
+      return
+    }
+
+    val application = currentActivity?.application
+    if (application == null) {
+      promise?.resolve(
+        serializeResult("error", "NO_ACTIVITY", "Current activity is null. Cannot start headless flow.")
+      )
+      return
+    }
+
+    HeadlessFlowController.getCustomerSavedPaymentMethods(secret, application, callback = { handler ->
+      paymentSessionHandler = handler
+      promise?.resolve(
+        serializeResult("success", null, "Payment methods initialized")
+      )
+    })
+  }
+
+  override fun getCustomerDefaultSavedPaymentMethodData(promise: Promise?) {
+    val handler = paymentSessionHandler
+    if (handler == null) {
+      promise?.resolve(
+        serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
+      )
+      return
+    }
+
+    val result = handler.getCustomerDefaultSavedPaymentMethodData()
+    result.fold(
+      onSuccess = { pm ->
+        promise?.resolve(
+          serializeResult("success", null, "Default payment method retrieved", paymentMethodToJson(pm))
+        )
+      },
+      onFailure = { error ->
+        val pmError = error as? PMError
+        promise?.resolve(
+          serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+        )
+      }
+    )
+  }
+
+  override fun getCustomerLastUsedPaymentMethodData(promise: Promise?) {
+    val handler = paymentSessionHandler
+    if (handler == null) {
+      promise?.resolve(
+        serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
+      )
+      return
+    }
+
+    val result = handler.getCustomerLastUsedPaymentMethodData()
+    result.fold(
+      onSuccess = { pm ->
+        promise?.resolve(
+          serializeResult("success", null, "Last used payment method retrieved", paymentMethodToJson(pm))
+        )
+      },
+      onFailure = { error ->
+        val pmError = error as? PMError
+        promise?.resolve(
+          serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+        )
+      }
+    )
+  }
+
+  override fun confirmWithCustomerDefaultPaymentMethod(widgetId: String?, promise: Promise?) {
+    val handler = paymentSessionHandler
+    if (handler == null) {
+      promise?.resolve(
+        serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
+      )
+      return
+    }
+
+    if (isCvcWidgetActive && !(widgetId.isNullOrEmpty())) {
+      // CvcWidget is active — route card confirm through CvcWidget's JS context
+      val defaultData = handler.getCustomerDefaultSavedPaymentMethodData()
+      defaultData.fold(
+        onSuccess = { pm ->
+          HeadlessFlowController.confirmViaWidget(
+            widgetId = widgetId,
+            paymentToken = pm.paymentToken,
+            paymentMethodId = pm.paymentMethodId,
+            resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
+          )
+        },
+        onFailure = { error ->
+          val pmError = error as? PMError
+          promise?.resolve(
+            serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+          )
+        }
+      )
+    } else {
+      // No CvcWidget — confirm through HeadlessJsTask's callback (cvc will be null)
+      handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
+        promise?.resolve(paymentResultToString(result))
+      }
+    }
+  }
+
+  override fun confirmWithCustomerLastUsedPaymentMethod(widgetId: String?, promise: Promise?) {
+    val handler = paymentSessionHandler
+    if (handler == null) {
+      promise?.resolve(
+        serializeResult("error", "NO_HANDLER", "Payment session handler not initialized.")
+      )
+      return
+    }
+
+    if (isCvcWidgetActive && !(widgetId.isNullOrEmpty())) {
+      // CvcWidget is active — route card confirm through CvcWidget's JS context
+      val lastUsedData = handler.getCustomerLastUsedPaymentMethodData()
+      lastUsedData.fold(
+        onSuccess = { pm ->
+          HeadlessFlowController.confirmViaWidget(
+            widgetId = widgetId,
+            paymentToken = pm.paymentToken,
+            paymentMethodId = pm.paymentMethodId,
+            resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
+          )
+        },
+        onFailure = { error ->
+          val pmError = error as? PMError
+          promise?.resolve(
+            serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+          )
+        }
+      )
+    } else {
+      // No CvcWidget — confirm through HeadlessJsTask's callback (cvc will be null)
+      handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
+        promise?.resolve(paymentResultToString(result))
+      }
+    }
+  }
+
+  override fun confirmWithCustomerPaymentToken(paymentToken: String, promise: Promise?) {
+    val handler = paymentSessionHandler
+    if (handler == null) {
+      promise?.resolve(
+        serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
+      )
+      return
+    }
+
+    handler.confirmWithCustomerPaymentToken(paymentToken, null) { result ->
+      promise?.resolve(paymentResultToString(result))
+    }
+  }
+
   fun resetView() {
     hyperProvider?.removeSheetView(true)
   }
@@ -75,6 +246,11 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
     private var sheetPromise: Promise? = null
     private var currentInstance: HyperswitchSdkReactNativeModule? = null
     private var hostReactContext: ReactApplicationContext? = null
+    private var clientSecret: String? = null
+    @Volatile
+    private var paymentSessionHandler: PaymentSessionHandler? = null
+    @Volatile
+    var isCvcWidgetActive: Boolean = false
 
     fun resolvePromise(data: Any?) {
       try {
@@ -97,6 +273,63 @@ class HyperswitchSdkReactNativeModule(reactContext: ReactApplicationContext) :
           })
       } catch (e: Exception) {
       }
+    }
+
+    /**
+     * Convert PaymentResult (Throwable-based Failed) to JSON string.
+     * Old pattern: code in throwable.cause.message, message in throwable.message
+     */
+    private fun paymentResultToString(result: PaymentResult): String {
+      val json = JSONObject()
+      when (result) {
+        is PaymentResult.Completed -> {
+          json.put("status", "success")
+          json.put("message", "Payment confirmed successfully")
+          json.put("data", result.data)
+        }
+        is PaymentResult.Failed -> {
+          json.put("status", "failed")
+          json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
+          json.put("message", result.throwable.message ?: "An error has occurred.")
+        }
+        is PaymentResult.Canceled -> {
+          json.put("status", "cancelled")
+          json.put("message", "Payment confirmation cancelled")
+          json.put("data", result.data)
+        }
+      }
+      return json.toString()
+    }
+
+    /**
+     * Convert PaymentMethod (common lib type with toMap()) to JSON string for the data field.
+     * Uses JSONObject recursively to handle nested maps (e.g., card).
+     */
+    private fun paymentMethodToJson(pm: com.hyperswitchsdkreactnative.headless.PaymentMethod): String {
+      return mapToJsonObject(pm.toMap()).toString()
+    }
+
+    private fun mapToJsonObject(map: Map<String, Any?>): JSONObject {
+      val json = JSONObject()
+      for ((key, value) in map) {
+        when (value) {
+          is Map<*, *> -> json.put(key, mapToJsonObject(value as Map<String, Any?>))
+          is List<*> -> json.put(key, org.json.JSONArray(value))
+          null -> json.put(key, JSONObject.NULL)
+          else -> json.put(key, value)
+        }
+      }
+      return json
+    }
+
+    private fun serializeResult(status: String, code: String?, message: String, data: String? = null): String {
+      val json = JSONObject().apply {
+        put("status", status)
+        if (code != null) put("code", code)
+        put("message", message)
+        if (data != null) put("data", JSONObject(data))
+      }
+      return json.toString()
     }
   }
 }
