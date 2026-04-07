@@ -16,6 +16,7 @@ import com.facebook.react.ReactRootView
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactContext
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class OnEventResult(
   val eventName: String,
-  val payload: String? = null
+  val payload: ReadableMap? = null
 )
 
 typealias EventCallback = (OnEventResult) -> Unit
@@ -37,14 +38,24 @@ typealias EventCallback = (OnEventResult) -> Unit
 class HyperFragment : ReactFragment() {
   private lateinit var onPaymentResult: Callback
 
-
   private lateinit var eventResultCallback: EventCallback
   fun setOnPaymentResult(callback: Callback) {
     this.onPaymentResult = callback
+    paymentEventCallbacks[view?.id ?: -1] = onPaymentResult
   }
 
   fun setOnEventCallback(eventCallback: EventCallback) {
     this.eventResultCallback = eventCallback
+    onEventCallBacks[this.getWidgetIdFromLaunchOptions()] = eventCallback
+  }
+
+  private fun getWidgetIdFromLaunchOptions(): String{
+    val launchOptions = arguments?.getBundle("arg_launch_options")
+    return try {
+      launchOptions?.getBundle("props")?.getString("widgetId")
+    } catch (e: Exception) {
+      "-1"
+    }.toString()
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,8 +70,9 @@ class HyperFragment : ReactFragment() {
       if (::onPaymentResult.isInitialized) {
         paymentEventCallbacks[rootTag] = onPaymentResult
       }
+
       if (::eventResultCallback.isInitialized) {
-        onEventCallBacks[rootTag] = eventResultCallback
+        onEventCallBacks[getWidgetIdFromLaunchOptions()] = eventResultCallback
       }
     }
   }
@@ -221,7 +233,7 @@ class HyperFragment : ReactFragment() {
     private var paymentEventCallbacks = ConcurrentHashMap<Int, Callback>()
 
     @Volatile
-    private var onEventCallBacks = ConcurrentHashMap<Int, EventCallback>()
+    private var onEventCallBacks = ConcurrentHashMap<String, EventCallback>()
     fun onPaymentResultEvent(rootTag: Int, result: String) {
       try {
         confirmActionCallbacks[rootTag]?.invoke(result)
@@ -232,15 +244,15 @@ class HyperFragment : ReactFragment() {
       }
     }
 
-    fun onEvents(rootTag: Int, result: String) {
+    fun onEvents(widgetId: String, eventType: String, result: ReadableMap) {
       try {
-        onEventCallBacks[rootTag]?.invoke(
+        onEventCallBacks[widgetId]?.invoke(
           OnEventResult(
+            eventType,
             result
           )
         )
       } catch (_: Exception) {
-
         Log.e("HyperModule", "Error in resolveConfirmPayment")
       }
     }
@@ -260,7 +272,6 @@ class HyperFragment : ReactFragment() {
     var mComponentName: String? = null
     var mLaunchOptions: Bundle? = null
     var mFabricEnabled: Boolean = false
-
     fun setComponentName(componentName: String?): Builder {
       mComponentName = componentName
       return this
@@ -275,7 +286,6 @@ class HyperFragment : ReactFragment() {
       val ARG_COMPONENT_NAME = "arg_component_name"
       val ARG_LAUNCH_OPTIONS = "arg_launch_options"
       val ARG_FABRIC_ENABLED = "arg_fabric_enabled"
-
       val fragment = HyperFragment()
       val args = Bundle()
       args.putString(ARG_COMPONENT_NAME, mComponentName)

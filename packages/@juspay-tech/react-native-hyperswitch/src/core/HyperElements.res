@@ -21,21 +21,6 @@ type hyperElementsData = {
   sdkAuthorisation: option<string>,
 }
 
-// Widget registry for managing widget states
-let widgetRegistry: ref<Dict.t<HyperTypes.widgetController>> = ref(Js.Dict.empty())
-
-let registerWidget = (id: string, controller: HyperTypes.widgetController) => {
-  Dict.set(widgetRegistry.contents, id, controller)
-}
-
-let unregisterWidget = (id: string) => {
-  Dict.delete(widgetRegistry.contents, id)
-}
-
-let getWidgetState = (id: string): option<HyperTypes.widgetController> => {
-  Dict.get(widgetRegistry.contents, id)
-}
-
 // Default values
 let defaultVal: hyperElementsData = {
   hyperInstance: None,
@@ -52,12 +37,16 @@ module Provider = {
 }
 
 // Get error data helper
-let getErrorData = (~error="Failed to initialize Hyperswitch", ~clientSecret=None, ~sdkAuthorisation=None): hyperElementsData => {
+let getErrorData = (
+  ~error="Failed to initialize Hyperswitch",
+  ~clientSecret=None,
+  ~sdkAuthorisation=None,
+): hyperElementsData => {
   hyperInstance: None,
   isInitialized: false,
-  error: error,
-  clientSecret: clientSecret,
-  sdkAuthorisation: sdkAuthorisation,
+  error,
+  clientSecret,
+  sdkAuthorisation,
 }
 
 // Initialize the native SDK
@@ -114,17 +103,18 @@ let make = (
             setState(_ => {
               hyperInstance: Some(hyperInstance),
               isInitialized: true,
-              clientSecret: clientSecret,
-              sdkAuthorisation: sdkAuthorisation,
+              clientSecret,
+              sdkAuthorisation,
             })
           }
-        | None => {
-            setState(_ => getErrorData(
+        | None =>
+          setState(_ =>
+            getErrorData(
               ~error="Hyper config not found. Call Hyper.init() before rendering HyperElements.",
-              ~clientSecret=clientSecret,
-              ~sdkAuthorisation=sdkAuthorisation,
-            ))
-          }
+              ~clientSecret,
+              ~sdkAuthorisation,
+            )
+          )
         }
       } catch {
       | Exn.Error(obj) =>
@@ -144,9 +134,7 @@ let make = (
     setState(_ => val)
   }, [])
 
-  <Provider value=(state, setState)>
-    children
-  </Provider>
+  <Provider value=(state, setState)> children </Provider>
 }
 
 // Hook to use HyperElements context

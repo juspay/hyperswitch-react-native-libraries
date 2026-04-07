@@ -39,14 +39,18 @@ let parseNativeResponse = (result: 'a): HyperTypes.nativeResponse => {
 
       let code =
         dict
-        ->Dict.get("code")
+        ->Js.Dict.get("code")
         ->Option.flatMap(JSON.Decode.string)
 
       let data = dict->Js.Dict.get("data")
 
       switch (code, data) {
-      | (Some(codeStr), Some(dataJson)) => {status, message, code: codeStr, data: dataJson}
-      | (Some(codeStr), None) => {status, message, code: codeStr}
+      | (Some(codeJson), Some(dataJson)) =>
+        switch dataJson->Js.Json.decodeObject {
+        | Some(_) => {status, message, code: codeJson, data: dataJson}
+        | None => {status, message, code: codeJson, data: dataJson}
+        }
+      | (Some(codeJson), None) => {status, message, code: codeJson}
       | (None, Some(dataJson)) => {status, message, data: dataJson}
       | (None, None) => {status, message}
       }

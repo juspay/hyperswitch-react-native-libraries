@@ -186,6 +186,7 @@ let make = React.forwardRef((
         widgetType={"widgetPaymentSheet"}
         clientSecret={clientSecret}
         onPaymentResult={onPaymentResultInternal}
+        onPaymentEvent={onPaymentEventInternal}
         ?options
         ?style
       />

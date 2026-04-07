@@ -16,15 +16,14 @@ import com.facebook.react.uimanager.events.RCTEventEmitter
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerDelegate
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerInterface
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.provider.HyperFragment
+import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
+import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
-import com.hyperswitchsdkreactnative.utils.EventCallback
 import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
 import java.util.UUID
 
 class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
-  NativePaymentWidgetManagerInterface<PaymentWidgetView>{
+  NativePaymentWidgetManagerInterface<PaymentWidgetView> {
 
   private val mDelegate: ViewManagerDelegate<PaymentWidgetView> =
     NativePaymentWidgetManagerDelegate(this)
@@ -32,26 +31,28 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   override fun getDelegate(): ViewManagerDelegate<PaymentWidgetView> {
     return mDelegate
   }
+
   override fun getExportedCustomDirectEventTypeConstants() = mapOf(
-    "topPaymentResult" to mapOf(
+    "onPaymentResult" to mapOf(
       "registrationName" to "onPaymentResult"
     ),
     "onPaymentEvent" to mapOf("registrationName" to "onPaymentEvent"),
   )
 
+  // Track which views are CVC widgets for isCvcWidgetActive cleanup
+  private val cvcWidgetViewIds = mutableSetOf<Int>()
+
 
   override fun getName(): String = NAME
   private lateinit var launchOptions: LaunchOptions
   private var context: ReactApplicationContext? = null
-  private lateinit var view : PaymentWidgetView
+  private lateinit var view: PaymentWidgetView
 
-  // Track choreographer callbacks per view to allow cleanup
-  private val choreographerCallbacks = mutableMapOf<Int, Choreographer.FrameCallback>()
 
   override fun createViewInstance(reactContext: ThemedReactContext): PaymentWidgetView {
     launchOptions = LaunchOptions(reactContext.applicationContext, BuildConfig.VERSION_NAME)
     context = reactContext.reactApplicationContext
-    view =  PaymentWidgetView(reactContext)
+    view = PaymentWidgetView(reactContext)
     return view
   }
 
@@ -73,22 +74,22 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
         view.removeWidget()
       }
     }
-    view.onEventResult( { result ->
-        val event: WritableMap = Arguments.createMap()
-        event.putString("eventName", result.eventName)
-        event.putMap("payload", result.payload)
-        context?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
-          view.id,
-          "onPaymentEvent",
-          event
-        )
+    view.onEvent({ result ->
+      val event: WritableMap = Arguments.createMap()
+      event.putString("eventName", result.eventName)
+      event.putMap("payload", result.payload)
+      context?.getJSModule(RCTEventEmitter::class.java)?.receiveEvent(
+        view.id,
+        "onPaymentEvent",
+        event
+      )
     })
   }
 
   @ReactProp(name = "widgetId")
   override fun setWidgetId(view: PaymentWidgetView, widgetId: String?) {
     view.setWidgetId(
-      widgetId ?: UUID.randomUUID().toString()
+      widgetId ?: view.getWidgetId()
     )
   }
 
@@ -97,7 +98,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     view.setWidgetType(widgetType)
     if (widgetType == "cvcWidget") {
       cvcWidgetViewIds.add(view.id)
-      HyperswitchSdkReactNativeModule.isCvcWidgetActive = true
+      HyperswitchRNWrapperNativeModule.isCvcWidgetActive = true
     }
   }
 
@@ -116,13 +117,13 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     view.configuration(map)
 
     // If fragment already exists, tear it down and re-show
-    val tag = "HyperPaymentSheet_${view.id}"
-    val activity = context?.currentActivity as? FragmentActivity ?: return
-    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
-    if (existingFragment != null) {
-      removeWidget(view)
-      view.post { showWidgetInternal(view) }
-    }
+//    val tag = "HyperPaymentSheet_${view.id}"
+//    val activity = context?.currentActivity as? FragmentActivity ?: return
+//    val existingFragment = activity.supportFragmentManager.findFragmentByTag(tag)
+//    if (existingFragment != null) {
+//     view.removeWidget()
+//      view.post { showWidgetInternal(view) }
+//    }
   }
 
   override fun getCommandsMap() = mapOf(
@@ -141,12 +142,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     }
   }
 
-  override fun getExportedCustomDirectEventTypeConstants() = mapOf(
-    "topPaymentResult" to mapOf(
-      "registrationName" to "onPaymentResult"
-    )
-  )
-
 
   override fun onDropViewInstance(view: PaymentWidgetView) {
     val tag = "HyperPaymentSheet_${view.id}"
@@ -157,7 +152,7 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     activity?.let { HyperFragmentManager.remove(it, tag) }
     // Clear CVC widget active flag when the last CVC widget view is dropped
     if (cvcWidgetViewIds.remove(view.id) && cvcWidgetViewIds.isEmpty()) {
-      HyperswitchSdkReactNativeModule.isCvcWidgetActive = false
+      HyperswitchRNWrapperNativeModule.isCvcWidgetActive = false
       HeadlessFlowController.reset()
     }
   }

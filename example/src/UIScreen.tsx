@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import {
   PaymentWidget,
   CvcWidget,
   HyperElements,
-  useWidget,
+  initPaymentSession,
   type HyperElementsOptions,
   type HyperInstance,
   type PaymentEvent,
-  type PaymentWidgetRef,
   type PaymentSession,
   type HeadlessResponse,
   type SavedPaymentMethod,
@@ -26,87 +25,6 @@ type PaymentMethod = SavedPaymentMethod;
 
 interface UIScreenProps {
   hyperPromise: Promise<HyperInstance>;
-}
-
-function WidgetContent({ 
-  onStatusUpdate 
-}: { 
-  onStatusUpdate: (status: string, message?: string) => void 
-}) {
-  const widget = useWidget();
-  const [isConfirming, setIsConfirming] = useState(false);
-  const widgetRef = useRef<PaymentWidgetRef | null>(null);
-  const handleConfirmPayment = async () => {
-    // if (!widget.isReady) {
-    //   onStatusUpdate('Error', 'Widget is not ready');
-    //   return;
-    // }
-
-    try {
-      setIsConfirming(true);
-      onStatusUpdate('Confirming...', 'Payment confirmation in progress');
-      // Call confirmPayment with widgetId
-      const result = await widgetRef.current?.confirmPayment();
-      // Parse the result
-      const status = result?.status || 'unknown';
-      const message = result?.message || 'Payment confirmation completed';
-      
-      onStatusUpdate(getStatus(status), message);
-      setIsConfirming(false);
-    } catch (error) {
-      onStatusUpdate('Error', getErrorMessage(error));
-      setIsConfirming(false);
-    }
-  };
-
-  return (
-    <>
-        <PaymentWidget
-      ref= {widgetRef}
-        widgetId="payment-widget-2"
-        onPaymentResult={(result: any) => {
-          if (result.errorMessage) {
-            onStatusUpdate(`Payment failed: ${result.errorMessage}`);
-          } else {
-            onStatusUpdate(getStatus(result?.status), result?.status);
-          }
-        }}
-        style={{ width: '100%', height: 400 }}
-        options={{ 
-          ...getCustomisationOptions('accordion'), 
-        }}
-      />
-      {/* Confirm Payment Button */}
-      <TouchableOpacity 
-        style={[
-          styles.button, 
-          styles.confirmButton,
-          (isConfirming) && styles.buttonDisabled
-        ]} 
-        onPress={handleConfirmPayment}
-        disabled={ isConfirming}
-      >
-        <Text style={styles.buttonText}>
-          {
-          isConfirming ? 'Confirming...' : 
-           widget.isLoading ? 'Loading...' : 
-           'Confirm Payment (useWidget)'
-           }
-        </Text>
-      </TouchableOpacity>
-
-      {/* Widget Status */}
-      {/* <View style={styles.widgetStatus}>
-        <Text style={styles.widgetStatusText}>
-          Widget Status: {widget.isReady ? 'Ready' : 'Initializing'}
-        </Text>
-        <Text style={styles.widgetStatusText}>
-          Loading: {widget.isLoading ? 'Yes' : 'No'} | 
-          Disabled: {widget.isConfirmDisabled ? 'Yes' : 'No'}
-        </Text>
-      </View> */}
-    </>
-  );
 }
 
 export default function UIScreen({ hyperPromise }: UIScreenProps) {
@@ -153,13 +71,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   }, [createPaymentIntent]);
 
   const checkout = async (): Promise<void> => {
-    setStatus('Info');
-    setMessage('Use the "Confirm Payment" button below to trigger payment via useWidget hook');
-  };
-
-  const handleStatusUpdate = (newStatus: string, newMessage?: string) => {
-    setStatus(newStatus);
-    setMessage(newMessage || null);
+    console.log('Checkout initiated');
   };
 
   useEffect(() => {
@@ -185,7 +97,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
         ]);
 
         // Process last-used result
-        if (lastUsedResult.status === 'success' && lastUsedResult.data) {
+        if (lastUsedResult.status === 'succeeded' && lastUsedResult.data) {
           setLastUsedMethod(lastUsedResult.data);
         } else {
           setLastUsedMethod(null);
@@ -193,7 +105,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
         }
 
         // Process default result
-        if (defaultResult.status === 'success' && defaultResult.data) {
+        if (defaultResult.status === 'succeeded' && defaultResult.data) {
           setDefaultMethod(defaultResult.data);
         } else {
           setDefaultMethod(null);
@@ -349,7 +261,8 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   return (
     <ScrollView >
     <HyperElements hyper={hyperPromise} options={hyperElementsOptions}>
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
+      <View style={styles.container}>
+        <Text style={styles.title}>UI Mode</Text>
         <TextInput
           style={styles.textInput}
           placeholder="Enter base URL"
@@ -383,6 +296,98 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
             ...getCustomisationOptions('accordion'), 
           }}
         />
+
+        <Text style={styles.title}>CVC Widget + Headless</Text>
+
+        {sessionInitializing && (
+          <View style={styles.status}>
+            <ActivityIndicator size="small" color="#007AFF" />
+            <Text style={styles.statusText}>
+              Auto-initializing session & fetching saved methods...
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.statusText}>CVC Widget — Default Card:</Text>
+        {clientSecret && (
+          <CvcWidget
+            options={{
+              ...getCvcInputOptions(),
+              clientSecret: clientSecret,
+              widgetId: 'default-card',
+              placeholder: '123',
+            }}
+            style={{ width: '30%', height: 80 }}
+            onChange={(event: PaymentEvent) => {
+              console.log('CvcWidget [default-card] Event:', event.eventName, event.payload);
+            }}
+            onFocus={() => {
+              console.log('CvcWidget [default-card] Focus');
+            }}
+            onBlur={() => {
+              console.log('CvcWidget [default-card] Blur');
+            }}
+          />
+        )}
+
+        <Text style={styles.statusText}>CVC Widget — Last Used Card:</Text>
+        {clientSecret && lastUsedMethod !== null && (
+        // console.log('Rendering CvcWidget with clientSecret:', lastUsedMethod),
+          <CvcWidget
+            options={{
+              ...getCvcInputOptions(),
+              clientSecret: clientSecret,
+              widgetId: 'last-used-card',
+              placeholder: '456',
+            }}
+            style={{ width: '30%', height: 80 }}
+            onChange={(event: PaymentEvent) => {
+              console.log('CvcWidget [last-used-card] Event:', event.eventName, event.payload);
+            }}
+            onFocus={() => {
+              console.log('CvcWidget [last-used-card] Focus');
+            }}
+            onBlur={() => {
+              console.log('CvcWidget [last-used-card] Blur');
+            }}
+          />
+        )}
+
+        {/* Saved method cards are displayed automatically after auto-init */}
+        {renderPaymentMethod(lastUsedMethod, 'Last Used Method')}
+        {renderPaymentMethod(defaultMethod, 'Default Method')}
+
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={refreshSavedMethods}
+          disabled={isLoading || !paymentSession}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Loading...' : 'Refresh Saved Methods'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
+          onPress={confirmWithLastUsed}
+          disabled={isLoading || !lastUsedMethod}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Processing...' : 'Confirm with Last Used'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
+          onPress={confirmWithDefault}
+          disabled={isLoading || !defaultMethod}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Processing...' : 'Confirm with Default'}
+          </Text>
+        </TouchableOpacity>
+
+        {isLoading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
       </View>
     </HyperElements>
     </ScrollView>

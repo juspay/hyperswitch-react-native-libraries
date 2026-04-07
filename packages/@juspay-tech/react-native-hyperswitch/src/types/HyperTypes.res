@@ -25,22 +25,12 @@ type hyperInstance = {
   // completeUpdateIntent: string => promise<Js.Json.t>,
 }
 
-// Widget controller type for useWidget hook
-@genType
-type widgetController = {
-  confirmPayment: string => promise<nativeResponse>,
-  presentPaymentSheet: NativeHyperswitchSdk.presentPaymentSheetParams => promise<nativeResponse>,
-  isConfirmDisabled: bool,
-  isLoading: bool,
-  isReady: bool,
-}
-
 // UsePaymentSession response type
 @genType
 type paymentSession = {
-  getCustomerDefaultSavedPaymentMethodData: unit => promise<headlessResponse>,
-  getCustomerLastUsedPaymentMethodData: unit => promise<headlessResponse>,
-  confirmWithCustomerDefaultPaymentMethod: string => promise<headlessResponse>,
-  confirmWithCustomerLastUsedPaymentMethod: string => promise<headlessResponse>,
-  confirmWithCustomerPaymentToken: string => promise<headlessResponse>,
+  getCustomerDefaultSavedPaymentMethodData: unit => promise<nativeResponse>,
+  getCustomerLastUsedPaymentMethodData: unit => promise<nativeResponse>,
+  confirmWithCustomerDefaultPaymentMethod: string => promise<nativeResponse>,
+  confirmWithCustomerLastUsedPaymentMethod: string => promise<nativeResponse>,
+  confirmWithCustomerPaymentToken: string => promise<nativeResponse>,
 }

@@ -1,19 +1,5 @@
-@module("react-native") @scope("UIManager")
-external dispatchViewManagerCommand: (
-  ~viewId: int,
-  ~commandId: int,
-  ~commandArgs: array<int>,
-) => unit = "dispatchViewManagerCommand"
-
-@module("react-native")
-external findNodeHandle: Nullable.t<unit> => int = "findNodeHandle"
-
-type commands = {createView: string}
-
-type viewManagerConfig = {\"Commands": commands}
-
 let createView = viewId => {
-  dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
+  ReactNativeUtils.dispatchViewManagerCommand(~viewId, ~commandId=1, ~commandArgs=[])
 }
 
 @react.component @genType
@@ -29,7 +15,7 @@ let make = (
   React.useEffect0(() => {
     switch Nullable.toOption(viewRef.current) {
     | Some(_) =>
-      setViewId(_ => Some(findNodeHandle(viewRef.current)))
+      setViewId(_ => Some(ReactNativeUtils.findNodeHandle(viewRef.current)))
       ()
     | None => ()
     }
@@ -46,6 +32,7 @@ let make = (
 
   let onPaymentEventInternal = (event: NativeModuleTypes.paymentEventNative) => {
     // Forward the raw event to onChange
+    Console.log2("Received payment event from native layer:", event.nativeEvent)
     switch onChange {
     | Some(callback) => callback(event.nativeEvent)
     | None => ()
@@ -93,17 +80,16 @@ let make = (
     }
   }
 
-  let fullAppearance: option<PaymentSheetConfiguration.appearance> = 
+  let fullAppearance: option<PaymentSheetConfiguration.appearance> =
     options.appearance->Option.map(AppearanceTransformer.cvcAppearanceToAppearance)
-
 
   let fullOptions: PaymentSheetConfiguration.options = {
     subscribedEvents: ?Some([CvcStatus]),
     appearance: ?fullAppearance,
-    placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {cvv: ?Some(cvv)}),
+    placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {
+      cvv: ?Some(cvv),
+    }),
   }
-
-  
 
   <NativePaymentWidget
     ref={viewRef}

@@ -54,6 +54,8 @@ export const getCustomisationOptions = (layout='tabs') => {
       'PAYMENT_METHOD_INFO_CARD',
       'PAYMENT_METHOD_STATUS',
       'FORM_STATUS',
+      'CVC_STATUS',
+      
     ] as PaymentEventName[],
   };
 

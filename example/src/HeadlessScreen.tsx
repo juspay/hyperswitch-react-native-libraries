@@ -75,10 +75,11 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
     try {
       setLoading(true);
       setStatus('Fetching last used method...');
+    
 
       const result = await paymentSession.getCustomerLastUsedPaymentMethodData() as HeadlessResponse;
-
-      if (result.status === 'success' && result.data) {
+      console.log('-- HeadlessScreen:', 'Last used method:', result);
+      if (result.status === 'succeeded' && result.data) {
         const paymentMethod = result.data;
         setLastUsedMethod(paymentMethod);
         setStatus('Last used method fetched');
@@ -111,7 +112,7 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       const result = await paymentSession.getCustomerDefaultSavedPaymentMethodData() as HeadlessResponse;
       console.log('-- HeadlessScreen:', 'Default method:', result);
 
-      if (result.status === 'success' && result.data) {
+      if (result.status === 'succeeded' && result.data) {
         const paymentMethod = result.data;
         setDefaultMethod(paymentMethod);
         setStatus('Default method fetched');

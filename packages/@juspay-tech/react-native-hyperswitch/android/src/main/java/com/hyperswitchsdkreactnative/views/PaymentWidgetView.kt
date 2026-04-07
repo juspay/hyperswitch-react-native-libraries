@@ -87,6 +87,10 @@ class PaymentWidgetView : FrameLayout {
     this.widgetId = widgetId
   }
 
+  fun getWidgetId() : String{
+    return this.widgetId;
+  }
+
 
   fun initWidget(publishableKey: String) {
     initWidget(publishableKey, this.profileId ?: "")
@@ -131,7 +135,7 @@ class PaymentWidgetView : FrameLayout {
   }
 
   fun onEvent(eventCallback: EventCallback) {
-    WidgetCallbackManager.setEventCallback(this.widgetId, eventCallback)
+    this.onEventCallback = eventCallback
   }
 
 

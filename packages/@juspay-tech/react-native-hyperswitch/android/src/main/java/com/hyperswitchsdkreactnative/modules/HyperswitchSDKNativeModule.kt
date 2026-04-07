@@ -6,7 +6,6 @@ import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
-import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import org.json.JSONException
@@ -131,9 +130,11 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
   override fun emitPaymentEvent(widgetId: String, eventType: String, payload: ReadableMap) {
     try {
       if (widgetId.isEmpty()) {
-        HyperswitchSdkReactNativeModule.emitPaymentSheetEvent(eventType, payload)
+        HyperswitchRNWrapperNativeModule.emitPaymentSheetEvent(eventType, payload)
       } else {
-        WidgetCallbackManager.sendEvent(widgetId, eventType, payload)
+//        WidgetCallbackManager.sendEvent(widgetId, eventType, payload)
+        HyperFragment.onEvents(widgetId, eventType, payload)
+
       }
     } catch (e: Exception) {
       Log.e("HyperModule", "Error emitting payment event", e)

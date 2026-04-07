@@ -73,7 +73,11 @@ object HyperFragmentManager {
     // Remove existing fragment with the same tag if present
     val existing = fm.findFragmentByTag(tag)
     if (existing != null) {
-      fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+      fm.beginTransaction()
+        .remove(existing)
+        .commitAllowingStateLoss()
+      fm.executePendingTransactions()
+//      fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
       fragmentRegistry.remove(tag)
     }
 
@@ -101,11 +105,12 @@ object HyperFragmentManager {
     cancelPending(tag)
     val fm = activity.supportFragmentManager
     fm.findFragmentByTag(tag)?.let {
+      fm.beginTransaction().remove(it).commitAllowingStateLoss()
       // popBackStackImmediate is synchronous and also removes the back stack entry,
       // so the fragment goes through the full lifecycle: onDestroyView → onDestroy.
       // Plain remove() on a back-stacked fragment only calls onDestroyView, leaving
       // the fragment instance (and its React tree) alive.
-      fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+//      fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
     }
     fragmentRegistry.remove(tag)
   }
@@ -115,7 +120,8 @@ object HyperFragmentManager {
     val fm = activity.supportFragmentManager
     fragmentRegistry.keys.toList().forEach { tag ->
       fm.findFragmentByTag(tag)?.let {
-        fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        fm.beginTransaction().remove(it).commitAllowingStateLoss()
+//        fm.popBackStackImmediate(tag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
       }
     }
     fragmentRegistry.clear()
