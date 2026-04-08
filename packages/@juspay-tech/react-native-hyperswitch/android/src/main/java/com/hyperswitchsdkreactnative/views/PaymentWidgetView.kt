@@ -34,6 +34,8 @@ class PaymentWidgetView : FrameLayout {
   private var widgetId = UUID.randomUUID().toString()
   private var clientSecret: String = ""
 
+  private var sdkAuthorization : String = ""
+
   private var callback: Callback? = null
 
   private var onEventCallback: EventCallback? = null
@@ -80,6 +82,9 @@ class PaymentWidgetView : FrameLayout {
     return this.clientSecret
   }
 
+  fun getSdkAuthorization(): String{
+    return this.sdkAuthorization
+  }
   private var widgetType: String? = null
 
   fun setWidgetId(widgetId: String) {
@@ -120,6 +125,10 @@ class PaymentWidgetView : FrameLayout {
     return this.clientSecret.isEmpty()
   }
 
+  fun isSdkAuthorizationEmpty(): Boolean {
+    return this.sdkAuthorization.isEmpty()
+  }
+
   fun setWidgetType(widgetType: String?) {
     this.widgetType = widgetType
   }
@@ -147,8 +156,9 @@ class PaymentWidgetView : FrameLayout {
       customLogUrl = HyperProvider.customLogUrl,
       customParams = HyperProvider.customParams,
       type = widgetType,
-      widgetId = this.widgetId
-    )
+      widgetId = this.widgetId,
+      sdkAuthorization= this.sdkAuthorization,
+      )
 
   fun confirmPayment(callback: Callback) {
     this.fragment?.confirmPayment(callback)
@@ -167,6 +177,10 @@ class PaymentWidgetView : FrameLayout {
 
   fun setPaymentIntent(clientSecret: String) {
     this.clientSecret = clientSecret
+  }
+
+  fun setSdkAuthorization(sdkAuthorization: String){
+    this.sdkAuthorization = sdkAuthorization
   }
 
   fun showWidgetInternal() {

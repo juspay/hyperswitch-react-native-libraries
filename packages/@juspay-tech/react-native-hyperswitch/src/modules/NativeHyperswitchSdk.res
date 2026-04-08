@@ -14,7 +14,7 @@ type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string
 
 
 @genType
-type initPaymentSessionParams = {paymentIntentClientSecret?: string, sdkAuthorisation?: string}
+type initPaymentSessionParams = {paymentIntentClientSecret?: string, sdkAuthorization?: string}
 
 @genType
 type initPaymentSessionResult = {error?: string}

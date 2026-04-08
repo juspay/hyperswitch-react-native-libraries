@@ -14,7 +14,7 @@ let make = React.forwardRef((
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let isRegisteredRef = React.useRef(false)
-
+  let (contextData, _) = React.useContext(HyperElements.hyperElementsContext)
   // Detect native view and get node handle when ready (with retry)
   React.useEffect0(() => {
     let isMounted = {contents: true}
@@ -129,6 +129,8 @@ let make = React.forwardRef((
     placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {
       cvv: ?Some(cvv),
     }),
+    clientSecret: ?contextData.clientSecret,
+    sdkAuthorization: ?contextData.sdkAuthorization,
   }
 
   <NativePaymentWidget

@@ -80,7 +80,11 @@ let make = React.forwardRef((
       }
     }
 
-    if hyperElementsContext.isInitialized && Option.isSome(hyperElementsContext.clientSecret) {
+    if (
+      hyperElementsContext.isInitialized &&
+      (Option.isSome(hyperElementsContext.clientSecret) ||
+      Option.isSome(hyperElementsContext.sdkAuthorization))
+    ) {
       findNodeHandle(0)
     }
 
@@ -199,20 +203,21 @@ let make = React.forwardRef((
   // Render conditions
   if !hyperElementsContext.isInitialized {
     React.null
+  } else if (
+    hyperElementsContext.clientSecret != None || hyperElementsContext.sdkAuthorization != None
+  ) {
+    <NativePaymentWidget
+      ref={viewRef}
+      widgetId={widgetId}
+      widgetType={"widgetPaymentSheet"}
+      clientSecret={hyperElementsContext.clientSecret->Option.getOr("")}
+      sdkAuthorization={hyperElementsContext.sdkAuthorization->Option.getOr("")}
+      onPaymentResult={onPaymentResultInternal}
+      onPaymentEvent={onPaymentEventInternal}
+      ?options
+      ?style
+    />
   } else {
-    switch hyperElementsContext.clientSecret {
-    | Some(clientSecret) =>
-      <NativePaymentWidget
-        ref={viewRef}
-        widgetId={widgetId}
-        widgetType={"widgetPaymentSheet"}
-        clientSecret={clientSecret}
-        onPaymentResult={onPaymentResultInternal}
-        onPaymentEvent={onPaymentEventInternal}
-        ?options
-        ?style
-      />
-    | None => React.null
-    }
+    React.null
   }
 })

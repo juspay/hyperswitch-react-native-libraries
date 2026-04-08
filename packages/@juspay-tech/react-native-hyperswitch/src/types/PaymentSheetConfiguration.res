@@ -204,6 +204,8 @@ type cvcWidgetOptions = {
 
 @genType
 type options = {
+  clientSecret?: string,
+  sdkAuthorization?: string,
   allowsDelayedPaymentMethods?: bool,
   appearance?: appearance,
   shippingDetails?: addressDetails,

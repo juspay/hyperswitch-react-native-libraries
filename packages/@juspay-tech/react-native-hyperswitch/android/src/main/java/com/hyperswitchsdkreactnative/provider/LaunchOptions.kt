@@ -52,11 +52,13 @@ class LaunchOptions(
         customParams: ReadableMap? = null,
         type: String? = "payment",
         widgetId: String? = null,
-    ): Bundle = Bundle().apply {
+        sdkAuthorization : String? = null,
+        ): Bundle = Bundle().apply {
         putBundle("props", Bundle().apply {
           putString("type", type)
           putString("from", "rn")
           putString("publishableKey", publishableKey ?: "")
+          putString("sdkAuthorization", sdkAuthorization?:"")
           putString("clientSecret", clientSecret ?: "")
           putBundle("configuration", readableMapToBundle(configuration))
           customBackendUrl?.let { url -> putString("customBackendUrl", url) }

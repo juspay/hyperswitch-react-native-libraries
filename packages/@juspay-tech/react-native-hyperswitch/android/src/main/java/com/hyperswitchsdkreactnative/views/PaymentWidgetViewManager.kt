@@ -102,6 +102,15 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     )
   }
 
+
+  @ReactProp(name = "sdkAuthorization")
+  override fun setSdkAuthorization(view: PaymentWidgetView, sdkAuthorization: String?) {
+    view.setSdkAuthorization(
+      sdkAuthorization ?: ""
+    )
+  }
+
+
   @ReactProp(name = "widgetType")
   override fun setWidgetType(view: PaymentWidgetView, widgetType: String?) {
     view.setWidgetType(widgetType)

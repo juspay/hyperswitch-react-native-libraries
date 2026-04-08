@@ -1,6 +1,6 @@
 // HyperElements.res
 // Context provider component that handles SDK initialization
-// Accepts hyper promise from Hyper.init() and options (sdkAuthorisation)
+// Accepts hyper promise from Hyper.init() and options (sdkAuthorization)
 
 open NativeHyperswitchSdk
 
@@ -8,25 +8,27 @@ open NativeHyperswitchSdk
 @genType
 type hyperElementsOptions = {
   clientSecret: option<string>,
-  sdkAuthorisation: option<string>,
+  sdkAuthorization: option<string>,
 }
 
 // Use hyperInstance type from Hyper module
 @genType
 type hyperElementsData = {
   hyperInstance: option<HyperTypes.hyperInstance>,
+  paymentSession: option<HyperTypes.paymentSession>,
   isInitialized: bool,
   error?: string,
   clientSecret: option<string>,
-  sdkAuthorisation: option<string>,
+  sdkAuthorization: option<string>,
 }
 
 // Default values
 let defaultVal: hyperElementsData = {
   hyperInstance: None,
+  paymentSession: None,
   isInitialized: false,
   clientSecret: None,
-  sdkAuthorisation: None,
+  sdkAuthorization: None,
 }
 
 // Create context
@@ -40,13 +42,14 @@ module Provider = {
 let getErrorData = (
   ~error="Failed to initialize Hyperswitch",
   ~clientSecret=None,
-  ~sdkAuthorisation=None,
+  ~sdkAuthorization=None,
 ): hyperElementsData => {
   hyperInstance: None,
+  paymentSession: None,
   isInitialized: false,
   error,
   clientSecret,
-  sdkAuthorisation,
+  sdkAuthorization,
 }
 
 // Initialize the native SDK
@@ -72,9 +75,9 @@ let make = (
 ) => {
   let (state, setState) = React.useState(_ => defaultVal)
 
-  // Extract sdkAuthorisation and clientSecret from options
-  let sdkAuthorisation = switch options {
-  | Some(opts) => opts.sdkAuthorisation
+  // Extract sdkAuthorization and clientSecret from options
+  let sdkAuthorization = switch options {
+  | Some(opts) => opts.sdkAuthorization
   | None => None
   }
 
@@ -83,7 +86,7 @@ let make = (
   | None => None
   }
 
-  // Initialize the SDK when hyper promise resolves or options change
+  // Initialize the SDK and payment session when hyper promise resolves or options change
   React.useEffect3(() => {
     let initialize = async () => {
       try {
@@ -100,11 +103,18 @@ let make = (
               ~customParams=config.customParams,
             )
 
+            // Initialize payment session once
+            let paymentSession = await Hyper.initPaymentSession(
+              ~hyperPromise=hyper,
+              ~paymentIntentClientSecret=clientSecret->Option.getOr(""),
+            )
+
             setState(_ => {
               hyperInstance: Some(hyperInstance),
+              paymentSession: Some(paymentSession),
               isInitialized: true,
               clientSecret,
-              sdkAuthorisation,
+              sdkAuthorization,
             })
           }
         | None =>
@@ -112,7 +122,7 @@ let make = (
             getErrorData(
               ~error="Hyper config not found. Call Hyper.init() before rendering HyperElements.",
               ~clientSecret,
-              ~sdkAuthorisation,
+              ~sdkAuthorization,
             )
           )
         }
@@ -128,7 +138,7 @@ let make = (
 
     initialize()->ignore
     None
-  }, (hyper, clientSecret, sdkAuthorisation))
+  }, (hyper, clientSecret, sdkAuthorization))
 
   let setState = React.useCallback1((val: hyperElementsData) => {
     setState(_ => val)

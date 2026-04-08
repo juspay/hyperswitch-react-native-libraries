@@ -18,4 +18,5 @@ public interface NativePaymentWidgetManagerInterface<T extends View> {
   void setWidgetType(T view, @Nullable String value);
   void setClientSecret(T view, @Nullable String value);
   void setOptions(T view, @Nullable Dynamic value);
+  void setSdkAuthorization(T view, @Nullable String value);
 }
