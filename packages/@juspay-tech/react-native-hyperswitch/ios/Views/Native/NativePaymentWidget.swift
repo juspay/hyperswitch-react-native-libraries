@@ -33,10 +33,10 @@ internal class NativePaymentWidget: RCTViewManager {
         //        }
     }
 
-    @objc func confirmPayment(_ reactTag: NSNumber) {
+    @objc func confirmPayment(_ reactTag: NSNumber, _ rnCallback: @escaping RCTResponseSenderBlock) {
         bridge.uiManager.addUIBlock { _, viewRegistry in
             guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
-            view.confirmPayment()
+            view.confirmPayment(rnCallback)
         }
     }
 }
@@ -48,6 +48,8 @@ internal class NativePaymentWidgetView: UIView {
     @objc private var clientSecret: String?
     @objc private var options: [String: Any]?
     @objc private var onPaymentResult: RCTDirectEventBlock?
+    private var responseSenderCallback: RCTResponseSenderBlock?
+
     internal var rctRootTag: NSNumber?
 
     @objc func didSetProps() {
@@ -76,6 +78,8 @@ internal class NativePaymentWidgetView: UIView {
                 WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag) { [weak self] response, shouldRemoveView in
                     guard let self = self else { return }
                     self.onPaymentResult?(["result": response])
+                    self.responseSenderCallback?([["result": response]])
+                    self.responseSenderCallback = nil
                     if shouldRemoveView {
                         self.rootView?.removeFromSuperview()
                     }
@@ -103,8 +107,16 @@ internal class NativePaymentWidgetView: UIView {
         }
     }
 
-    internal func confirmPayment() {
-        HyperModule.shared?.confirmPayment(self.rctRootTag ?? -1)
+    internal func confirmPayment(_ rnCallback: @escaping RCTResponseSenderBlock) {
+      // avoiding duplicate confirm calls (confirmPayment triggered multiple times from RN layer)
+      if self.responseSenderCallback != nil {
+        let response = ["status": "failed", "error": "invalid call"]
+        rnCallback([["result": response]])
+        return
+      }
+
+      self.responseSenderCallback = rnCallback
+      HyperModule.shared?.confirmPayment(self.rctRootTag ?? -1)
     }
 
     deinit {
