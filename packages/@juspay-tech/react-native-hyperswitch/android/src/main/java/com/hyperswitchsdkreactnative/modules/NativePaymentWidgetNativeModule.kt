@@ -28,7 +28,7 @@ class NativePaymentWidgetNativeModule(reactContext: ReactApplicationContext) :
         } else {
           callback.invoke("ERROR", "Invalid view type")
         }
-      } catch (e: IllegalViewOperationException) {
+      } catch (e: Exception) {
         callback.invoke("ERROR", "View not found: ${e.message}")
       }
     }

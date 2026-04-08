@@ -88,7 +88,7 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
-  public abstract void emitPaymentEvent(String widgetId, String eventType, ReadableMap payload);
+  public abstract void emitPaymentEvent(int rootTag, String eventType, ReadableMap payload);
 
   @ReactMethod
   @DoNotStrip

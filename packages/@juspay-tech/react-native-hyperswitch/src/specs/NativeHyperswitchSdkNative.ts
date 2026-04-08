@@ -28,9 +28,9 @@ export interface Spec extends TurboModule {
 
   exitCardForm(result: string): void;
 
-  exitWidgetPaymentsheet(rootTag: number, widgetId: string, result: string, reset: boolean): void;
+  exitWidgetPaymentsheet(rootTag: number, result: string, reset: boolean): void;
 
-  notifyWidgetPaymentResult(widgetId: string, result: string): void;
+  notifyWidgetPaymentResult(rootTag: number, result: string): void;
 
   launchWidgetPaymentSheet(
     requestObj: string,
@@ -41,7 +41,7 @@ export interface Spec extends TurboModule {
 
   onAddPaymentMethod(data: string): void;
 
-  emitPaymentEvent(widgetId:string,eventType: string, payload: Object): void;
+  emitPaymentEvent(rootTag: number, eventType: string, payload: Object): void;
 }
 
 /**

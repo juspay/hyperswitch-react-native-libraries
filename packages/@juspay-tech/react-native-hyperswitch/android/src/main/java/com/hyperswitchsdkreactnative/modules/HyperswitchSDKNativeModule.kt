@@ -100,7 +100,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
         onFound(FragmentManager.findFragment<HyperFragment>(reactRootView))
       } catch (e: IllegalViewOperationException) {
         onFound(null)
-      } catch (e: IllegalStateException) {
+      } catch (e: Exception) {
         onFound(null)
       }
     }
@@ -156,17 +156,14 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
 
 
   @ReactMethod
-  override fun emitPaymentEvent(widgetId: String, eventType: String, payload: ReadableMap) {
+  override fun emitPaymentEvent(rootTag: Int, eventType: String, payload: ReadableMap) {
     try {
-      if (widgetId.isEmpty()) {
+      if (rootTag <= 0) {
         HyperswitchRNWrapperNativeModule.emitPaymentSheetEvent(eventType, payload)
       } else {
-//        findFragmentWithRootTag(rootTag.toInt(), {
-//          it?.notifyResult(CallbackType.PAYMENT_RESULT, result)
-//        })
-//        WidgetCallbackManager.sendEvent(widgetId, eventType, payload)
-//        HyperFragment.onEvents(widgetId, eventType, payload)
-//          HyperFragment.onEvents(widgetId, CallbackType.PAYMENT_RESULT,"", result)
+        findFragmentWithRootTag(rootTag, {
+          it?.notifyEvent(eventType, payload)
+        })
       }
     } catch (e: Exception) {
       Log.e("HyperModule", "Error emitting payment event", e)

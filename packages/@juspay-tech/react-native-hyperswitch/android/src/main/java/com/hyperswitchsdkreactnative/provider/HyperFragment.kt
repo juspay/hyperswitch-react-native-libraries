@@ -271,21 +271,6 @@ class HyperFragment : ReactFragment() {
     })
   }
 
-  override fun onCreateView(
-    inflater: LayoutInflater,
-    container: ViewGroup?,
-    savedInstanceState: Bundle?
-  ): View? {
-    val view = super.onCreateView(inflater, container, savedInstanceState)
-    if (view is ReactRootView) {
-      view.layoutParams = FrameLayout.LayoutParams(
-        FrameLayout.LayoutParams.MATCH_PARENT,
-        FrameLayout.LayoutParams.MATCH_PARENT
-      )
-    }
-    return view
-  }
-
   override fun onDestroyView() {
     (view as? ReactRootView)?.unmountReactApplication()
     super.onDestroyView()

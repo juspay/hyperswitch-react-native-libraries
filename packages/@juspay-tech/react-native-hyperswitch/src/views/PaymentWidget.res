@@ -123,7 +123,13 @@ let make = React.forwardRef((
           switch Nullable.toOption(viewRef.current) {
           | None =>
             Promise.resolve(
-              ({status: "failed", message: "Widget not ready", error: "Widget not ready"}: NativeHyperswitchSdk.paymentResult),
+              (
+                {
+                  status: "failed",
+                  message: "Widget not ready",
+                  error: "Widget not ready",
+                }: NativeHyperswitchSdk.paymentResult
+              ),
             )
           | Some(_) =>
             let id = ReactNativeUtils.findNodeHandle(viewRef.current)
