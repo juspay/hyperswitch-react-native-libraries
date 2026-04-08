@@ -52,11 +52,11 @@ public class HyperswitchModule: NSObject {
       self.paymentSession?.presentPaymentSheetWithParams(viewController: vc, params: configuration, completion: { result in
         switch result {
         case .completed(let data):
-          resolve(["status": "completed", "message": "Payment completed", "data": data])
+          resolve(["status": "completed", "message": data])
         case .failed(let error as NSError):
-          resolve(["status": "failed", "code": error.domain, "message": "\(error.userInfo["message"] ?? "Payment failed")"])
+          resolve(["status": "failed", "code": error.domain, "message": "Payment failed: \(error.userInfo["message"] ?? "Failed")"])
         case .canceled(let data):
-          resolve(["status": "cancelled", "message": "Payment cancelled", "data": data])
+          resolve(["status": "cancelled", "message": data])
         }
       })
     }
@@ -74,7 +74,6 @@ public class HyperswitchModule: NSObject {
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
       self.paymentSession?.getCustomerSavedPaymentMethods(initSavedPaymentMethodSessionCallback)
-
       resolve(["status": "success", "message": "Payment methods initialized"])
   }
 
@@ -86,7 +85,6 @@ public class HyperswitchModule: NSObject {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
-              "code": "UNKNOWN",
               "message": "Payment session handler not initialized."
           ])
           return
@@ -126,7 +124,6 @@ public class HyperswitchModule: NSObject {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
-              "code": "UNKNOWN",
               "message": "Payment session handler not initialized."
           ])
           return
@@ -167,7 +164,6 @@ public class HyperswitchModule: NSObject {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
-              "code": "UNKNOWN",
               "message": "Payment session handler not initialized."
           ])
           return
@@ -205,10 +201,10 @@ public class HyperswitchModule: NSObject {
           }
       }
   }
-  
+
 //  @objc(confirmPaymentWithWidgetId:resolve:reject:)
 //  public func confirmPayment(
-//    withWidgetId widgetId: String,
+//    rootTag: String,
 //    resolve: @escaping RCTPromiseResolveBlock,
 //    reject: @escaping RCTPromiseRejectBlock
 //  ) -> Void {
@@ -220,7 +216,7 @@ public class HyperswitchModule: NSObject {
 //      ])
 //      return
 //    }
-//    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
+////    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
 //  }
 
   @objc(confirmWithCustomerLastUsedPaymentMethodWithReactTag:withResolve:reject:)
@@ -232,7 +228,6 @@ public class HyperswitchModule: NSObject {
       guard let handler = self.paymentSessionHandler else {
           resolve([
               "status": "error",
-              "code": "NO_HANDLER",
               "message": "Payment session handler not initialized."
           ])
           return
