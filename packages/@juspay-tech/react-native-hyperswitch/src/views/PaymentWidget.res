@@ -6,11 +6,6 @@ let createView = viewId => {
 
 type paymentWidgetRef = {confirmPayment: unit => promise<NativeHyperswitchSdk.paymentResult>}
 
-type pendingConfirmation = {
-  resolve: NativeHyperswitchSdk.paymentResult => unit,
-  reject: exn => unit,
-}
-
 @react.component @genType
 let make = React.forwardRef((
   ~widgetId: string,
@@ -23,64 +18,84 @@ let make = React.forwardRef((
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let (hyperElementsContext, _) = HyperElements.useHyperElements()
   let isRegisteredRef = React.useRef(false)
-  let mountCountRef = React.useRef(0)
 
-  // Effect to detect when native view is mounted and get its node handle
-  React.useEffect(() => {
-    let checkAndRegister = () => {
-      switch Js.Nullable.toOption(viewRef.current) {
-      | Some(_) => {
+  // Detect native view and get node handle when ready
+  React.useEffect2(() => {
+    let isMounted = {contents: true}
+
+    let rec findNodeHandle = attempt => {
+      if !isMounted.contents {
+        ()
+      } else {
+        switch Js.Nullable.toOption(viewRef.current) {
+        | Some(_) =>
           let id = ReactNativeUtils.findNodeHandle(viewRef.current)
           if id != -1 {
             setViewId(_ => Some(id))
+          } else if attempt < 20 {
+            let _ = Js.Global.setTimeout(() => findNodeHandle(attempt + 1), 100)
+          }
+        | None =>
+          if attempt < 20 {
+            let _ = Js.Global.setTimeout(() => findNodeHandle(attempt + 1), 100)
           }
         }
-      | None => ()
       }
     }
-    // Delay slightly to ensure native view is mounted
-    let timeoutId = Js.Global.setTimeout(checkAndRegister, 100)
-    Some(() => Js.Global.clearTimeout(timeoutId))
-  }, [mountCountRef.current])
 
-  // Registration effect - runs when viewId becomes available
-  React.useEffect(() => {
+    if hyperElementsContext.isInitialized && Option.isSome(hyperElementsContext.clientSecret) {
+      findNodeHandle(0)
+    }
+
+    Some(() => isMounted.contents = false)
+  }, (hyperElementsContext.isInitialized, hyperElementsContext.clientSecret))
+
+  // Register/unregister widget with registry
+  React.useEffect1(() => {
     switch viewId {
-    | Some(id) => {
-        WidgetRegistry.registerWidget(widgetId, id)
-        isRegisteredRef.current = true
-        Some(() => {
-          if isRegisteredRef.current {
-            WidgetRegistry.unregisterWidget(widgetId)
-            isRegisteredRef.current = false
-          }
-        })
-      }
+    | Some(id) =>
+      WidgetRegistry.registerWidget(widgetId, id)
+      isRegisteredRef.current = true
+      Some(() => {
+        if isRegisteredRef.current {
+          WidgetRegistry.unregisterWidget(widgetId)
+          isRegisteredRef.current = false
+        }
+      })
     | None => None
     }
   }, [viewId])
 
+  // Create native view when viewId available
+  React.useEffect1(() => {
+    switch viewId {
+    | Some(id) => createView(id)
+    | None => ()
+    }
+    None
+  }, [viewId])
+
+  // Expose imperative handle for direct confirmPayment calls
   React.useImperativeHandle(
     ref,
     () => {
       {
-        confirmPayment: (): promise<NativeHyperswitchSdk.paymentResult> => {
+        confirmPayment: () => {
           switch Nullable.toOption(viewRef.current) {
           | None =>
             Promise.resolve(
-              ({status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult),
+              {status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult,
             )
           | Some(_) =>
             let id = ReactNativeUtils.findNodeHandle(viewRef.current)
             if id == -1 {
               Promise.resolve(
-                ({status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult ),
+                {status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult,
               )
             } else {
               Promise.make((resolve, _) => {
                 NativeHyperswitchSdk.confirmPayment(id, (result: NativeHyperswitchSdk.paymentResult) => {
-                  let status = result.status 
-                  resolve(({status, message: result.message}: NativeHyperswitchSdk.paymentResult))
+                  resolve({status: result.status, message: result.message}: NativeHyperswitchSdk.paymentResult)
                 })
               })
             }
@@ -91,21 +106,11 @@ let make = React.forwardRef((
     [viewId],
   )
 
-  React.useEffect(() => {
-    switch viewId {
-    | Some(id) => {
-        createView(id)
-      }
-    | None => ()
-    }
-    None
-  }, [viewId])
-
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
-  // Only render if HyperElements is initialized
+  // Render conditions
   if !hyperElementsContext.isInitialized {
     React.null
   } else {

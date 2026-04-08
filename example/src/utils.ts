@@ -41,6 +41,7 @@ export const getCustomisationOptions = (layout='tabs') => {
       },
     },
     primaryButtonLabel: 'Complete Purchase',
+    hideConfirmButton : true
   };
 
   return options;
