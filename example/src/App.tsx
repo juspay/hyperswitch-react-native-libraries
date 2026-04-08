@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
 import UIScreen from './UIScreen';
 import HeadlessScreen from './HeadlessScreen';
+import PaymentScreenWithHook from './PaymentScreen';
 
 type TabType = 'ui' | 'headless';
 
@@ -61,7 +62,7 @@ export default function App() {
 
       <View style={styles.content}>
         {activeTab === 'ui' ? (
-          <UIScreen hyperPromise={hyperPromise} />
+          <PaymentScreenWithHook hyperPromise={hyperPromise} />
         ) : (
           <HeadlessScreen hyperPromise={hyperPromise} />
         )}
