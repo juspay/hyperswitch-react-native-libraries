@@ -176,9 +176,15 @@ class HyperFragment : ReactFragment() {
       val json = JSONObject()
       when (result) {
         is HeadlessPaymentResult.Completed -> {
-          json.put("status", "success")
-          json.put("message", "Payment confirmed successfully")
-          json.put("data", result.data)
+          if (result.data == "requires_customer_action") {
+            json.put("status", "failed")
+            json.put("code", "requires_customer_action")
+            json.put("message", "Payment requires additional authentication")
+          } else {
+            json.put("status", "success")
+            json.put("message", "Payment confirmed successfully")
+            json.put("data", result.data)
+          }
         }
 
         is HeadlessPaymentResult.Failed -> {
