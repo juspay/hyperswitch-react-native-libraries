@@ -29,6 +29,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
 
 data class OnEventResult(
   val eventName: String,
@@ -41,12 +42,16 @@ enum class CallbackType {
   PAYMENT_RESULT,
   CONFIRM_ACTION,
   CONFIRM_CVC_ACTION,
-  ON_EVENT
+  ON_EVENT,
+  UPDATE_INTENT_INIT,
+  UPDATE_INTENT_COMPLETE
 }
+
 
 sealed class HyperCallback {
   class Payment(val fn: Callback) : HyperCallback()
   class Event(val fn: EventCallback) : HyperCallback()
+  class UpdateIntent(val fn : Callback) : HyperCallback()
 }
 
 class HyperFragment : ReactFragment() {
@@ -70,6 +75,57 @@ class HyperFragment : ReactFragment() {
 
   fun setOnEventCallback(eventCallback: EventCallback) {
     callbacks[CallbackType.ON_EVENT] = HyperCallback.Event(eventCallback)
+  }
+
+  fun updatePaymentIntentInit(callback: Callback) {
+    val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+    if (rootTag == -1) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "React context not ready",
+          "REACT_CONTEXT_NOT_READY"
+        )
+      )
+      return
+    }
+    callbacks[CallbackType.UPDATE_INTENT_INIT] = HyperCallback.UpdateIntent(callback)
+    reactDelegate.currentReactContext
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("updateIntentInit", Arguments.createMap().apply {
+        putInt("rootTag", rootTag)
+      })
+  }
+
+  fun updatePaymentIntentComplete(sdkAuthorization: String, callback: Callback) {
+    val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+    if (rootTag == -1) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "React context not ready",
+          "REACT_CONTEXT_NOT_READY"
+        )
+      )
+      return
+    }
+    if(callbacks[CallbackType.UPDATE_INTENT_COMPLETE] != null){
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "Update intent complete already in progress",
+          "ALREADY_IN_PROGRESS"
+        )
+      )
+      return
+    }
+    callbacks[CallbackType.UPDATE_INTENT_COMPLETE] = HyperCallback.UpdateIntent(callback)
+    reactDelegate.currentReactContext
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("updateIntentComplete", Arguments.createMap().apply {
+        putString("sdkAuthorization", sdkAuthorization)
+        putInt("rootTag", rootTag)
+      })
   }
 
   fun confirmPayment(callback: Callback) {
@@ -126,6 +182,16 @@ class HyperFragment : ReactFragment() {
           }
         }
 
+        CallbackType.UPDATE_INTENT_INIT ->
+          (callbacks.remove(CallbackType.UPDATE_INTENT_INIT) as? HyperCallback.UpdateIntent)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+
+        CallbackType.UPDATE_INTENT_COMPLETE ->
+          (callbacks.remove(CallbackType.UPDATE_INTENT_COMPLETE) as? HyperCallback.UpdateIntent)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+
         CallbackType.CONFIRM_ACTION -> {
           (callbacks.remove(CallbackType.CONFIRM_ACTION) as? HyperCallback.Payment)?.fn?.invoke(
             parsed.toWritableMap()
@@ -176,9 +242,15 @@ class HyperFragment : ReactFragment() {
       val json = JSONObject()
       when (result) {
         is HeadlessPaymentResult.Completed -> {
-          json.put("status", "success")
-          json.put("message", "Payment confirmed successfully")
-          json.put("data", result.data)
+          if (result.data == "requires_customer_action") {
+            json.put("status", "failed")
+            json.put("code", "requires_customer_action")
+            json.put("message", "Payment requires additional authentication")
+          } else {
+            json.put("status", "success")
+            json.put("message", "Payment confirmed successfully")
+            json.put("data", result.data)
+          }
         }
 
         is HeadlessPaymentResult.Failed -> {
@@ -320,6 +392,7 @@ class HyperFragment : ReactFragment() {
   fun unRegisterEventBus() {
     if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this)
   }
+
 
   @Subscribe
   fun onEvent(event: RedirectEvent) {

@@ -29,7 +29,7 @@ object HeadlessManager {
      * If ReactContext is already available, starts the task immediately.
      * Otherwise, waits for ReactContext initialization and then starts.
      *
-     * @param props Bundle containing clientSecret, publishableKey, hyperParams, etc.
+     * @param props Bundle containing sdkAuthorization, publishableKey, hyperParams, etc.
      */
     fun startHeadlessTask(props: Bundle, application: Application) {
         val reactNativeHost: ReactNativeHost?

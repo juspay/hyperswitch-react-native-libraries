@@ -52,7 +52,7 @@ internal class NativePaymentWidgetView: UIView {
 
     @objc private var rootView: RCTRootView?
     @objc private var widgetType: String?
-    @objc private var clientSecret: String?
+    @objc private var sdkAuthorization: String?
     @objc private var options: [String: Any]?
     @objc private var onPaymentResult: RCTDirectEventBlock?
     private var responseSenderCallback: RCTResponseSenderBlock?
@@ -60,19 +60,16 @@ internal class NativePaymentWidgetView: UIView {
     internal var rctRootTag: NSNumber?
 
     @objc func didSetProps() {
-        if let clientSecret = clientSecret {
-            // Track CVC widget active state
-            if widgetType == "cvcWidget" {
-                HyperswitchModule.isCvcWidgetActive = true
-            }
-
+      print()
+        if let sdkAuthorization = sdkAuthorization {
             let hyperParams = HyperParams.getHyperParams()
             var configuration = self.options ?? [:]
             configuration["hideConfirmButton"] = true
             let props: [String : Any] = [
                 "configuration": configuration,
                 "type": self.widgetType as Any,
-                "clientSecret": clientSecret as Any,
+                "widgetId": self.reactTag as Any,
+                "sdkAuthorization": sdkAuthorization as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
@@ -151,7 +148,6 @@ internal class NativePaymentWidgetView: UIView {
                 resolve([response])
             }
         }
-
 
         let payload: [String: Any] = [
             "actionType": "CONFIRM_CVC_PAYMENT",

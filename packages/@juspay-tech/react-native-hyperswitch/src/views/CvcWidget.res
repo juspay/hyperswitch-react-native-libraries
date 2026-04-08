@@ -14,7 +14,7 @@ let make = React.forwardRef((
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
   let isRegisteredRef = React.useRef(false)
-
+  let (contextData, _) = React.useContext(HyperElements.hyperElementsContext)
   // Detect native view and get node handle when ready (with retry)
   React.useEffect0(() => {
     let isMounted = {contents: true}
@@ -82,7 +82,7 @@ let make = React.forwardRef((
     switch event.nativeEvent.eventName {
     | "CVC_STATUS" =>
       try {
-        switch event.nativeEvent.payload->JSON.parseExn->JSON.Decode.object {
+        switch event.nativeEvent.payload->JSON.Decode.object {
         | Some(outerDict) =>
           switch outerDict->Dict.get("cvcStatus")->Option.flatMap(JSON.Decode.object) {
           | Some(cvcDict) => {
@@ -129,13 +129,14 @@ let make = React.forwardRef((
     placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {
       cvv: ?Some(cvv),
     }),
+    sdkAuthorization: options.sdkAuthorization,
   }
 
   <NativePaymentWidget
     ref={viewRef}
     widgetId={options.widgetId}
     widgetType="cvcWidget"
-    clientSecret={options.clientSecret}
+    sdkAuthorization={options.sdkAuthorization}
     onPaymentEvent={onPaymentEventInternal}
     options={fullOptions}
     ?style

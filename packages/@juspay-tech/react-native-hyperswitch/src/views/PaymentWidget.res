@@ -18,10 +18,9 @@ let emitUnknownEventWarningWidget = (
       ),
       ("validEvents", JSON.Encode.array(warningPayload.validEvents->Array.map(JSON.Encode.string))),
     ])->JSON.Encode.object
-  let payloadStr = payloadJson->JSON.stringify
   callback({
     eventName: "UNKNOWN_EVENT_SUBSCRIBED",
-    payload: payloadStr,
+    payload: payloadJson,
   })
 }
 
@@ -80,12 +79,12 @@ let make = React.forwardRef((
       }
     }
 
-    if hyperElementsContext.isInitialized && Option.isSome(hyperElementsContext.clientSecret) {
+    if hyperElementsContext.isInitialized && hyperElementsContext.sdkAuthorization != "" {
       findNodeHandle(0)
     }
 
     Some(() => isMounted.contents = false)
-  }, (hyperElementsContext.isInitialized, hyperElementsContext.clientSecret))
+  }, (hyperElementsContext.isInitialized, hyperElementsContext.sdkAuthorization))
 
   // Register/unregister widget with registry
   React.useEffect1(() => {
@@ -186,7 +185,6 @@ let make = React.forwardRef((
   })
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
-    Console.log2("Received payment result from native:", event.nativeEvent)
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 
@@ -200,20 +198,18 @@ let make = React.forwardRef((
   // Render conditions
   if !hyperElementsContext.isInitialized {
     React.null
+  } else if hyperElementsContext.sdkAuthorization != "" {
+    <NativePaymentWidget
+      ref={viewRef}
+      widgetId={widgetId}
+      widgetType={"widgetPaymentSheet"}
+      sdkAuthorization={hyperElementsContext.sdkAuthorization}
+      onPaymentResult={onPaymentResultInternal}
+      onPaymentEvent={onPaymentEventInternal}
+      ?options
+      ?style
+    />
   } else {
-    switch hyperElementsContext.clientSecret {
-    | Some(clientSecret) =>
-      <NativePaymentWidget
-        ref={viewRef}
-        widgetId={widgetId}
-        widgetType={"widgetPaymentSheet"}
-        clientSecret={clientSecret}
-        onPaymentResult={onPaymentResultInternal}
-        onPaymentEvent={onPaymentEventInternal}
-        ?options
-        ?style
-      />
-    | None => React.null
-    }
+    React.null
   }
 })

@@ -1,5 +1,6 @@
 package com.hyperswitchsdkreactnative.modules
 
+import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
@@ -53,15 +54,17 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun initPaymentSession(paymentIntentClientSecret: String, promise: Promise?) {
+  override fun initPaymentSession(sdkAuthorization: String?, promise: Promise?) {
     try {
       hyperProvider?.let { provider ->
         // Clean up stale state from any previous payment session.
         HeadlessFlowController.reset()
         paymentSessionHandler = null
 
-        provider.initPaymentSession(clientSecret = paymentIntentClientSecret)
-        clientSecret = paymentIntentClientSecret
+        sdkAuthorization?.let {
+          HyperswitchRNWrapperNativeModule.sdkAuthorization = sdkAuthorization
+          provider.initPaymentSession(sdkAuthorization = sdkAuthorization)
+        }
         promise?.resolve(null)
       } ?: run {
         promise?.reject("INIT_ERROR", "HyperProvider not initialized")
@@ -83,8 +86,8 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   }
 
   override fun getCustomerSavedPaymentMethods(promise: Promise?) {
-    val secret = clientSecret
-    if (secret == null) {
+    val auth = sdkAuthorization
+    if (auth == null) {
       promise?.resolve(
         serializeResult("error", "NO_SESSION", "Payment session not initialized. Call initPaymentSession first.")
       )
@@ -99,7 +102,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return
     }
 
-    HeadlessFlowController.getCustomerSavedPaymentMethods(secret, application, callback = { handler ->
+    HeadlessFlowController.getCustomerSavedPaymentMethods(auth, application, callback = { handler ->
       paymentSessionHandler = handler
       promise?.resolve(
         serializeResult("success", null, "Payment methods initialized")
@@ -300,7 +303,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     private var sheetPromise: Promise? = null
     private var currentInstance: HyperswitchRNWrapperNativeModule? = null
     private var hostReactContext: ReactApplicationContext? = null
-    private var clientSecret: String? = null
+    private var sdkAuthorization: String? = null
     @Volatile
     private var paymentSessionHandler: PaymentSessionHandler? = null
     @Volatile

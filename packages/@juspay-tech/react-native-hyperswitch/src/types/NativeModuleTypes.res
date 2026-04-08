@@ -60,7 +60,7 @@ type paymentEventPayload =
 @genType
 type paymentEventResult = {
   eventName: string,
-  payload: string,
+  payload: JSON.t,
 }
 
 type paymentEventNative = {nativeEvent: paymentEventResult}
@@ -76,8 +76,7 @@ type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
   widgetId: string, // sessionId
   widgetType?: string,
-  clientSecret?: string,
-  sdkAuthorisation?: string,
+  sdkAuthorization: string,
   options?: PaymentSheetConfiguration.options, // appearance and other configs can be passed as options in JSON string format
   onPaymentResult?: nativeEvent => unit, // callback to receive payment result from native code
   style?: ReactNative.Style.t, // style for the view including min-height

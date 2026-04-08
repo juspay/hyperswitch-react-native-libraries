@@ -7,7 +7,7 @@ import { UnsafeMixed } from './utils';
 export interface NativeProps extends ViewProps {
   widgetId?: string;
   widgetType?: string;
-  clientSecret?: string;
+  sdkAuthorization?: string;
   options?: UnsafeMixed<options>;
   onPaymentResult?: DirectEventHandler<{
     paymentResult?: string;

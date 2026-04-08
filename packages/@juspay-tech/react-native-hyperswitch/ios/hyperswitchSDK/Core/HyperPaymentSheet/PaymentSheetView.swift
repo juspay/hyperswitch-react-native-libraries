@@ -21,11 +21,11 @@ internal extension PaymentSheet {
         /// Create a dictionary of hyperParams with app ID, sdkVersion, country, user agent, default view, and launch time.
         let hyperParams = HyperParams.getHyperParams()
 
-        /// Create a dictionary of props to be sent to React Native with configuration, type, client secret, publishable key, hyperParams, custom backend URL, themes, and custom parameters.
+        /// Create a dictionary of props to be sent to React Native with configuration, type, sdkAuthorization, publishable key, hyperParams, custom backend URL, themes, and custom parameters.
         let props: [String : Any] = [
             "configuration": configuration as Any,
             "type":"payment",
-            "clientSecret": self.intentClientSecret,
+            "sdkAuthorization": self.sdkAuthorization,
             "publishableKey": APIClient.shared.publishableKey as Any,
             "hyperParams": hyperParams,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,
@@ -48,7 +48,7 @@ internal extension PaymentSheet {
         let props: [String : Any] = [
             "configuration": props,
             "type":"payment",
-            "clientSecret": self.intentClientSecret,
+            "sdkAuthorization": self.sdkAuthorization,
             "publishableKey": APIClient.shared.publishableKey as Any,
             "hyperParams": hyperParams,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,

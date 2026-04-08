@@ -13,7 +13,7 @@
 
 RCT_EXPORT_VIEW_PROPERTY(widgetType, NSString)
 RCT_EXPORT_VIEW_PROPERTY(options, NSDictionary)
-RCT_EXPORT_VIEW_PROPERTY(clientSecret, NSString)
+RCT_EXPORT_VIEW_PROPERTY(sdkAuthorization, NSString)
 RCT_EXPORT_VIEW_PROPERTY(onPaymentResult, RCTDirectEventBlock)
 
 RCT_EXTERN_METHOD(showWidget:(nonnull NSNumber *)reactTag)

@@ -45,19 +45,19 @@ class LaunchOptions(
 
     fun getBundle(
         publishableKey: String? = null,
-        clientSecret: String? = null,
         configuration: ReadableMap? = null,
         customBackendUrl: String? = null,
         customLogUrl: String? = null,
         customParams: ReadableMap? = null,
         type: String? = "payment",
         widgetId: String? = null,
-    ): Bundle = Bundle().apply {
+        sdkAuthorization : String? = null,
+        ): Bundle = Bundle().apply {
         putBundle("props", Bundle().apply {
           putString("type", type)
           putString("from", "rn")
           putString("publishableKey", publishableKey ?: "")
-          putString("clientSecret", clientSecret ?: "")
+          putString("sdkAuthorization", sdkAuthorization?:"")
           putBundle("configuration", readableMapToBundle(configuration))
           customBackendUrl?.let { url -> putString("customBackendUrl", url) }
           customLogUrl?.let { url -> putString("customLogUrl", url) }
