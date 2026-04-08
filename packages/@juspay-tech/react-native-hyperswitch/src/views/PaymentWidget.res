@@ -18,10 +18,9 @@ let emitUnknownEventWarningWidget = (
       ),
       ("validEvents", JSON.Encode.array(warningPayload.validEvents->Array.map(JSON.Encode.string))),
     ])->JSON.Encode.object
-  let payloadStr = payloadJson->JSON.stringify
   callback({
     eventName: "UNKNOWN_EVENT_SUBSCRIBED",
-    payload: payloadStr,
+    payload: payloadJson,
   })
 }
 

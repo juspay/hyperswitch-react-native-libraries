@@ -82,7 +82,7 @@ let make = React.forwardRef((
     switch event.nativeEvent.eventName {
     | "CVC_STATUS" =>
       try {
-        switch event.nativeEvent.payload->JSON.parseExn->JSON.Decode.object {
+        switch event.nativeEvent.payload->JSON.Decode.object {
         | Some(outerDict) =>
           switch outerDict->Dict.get("cvcStatus")->Option.flatMap(JSON.Decode.object) {
           | Some(cvcDict) => {
