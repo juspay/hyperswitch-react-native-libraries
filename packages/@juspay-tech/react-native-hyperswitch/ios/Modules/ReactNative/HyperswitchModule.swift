@@ -158,9 +158,9 @@ public class HyperswitchModule: NSObject {
       }
   }
 
-  @objc(confirmWithCustomerDefaultPaymentMethodWithWidgetId:withResolve:reject:)
+  @objc(confirmWithCustomerDefaultPaymentMethodWithReactTag:withResolve:reject:)
   public func confirmWithCustomerDefaultPaymentMethod(
-    widgetId: String,
+    reactTag: Int,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -173,14 +173,14 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      if HyperswitchModule.isCvcWidgetActive && !widgetId.isEmpty {
-          // CvcWidget active — route through widget bridge
+      if reactTag > 0 {
+          // CvcWidget reactTag provided — route through widget bridge
           let result = handler.getCustomerDefaultSavedPaymentMethodData()
           switch result {
           case .success(let paymentMethod):
               if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
                   HyperswitchModule.confirmViaWidget(
-                      widgetId: widgetId,
+                      reactTag: reactTag,
                       paymentToken: paymentMethod.paymentToken,
                       paymentMethodId: paymentMethod.paymentMethodId,
                       resolve: resolve
@@ -223,9 +223,9 @@ public class HyperswitchModule: NSObject {
 //    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
 //  }
 
-  @objc(confirmWithCustomerLastUsedPaymentMethodWithWidgetId:withResolve:reject:)
+  @objc(confirmWithCustomerLastUsedPaymentMethodWithReactTag:withResolve:reject:)
   public func confirmWithCustomerLastUsedPaymentMethod(
-    widgetId: String,
+    reactTag: Int,
     withResolve resolve: @escaping RCTPromiseResolveBlock,
       reject: @escaping RCTPromiseRejectBlock
   ) -> Void {
@@ -238,14 +238,14 @@ public class HyperswitchModule: NSObject {
           return
       }
 
-      if HyperswitchModule.isCvcWidgetActive && !widgetId.isEmpty {
-          // CvcWidget active — route through widget bridge
+      if reactTag > 0 {
+          // CvcWidget reactTag provided — route through widget bridge
           let result = handler.getCustomerLastUsedPaymentMethodData()
           switch result {
           case .success(let paymentMethod):
               if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
                   HyperswitchModule.confirmViaWidget(
-                      widgetId: widgetId,
+                      reactTag: reactTag,
                       paymentToken: paymentMethod.paymentToken,
                       paymentMethodId: paymentMethod.paymentMethodId,
                       resolve: resolve
@@ -274,11 +274,11 @@ public class HyperswitchModule: NSObject {
   // MARK: - CvcWidget Confirm Routing
 
   /// Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge so CvcWidget.res
-  /// handles the confirm. CvcWidget reads CVC from CvcRegistry, calls confirmCardPayment,
-  /// which calls exitHeadless when done — routing back through PaymentSession.exitHeadless →
-  /// completion → resolve.
+  /// handles the confirm. The reactTag is passed directly — no view lookup needed since
+  /// iOS can't resolve views across bridges (two-bridge problem). The reactTag from JS is
+  /// the rootTag of the CvcWidget's React root, matching nativeProp.rootTag in the inner bundle.
   private static func confirmViaWidget(
-      widgetId: String,
+      reactTag: Int,
       paymentToken: String,
       paymentMethodId: String,
       resolve: @escaping RCTPromiseResolveBlock
@@ -288,21 +288,10 @@ public class HyperswitchModule: NSObject {
           resolve(paymentResultToDict(result))
       }
 
-      // Look up the CvcWidget view to get the rootTag
-      guard let widgetView = NativePaymentWidgetView.getCvcWidgetView(widgetId: widgetId),
-            let rootTag = widgetView.id else {
-          resolve([
-              "status": "failed",
-              "code": "NO_WIDGET",
-              "message": "CvcWidget '\(widgetId)' not found or not mounted"
-          ])
-          return
-      }
-
       // Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge
       let payload: [String: Any] = [
           "actionType": "CONFIRM_CVC_PAYMENT",
-          "rootTag": rootTag,
+          "rootTag": reactTag,
           "paymentToken": paymentToken,
           "paymentMethodId": paymentMethodId
       ]

@@ -90,8 +90,8 @@ type savedPaymentMethod = {
 type getCustomerSavedPaymentMethods = unit => promise<string>
 type getCustomerDefaultSavedPaymentMethodData = unit => promise<string>
 type getCustomerLastUsedPaymentMethodData = unit => promise<string>
-type confirmWithCustomerDefaultPaymentMethod = string => promise<string>
-type confirmWithCustomerLastUsedPaymentMethod = string => promise<string>
+type confirmWithCustomerDefaultPaymentMethod = int => promise<string>
+type confirmWithCustomerLastUsedPaymentMethod = int => promise<string>
 type confirmWithCustomerPaymentToken = string => promise<string>
 
 

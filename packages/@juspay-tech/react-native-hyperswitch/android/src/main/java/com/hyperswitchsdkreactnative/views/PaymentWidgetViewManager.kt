@@ -22,7 +22,6 @@ import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule
 import com.hyperswitchsdkreactnative.provider.LaunchOptions
 import com.hyperswitchsdkreactnative.utils.HyperFragmentManager
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
   NativePaymentWidgetManagerInterface<PaymentWidgetView> {
@@ -60,11 +59,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   override fun onAfterUpdateTransaction(view: PaymentWidgetView) {
     super.onAfterUpdateTransaction(view)
-
-    // Register CVC widget after all props (widgetId, widgetType) are set
-    if (cvcWidgetViewIds.contains(view.id)) {
-      registerCvcWidget(view.getWidgetId(), view)
-    }
 
     view.onPaymentResult { result ->
       val parsed = result[0] as? ReadableMap
@@ -170,7 +164,6 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
       HyperswitchRNWrapperNativeModule.isCvcWidgetActive = false
       HeadlessFlowController.reset()
     }
-    unregisterCvcWidget(view.getWidgetId())
   }
 
   companion object {
@@ -178,21 +171,5 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     private const val SHOW_WIDGET = 0
     private const val REMOVE_WIDGET = 1
     private const val DEFAULT = -1
-
-    // widgetId → PaymentWidgetView mapping for CVC widgets
-    // Used by HyperswitchRNWrapperNativeModule to route CVC confirms to the correct view
-    private val cvcWidgetViews = ConcurrentHashMap<String, PaymentWidgetView>()
-
-    fun getCvcWidgetView(widgetId: String): PaymentWidgetView? {
-      return cvcWidgetViews[widgetId]
-    }
-
-    fun registerCvcWidget(widgetId: String, view: PaymentWidgetView) {
-      cvcWidgetViews[widgetId] = view
-    }
-
-    fun unregisterCvcWidget(widgetId: String) {
-      cvcWidgetViews.remove(widgetId)
-    }
   }
 }

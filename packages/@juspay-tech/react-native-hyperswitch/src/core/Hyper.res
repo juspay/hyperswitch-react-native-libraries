@@ -111,14 +111,32 @@ let initPaymentSession = (
                   )
                 },
                 confirmWithCustomerDefaultPaymentMethod: widgetId => {
-                  nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(
-                    widgetId,
-                  )->Promise.thenResolve(parseNativeResponse)
+                  switch WidgetRegistry.getWidget(widgetId) {
+                  | Some(reactTag) =>
+                    nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(
+                      reactTag,
+                    )->Promise.thenResolve(parseNativeResponse)
+                  | None =>
+                    Promise.resolve(
+                      parseNativeResponse(
+                        `{"status":"failed","code":"NO_WIDGET","message":"CvcWidget '${widgetId}' not found or not mounted"}`,
+                      ),
+                    )
+                  }
                 },
                 confirmWithCustomerLastUsedPaymentMethod: widgetId => {
-                  nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(
-                    widgetId,
-                  )->Promise.thenResolve(parseNativeResponse)
+                  switch WidgetRegistry.getWidget(widgetId) {
+                  | Some(reactTag) =>
+                    nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(
+                      reactTag,
+                    )->Promise.thenResolve(parseNativeResponse)
+                  | None =>
+                    Promise.resolve(
+                      parseNativeResponse(
+                        `{"status":"failed","code":"NO_WIDGET","message":"CvcWidget '${widgetId}' not found or not mounted"}`,
+                      ),
+                    )
+                  }
                 },
                 confirmWithCustomerPaymentToken: token => {
                   nativeHyperswitchSdk.confirmWithCustomerPaymentToken(token)->Promise.thenResolve(

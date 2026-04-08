@@ -16,8 +16,8 @@ export interface Spec extends TurboModule {
   getCustomerSavedPaymentMethods(): Promise<string>;
   getCustomerDefaultSavedPaymentMethodData(): Promise<string>;
   getCustomerLastUsedPaymentMethodData(): Promise<string>;
-  confirmWithCustomerDefaultPaymentMethod(widgetId: string): Promise<string>;
-  confirmWithCustomerLastUsedPaymentMethod(widgetId: string): Promise<string>;
+  confirmWithCustomerDefaultPaymentMethod(reactTag: number): Promise<string>;
+  confirmWithCustomerLastUsedPaymentMethod(reactTag: number): Promise<string>;
   confirmWithCustomerPaymentToken(paymentToken: string): Promise<string>;
 }
 

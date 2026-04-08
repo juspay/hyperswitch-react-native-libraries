@@ -61,11 +61,11 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
 
   @ReactMethod
   @DoNotStrip
-  public abstract void confirmWithCustomerDefaultPaymentMethod(String widgetId, Promise promise);
+  public abstract void confirmWithCustomerDefaultPaymentMethod(int reactTag, Promise promise);
 
   @ReactMethod
   @DoNotStrip
-  public abstract void confirmWithCustomerLastUsedPaymentMethod(String widgetId, Promise promise);
+  public abstract void confirmWithCustomerLastUsedPaymentMethod(int reactTag, Promise promise);
 
   @ReactMethod
   @DoNotStrip

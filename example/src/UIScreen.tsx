@@ -194,7 +194,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     }
 
     try {
-      setLoading(true);
+      // setLoading(true);
       setStatus('Confirming with CVC (last used)...');
 
       const result = await paymentSession.confirmWithCustomerLastUsedPaymentMethod('last-used-card') as HeadlessResponse;
@@ -219,7 +219,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     }
 
     try {
-      setLoading(true);
+      // setLoading(true);
       setStatus('Confirming with CVC (default)...');
 
       const result = await paymentSession.confirmWithCustomerDefaultPaymentMethod('default-card') as HeadlessResponse;
@@ -392,21 +392,21 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
 
         <TouchableOpacity
           style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
-          onPress={confirmWithLastUsed}
-          disabled={isLoading || !lastUsedMethod}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Processing...' : 'Confirm with Last Used'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
           onPress={confirmWithDefault}
           disabled={isLoading || !defaultMethod}
         >
           <Text style={styles.buttonText}>
             {isLoading ? 'Processing...' : 'Confirm with Default'}
+          </Text>
+        </TouchableOpacity>
+
+         <TouchableOpacity
+          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
+          onPress={confirmWithLastUsed}
+          disabled={isLoading || !lastUsedMethod}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Processing...' : 'Confirm with Last Used'}
           </Text>
         </TouchableOpacity>
 

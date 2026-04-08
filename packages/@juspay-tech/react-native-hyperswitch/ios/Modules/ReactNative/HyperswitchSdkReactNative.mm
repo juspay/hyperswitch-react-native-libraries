@@ -61,18 +61,18 @@ RCT_EXPORT_METHOD(getCustomerLastUsedPaymentMethodData:(RCTPromiseResolveBlock)r
   [HyperswitchModule.shared getCustomerLastUsedPaymentMethodDataWithResolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(nonnull NSString *)widgetId
+RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(NSInteger)reactTag
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
-  [HyperswitchModule.shared confirmWithCustomerDefaultPaymentMethodWithWidgetId:widgetId withResolve:resolve reject:reject];
+  [HyperswitchModule.shared confirmWithCustomerDefaultPaymentMethodWithReactTag:reactTag withResolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(nonnull NSString *)widgetId
+RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(NSInteger)reactTag
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
-  [HyperswitchModule.shared confirmWithCustomerLastUsedPaymentMethodWithWidgetId:widgetId withResolve:resolve reject:reject];
+  [HyperswitchModule.shared confirmWithCustomerLastUsedPaymentMethodWithReactTag:reactTag withResolve:resolve reject:reject];
 }
 
 + (BOOL)requiresMainQueueSetup

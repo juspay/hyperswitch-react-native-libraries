@@ -6,6 +6,8 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.UIManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
 import com.hyperswitchsdkreactnative.headless.PMError
@@ -13,7 +15,7 @@ import com.hyperswitchsdkreactnative.headless.PaymentMethodType
 import com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult
 import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.views.PaymentWidgetViewManager
+import com.hyperswitchsdkreactnative.views.PaymentWidgetView
 import org.json.JSONObject
 
 
@@ -155,7 +157,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     )
   }
 
-  override fun confirmWithCustomerDefaultPaymentMethod(widgetId: String?, promise: Promise?) {
+  override fun confirmWithCustomerDefaultPaymentMethod(reactTag: Int, promise: Promise?) {
     val handler = paymentSessionHandler
     if (handler == null) {
       promise?.resolve(
@@ -164,13 +166,13 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return
     }
 
-    if (isCvcWidgetActive && !(widgetId.isNullOrEmpty())) {
-      // CvcWidget is active — route card confirm through CvcWidget's JS context
+    if (reactTag > 0) {
+      // CvcWidget reactTag provided — route card confirm through CvcWidget's JS context
       val defaultData = handler.getCustomerDefaultSavedPaymentMethodData()
       defaultData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            confirmViaWidgetView(widgetId, pm.paymentToken, pm.paymentMethodId, promise)
+            confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
@@ -193,7 +195,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun confirmWithCustomerLastUsedPaymentMethod(widgetId: String?, promise: Promise?) {
+  override fun confirmWithCustomerLastUsedPaymentMethod(reactTag: Int, promise: Promise?) {
     val handler = paymentSessionHandler
     if (handler == null) {
       promise?.resolve(
@@ -202,14 +204,14 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return
     }
 
-    if (isCvcWidgetActive && !(widgetId.isNullOrEmpty())) {
-      // CvcWidget is active — route card confirm through CvcWidget's JS context
+    if (reactTag > 0) {
+      // CvcWidget reactTag provided — route card confirm through CvcWidget's JS context
       val lastUsedData = handler.getCustomerLastUsedPaymentMethodData()
 
       lastUsedData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            confirmViaWidgetView(widgetId, pm.paymentToken, pm.paymentMethodId, promise)
+            confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
@@ -247,36 +249,46 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   }
 
   /**
-   * Routes a card confirm through CvcWidget's view/fragment by looking up the
-   * PaymentWidgetView from the widgetId→view map and calling confirmCvcPayment.
+   * Routes a card confirm through CvcWidget's view/fragment by resolving the
+   * PaymentWidgetView from the reactTag via UIManagerModule and calling confirmCvcPayment.
    * The fragment emits "triggerWidgetAction" with CONFIRM_CVC_PAYMENT, and the
    * CvcWidget JS bundle handles CVC lookup + confirm API call.
-   * Result flows back through exitWidgetPaymentsheet → HyperFragment.resolveConfirmPayment → callback.
+   * Result flows back through exitHeadless → ExitHeadlessCallBackManager → callback → promise.resolve.
    */
   private fun confirmViaWidgetView(
-    widgetId: String,
+    reactTag: Int,
     paymentToken: String,
     paymentMethodId: String,
     promise: Promise?
   ) {
-    val view = PaymentWidgetViewManager.getCvcWidgetView(widgetId)
-    if (view == null) {
-      promise?.resolve(
-        serializeResult("failed", "NO_WIDGET", "CvcWidget '$widgetId' not found or not mounted")
-      )
-      return
-    }
-    view.confirmCvcPayment(
-      Callback { args ->
-        if (args.isNotEmpty()) {
-          promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
+    val uiManagerModule =
+      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
+    uiManagerModule?.addUIBlock { nvhm ->
+      try {
+        val view = nvhm.resolveView(reactTag)
+        if (view is PaymentWidgetView) {
+          view.confirmCvcPayment(
+            Callback { args ->
+              if (args.isNotEmpty()) {
+                promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
+              } else {
+                promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
+              }
+            },
+            paymentToken,
+            paymentMethodId
+          )
         } else {
-          promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
+          promise?.resolve(
+            serializeResult("failed", "INVALID_VIEW", "View at reactTag $reactTag is not a CvcWidget")
+          )
         }
-      },
-      paymentToken,
-      paymentMethodId
-    )
+      } catch (e: IllegalViewOperationException) {
+        promise?.resolve(
+          serializeResult("failed", "NO_WIDGET", "CvcWidget not found at reactTag $reactTag: ${e.message}")
+        )
+      }
+    }
   }
 
   fun resetView() {
@@ -318,7 +330,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     }
 
     /**
-     * Convert PaymentResult (Throwable-based Failed) to JSON string.
+     * Convert HeadlessPaymentResult (Throwable-based Failed) to JSON string.
      * Old pattern: code in throwable.cause.message, message in throwable.message
      */
     private fun paymentResultToString(result: HeadlessPaymentResult): String {
