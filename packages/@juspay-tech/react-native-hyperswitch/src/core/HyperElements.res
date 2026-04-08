@@ -7,8 +7,7 @@ open NativeHyperswitchSdk
 // Options type for HyperElements
 @genType
 type hyperElementsOptions = {
-  clientSecret: option<string>,
-  sdkAuthorization: option<string>,
+  sdkAuthorization: string,
 }
 
 // Use hyperInstance type from Hyper module
@@ -18,8 +17,7 @@ type hyperElementsData = {
   paymentSession: option<HyperTypes.paymentSession>,
   isInitialized: bool,
   error?: string,
-  clientSecret: option<string>,
-  sdkAuthorization: option<string>,
+  sdkAuthorization: string,
 }
 
 // Default values
@@ -27,8 +25,7 @@ let defaultVal: hyperElementsData = {
   hyperInstance: None,
   paymentSession: None,
   isInitialized: false,
-  clientSecret: None,
-  sdkAuthorization: None,
+  sdkAuthorization: "",
 }
 
 // Create context
@@ -41,14 +38,12 @@ module Provider = {
 // Get error data helper
 let getErrorData = (
   ~error="Failed to initialize Hyperswitch",
-  ~clientSecret=None,
-  ~sdkAuthorization=None,
+  ~sdkAuthorization="",
 ): hyperElementsData => {
   hyperInstance: None,
   paymentSession: None,
   isInitialized: false,
   error,
-  clientSecret,
   sdkAuthorization,
 }
 
@@ -75,19 +70,14 @@ let make = (
 ) => {
   let (state, setState) = React.useState(_ => defaultVal)
 
-  // Extract sdkAuthorization and clientSecret from options
+  // Extract sdkAuthorization from options
   let sdkAuthorization = switch options {
   | Some(opts) => opts.sdkAuthorization
-  | None => None
-  }
-
-  let clientSecret = switch options {
-  | Some(opts) => opts.clientSecret
-  | None => None
+  | None => ""
   }
 
   // Initialize the SDK and payment session when hyper promise resolves or options change
-  React.useEffect3(() => {
+  React.useEffect2(() => {
     let initialize = async () => {
       try {
         let hyperInstance = await hyper
@@ -103,17 +93,17 @@ let make = (
               ~customParams=config.customParams,
             )
 
+            let paymentSession = if sdkAuthorization != "" {
+              Some(await Hyper.initPaymentSession(~hyperPromise=hyper, ~sdkAuthorization))
+            } else {
+              None
+            }
             // Initialize payment session once
-            let paymentSession = await Hyper.initPaymentSession(
-              ~hyperPromise=hyper,
-              ~paymentIntentClientSecret=clientSecret->Option.getOr(""),
-            )
 
             setState(_ => {
               hyperInstance: Some(hyperInstance),
-              paymentSession: Some(paymentSession),
+              paymentSession: paymentSession,
               isInitialized: true,
-              clientSecret,
               sdkAuthorization,
             })
           }
@@ -121,7 +111,6 @@ let make = (
           setState(_ =>
             getErrorData(
               ~error="Hyper config not found. Call Hyper.init() before rendering HyperElements.",
-              ~clientSecret,
               ~sdkAuthorization,
             )
           )
@@ -138,7 +127,7 @@ let make = (
 
     initialize()->ignore
     None
-  }, (hyper, clientSecret, sdkAuthorization))
+  }, (hyper, sdkAuthorization))
 
   let setState = React.useCallback1((val: hyperElementsData) => {
     setState(_ => val)

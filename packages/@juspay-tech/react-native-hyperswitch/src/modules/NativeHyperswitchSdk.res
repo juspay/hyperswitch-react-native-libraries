@@ -10,11 +10,11 @@ type initialise = (
 
 // type completeUpdateIntent = Js.Json.t => promise<string>
 
-type initPaymentSession = (~paymentIntentClientSecret: string) => promise<string>
+type initPaymentSession = (~sdkAuthorization: string) => promise<string>
 
 
-@genType
-type initPaymentSessionParams = {paymentIntentClientSecret?: string, sdkAuthorization?: string}
+// @genType
+// type initPaymentSessionParams = {paymentIntentClientSecret?: string, sdkAuthorization?: string}
 
 @genType
 type initPaymentSessionResult = {error?: string}

@@ -32,8 +32,6 @@ class PaymentWidgetView : FrameLayout {
   private var publishableKey: String? = null
   private var profileId: String? = null
   private var widgetId = UUID.randomUUID().toString()
-  private var clientSecret: String = ""
-
   private var sdkAuthorization : String = ""
 
   private var callback: Callback? = null
@@ -78,10 +76,6 @@ class PaymentWidgetView : FrameLayout {
     return this.configuration
   }
 
-  fun getClientSecret(): String {
-    return this.clientSecret
-  }
-
   fun getSdkAuthorization(): String{
     return this.sdkAuthorization
   }
@@ -121,10 +115,6 @@ class PaymentWidgetView : FrameLayout {
   }
 
 
-  fun isClientSecretEmpty(): Boolean {
-    return this.clientSecret.isEmpty()
-  }
-
   fun isSdkAuthorizationEmpty(): Boolean {
     return this.sdkAuthorization.isEmpty()
   }
@@ -150,7 +140,6 @@ class PaymentWidgetView : FrameLayout {
   fun getLaunchOptions(): Bundle =
     this.launchOptions.getBundle(
       publishableKey = HyperProvider.publishableKey,
-      clientSecret = this.clientSecret,
       configuration = this.getConfiguration(),
       customBackendUrl = HyperProvider.customBackendUrl,
       customLogUrl = HyperProvider.customLogUrl,
@@ -175,16 +164,12 @@ class PaymentWidgetView : FrameLayout {
     this.fragment?.confirmCvcPayment(callback, paymentToken, paymentMethodId)
   }
 
-  fun setPaymentIntent(clientSecret: String) {
-    this.clientSecret = clientSecret
-  }
-
   fun setSdkAuthorization(sdkAuthorization: String){
     this.sdkAuthorization = sdkAuthorization
   }
 
   fun showWidgetInternal() {
-    if (this.isClientSecretEmpty()) {
+    if (this.isSdkAuthorizationEmpty()) {
       this.post { showWidgetInternal() }
       return
     }

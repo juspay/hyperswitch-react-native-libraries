@@ -129,15 +129,14 @@ let make = React.forwardRef((
     placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {
       cvv: ?Some(cvv),
     }),
-    clientSecret: ?contextData.clientSecret,
-    sdkAuthorization: ?contextData.sdkAuthorization,
+    sdkAuthorization: options.sdkAuthorization,
   }
 
   <NativePaymentWidget
     ref={viewRef}
     widgetId={options.widgetId}
     widgetType="cvcWidget"
-    clientSecret={options.clientSecret}
+    sdkAuthorization={options.sdkAuthorization}
     onPaymentEvent={onPaymentEventInternal}
     options={fullOptions}
     ?style

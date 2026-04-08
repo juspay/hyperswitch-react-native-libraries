@@ -25,13 +25,13 @@ object HeadlessFlowController {
      * Starts the headless flow to get customer saved payment methods.
      * Always starts HeadlessJsTask — CvcWidget is never involved in the get flow.
      *
-     * @param clientSecret The payment intent client secret
+     * @param sdkAuthorization The SDK authorization token
      * @param application The application context
      * @param callback Invoked with the PaymentSessionHandler when payment methods are ready
      */
     @Synchronized
     fun getCustomerSavedPaymentMethods(
-        clientSecret: String,
+        sdkAuthorization: String,
         application: Application,
         callback: (PaymentSessionHandler) -> Unit
     ) {
@@ -48,10 +48,10 @@ object HeadlessFlowController {
 
         val props = launchOptions.getBundle(
             publishableKey = HyperProvider.publishableKey,
-            clientSecret = clientSecret,
             customBackendUrl = HyperProvider.customBackendUrl,
             customLogUrl = HyperProvider.customLogUrl,
             customParams = HyperProvider.customParams,
+            sdkAuthorization = sdkAuthorization,
             type = "headless"
         )
 

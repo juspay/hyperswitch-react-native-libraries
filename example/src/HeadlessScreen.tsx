@@ -25,7 +25,7 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
   const [status, setStatus] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
-  const [clientSecret, setClientSecret] = useState<string>('');
+  const [sdkAuthorization, setSdkAuthorization] = useState<string>('');
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
   const [lastUsedMethod, setLastUsedMethod] = useState<SavedPaymentMethod | null>(null);
   const [defaultMethod, setDefaultMethod] = useState<SavedPaymentMethod | null>(null);
@@ -39,7 +39,7 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
 
-    return data.clientSecret;
+    return data.sdkAuthorization;
   }, [baseURL]);
 
   const initializeSession = async () => {
@@ -49,7 +49,7 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       setMessage('');
 
       const secret = await createPaymentIntent();
-      setClientSecret(secret);
+      setSdkAuthorization(secret);
 
       const session = await initPaymentSession(hyperPromise, secret);
       setPaymentSession(session);

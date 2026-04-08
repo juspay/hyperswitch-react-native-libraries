@@ -56,14 +56,14 @@ internal class NativePaymentWidgetView: UIView {
     @objc private var rootView: RCTRootView?
     @objc private var widgetId: String?
     @objc private var widgetType: String?
-    @objc private var clientSecret: String?
+    @objc private var sdkAuthorization: String?
     @objc private var options: [String: Any]?
     @objc internal var onPaymentResult: RCTDirectEventBlock?
     internal var id: NSNumber?
 
     @objc func didSetProps() {
       print()
-        if let clientSecret = clientSecret {
+        if let sdkAuthorization = sdkAuthorization {
             // Track CVC widget active state
             if widgetType == "cvcWidget" {
                 HyperswitchModule.isCvcWidgetActive = true
@@ -78,7 +78,7 @@ internal class NativePaymentWidgetView: UIView {
                 "configuration": configuration,
                 "type": self.widgetType as Any,
                 "widgetId": self.reactTag as Any,
-                "clientSecret": clientSecret as Any,
+                "sdkAuthorization": sdkAuthorization as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,

@@ -45,7 +45,6 @@ class LaunchOptions(
 
     fun getBundle(
         publishableKey: String? = null,
-        clientSecret: String? = null,
         configuration: ReadableMap? = null,
         customBackendUrl: String? = null,
         customLogUrl: String? = null,
@@ -59,7 +58,6 @@ class LaunchOptions(
           putString("from", "rn")
           putString("publishableKey", publishableKey ?: "")
           putString("sdkAuthorization", sdkAuthorization?:"")
-          putString("clientSecret", clientSecret ?: "")
           putBundle("configuration", readableMapToBundle(configuration))
           customBackendUrl?.let { url -> putString("customBackendUrl", url) }
           customLogUrl?.let { url -> putString("customLogUrl", url) }

@@ -80,16 +80,12 @@ let make = React.forwardRef((
       }
     }
 
-    if (
-      hyperElementsContext.isInitialized &&
-      (Option.isSome(hyperElementsContext.clientSecret) ||
-      Option.isSome(hyperElementsContext.sdkAuthorization))
-    ) {
+    if hyperElementsContext.isInitialized && hyperElementsContext.sdkAuthorization != "" {
       findNodeHandle(0)
     }
 
     Some(() => isMounted.contents = false)
-  }, (hyperElementsContext.isInitialized, hyperElementsContext.clientSecret))
+  }, (hyperElementsContext.isInitialized, hyperElementsContext.sdkAuthorization))
 
   // Register/unregister widget with registry
   React.useEffect1(() => {
@@ -203,15 +199,12 @@ let make = React.forwardRef((
   // Render conditions
   if !hyperElementsContext.isInitialized {
     React.null
-  } else if (
-    hyperElementsContext.clientSecret != None || hyperElementsContext.sdkAuthorization != None
-  ) {
+  } else if hyperElementsContext.sdkAuthorization != "" {
     <NativePaymentWidget
       ref={viewRef}
       widgetId={widgetId}
       widgetType={"widgetPaymentSheet"}
-      clientSecret={hyperElementsContext.clientSecret->Option.getOr("")}
-      sdkAuthorization={hyperElementsContext.sdkAuthorization->Option.getOr("")}
+      sdkAuthorization={hyperElementsContext.sdkAuthorization}
       onPaymentResult={onPaymentResultInternal}
       onPaymentEvent={onPaymentEventInternal}
       ?options

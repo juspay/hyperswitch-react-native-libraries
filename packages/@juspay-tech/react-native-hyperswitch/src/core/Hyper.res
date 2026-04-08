@@ -105,9 +105,9 @@ let setGlobalConfig = (
 // Create a hyper instance with the given config
 let createHyperInstance = (): HyperTypes.hyperInstance => {
   // confirmPayment: (paymentParams: Js.Json.t) => {}
-  initPaymentSession: (sessionParams: string) => {
+  initPaymentSession: (sdkAuthorization : string) => {
     nativeHyperswitchSdk.initPaymentSession(
-      ~paymentIntentClientSecret=sessionParams,
+      ~sdkAuthorization=sdkAuthorization
     )->Promise.thenResolve(parseNativeResponse)
   },
 
@@ -246,11 +246,11 @@ let _updateIntent = async (~callback): HyperTypes.nativeResponse => {
 @genType
 let initPaymentSession = (
   ~hyperPromise: promise<HyperTypes.hyperInstance>,
-  ~paymentIntentClientSecret: string,
+  ~sdkAuthorization: string,
 ): promise<HyperTypes.paymentSession> => {
   hyperPromise->Promise.then(_hyperInstance => {
     nativeHyperswitchSdk.initPaymentSession(
-      ~paymentIntentClientSecret,
+      ~sdkAuthorization,
     )->Promise.then(_initResult => {
       nativeHyperswitchSdk.getCustomerSavedPaymentMethods()->Promise.then(
         _savedMethodsResult => {

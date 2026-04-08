@@ -37,8 +37,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [status, setStatus] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
-  const [clientSecret, setClientSecret] = useState<string>('');
-  const [sdkAuthorisation, setSdkAuthorisation] = useState<string>('');
+  const [sdkAuthorization, setsdkAuthorization] = useState<string>('');
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(
     null
   );
@@ -58,7 +57,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const sessionInitRef = useRef(false);
 
   const createPaymentIntent = useCallback(async (): Promise<{
-    clientSecret: string;
     sdkAuthorization: string;
     paymentId: string;
   }> => {
@@ -71,14 +69,12 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     setPaymentId(data.payment_id);
 
     return {
-      clientSecret: data.clientSecret,
       sdkAuthorization: data.sdkAuthorization,
       paymentId: data.payment_id,
     };
   }, [baseURL]);
 
     const updatePaymentIntent = useCallback(async (): Promise<{
-    clientSecret: string;
     sdkAuthorization: string;
   }> => {
     console.log('Updating payment intent with ID:', paymentId);
@@ -101,8 +97,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     }
 
     return {
-      clientSecret: data.clientSecret,
-      sdkAuthorization: data.sdkAuthorization,
+      sdkAuthorization: data.sdkAuthorization
     };
   }, [baseURL, paymentId]);
 
@@ -159,15 +154,13 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     } finally {
       setLoading(false);
     }
-  }, [paymentSession, clientSecret]);
+  }, [paymentSession, sdkAuthorization]);
 
   const setup = useCallback(async (): Promise<void> => {
     try {
       sessionInitRef.current = false;
-      const { clientSecret, sdkAuthorisation } = await createPaymentIntent();
-
-      setClientSecret(clientSecret);
-      setSdkAuthorisation(sdkAuthorisation);
+      const {  sdkAuthorization } = await createPaymentIntent();
+      setsdkAuthorization(sdkAuthorization);
       setPaymentSession(null);
       setLastUsedMethod(null);
       setDefaultMethod(null);
@@ -210,7 +203,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   };
 
   useEffect(() => {
-    if (!clientSecret || sessionInitRef.current) return;
+    if (!sdkAuthorization || sessionInitRef.current) return;
 
     sessionInitRef.current = true;
 
@@ -220,7 +213,8 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
         setStatus('Auto-initializing session...');
         setMessage('');
 
-        const session = await initPaymentSession(hyperPromise, clientSecret);
+        const session = await initPaymentSession(hyperPromise, sdkAuthorization);
+        
         setPaymentSession(session);
         setStatus('Session initialized — fetching saved methods...');
 
@@ -261,7 +255,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     };
 
     initAndFetch();
-  }, [clientSecret, hyperPromise]);
+  }, [sdkAuthorization, hyperPromise]);
 
   useEffect(() => {
     setup();
@@ -425,8 +419,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   };
 
   const hyperElementsOptions: HyperElementsOptions = {
-    clientSecret: clientSecret || undefined,
-    sdkAuthorisation: sdkAuthorisation || undefined,
+    sdkAuthorization: sdkAuthorization || undefined,
   };
 
   const isLoading = loading || sessionInitializing;
@@ -497,11 +490,11 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           )}
 
           <Text style={styles.statusText}>CVC Widget — Default Card:</Text>
-          {clientSecret && defaultMethod && (
+          {sdkAuthorization && defaultMethod && (
             <CvcWidget
               options={{
                 ...getCvcInputOptions(),
-                clientSecret,
+                sdkAuthorization,
                 widgetId: 'default-card',
                 placeholder: '123',
               }}
@@ -513,11 +506,11 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           )}
 
           <Text style={styles.statusText}>CVC Widget — Last Used Card:</Text>
-          {clientSecret && lastUsedMethod && (
+          {sdkAuthorization && lastUsedMethod && (
             <CvcWidget
               options={{
                 ...getCvcInputOptions(),
-                clientSecret,
+                sdkAuthorization,
                 widgetId: 'last-used-card',
                 placeholder: '456',
               }}

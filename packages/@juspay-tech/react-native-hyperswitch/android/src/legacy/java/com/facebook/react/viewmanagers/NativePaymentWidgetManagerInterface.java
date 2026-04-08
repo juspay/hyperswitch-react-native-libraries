@@ -16,7 +16,6 @@ import com.facebook.react.bridge.Dynamic;
 public interface NativePaymentWidgetManagerInterface<T extends View> {
   void setWidgetId(T view, @Nullable String value);
   void setWidgetType(T view, @Nullable String value);
-  void setClientSecret(T view, @Nullable String value);
   void setOptions(T view, @Nullable Dynamic value);
   void setSdkAuthorization(T view, @Nullable String value);
 }

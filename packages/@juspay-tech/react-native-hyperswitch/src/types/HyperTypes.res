@@ -21,7 +21,7 @@ type nativeResponse = {
 @genType
 type hyperInstance = {
   // confirmPayment: Js.Json.t => promise<Js.Json.t>,
-  initPaymentSession: string => promise<nativeResponse>,
+  initPaymentSession: (string) => promise<nativeResponse>,
   // completeUpdateIntent: string => promise<Js.Json.t>,
 }
 

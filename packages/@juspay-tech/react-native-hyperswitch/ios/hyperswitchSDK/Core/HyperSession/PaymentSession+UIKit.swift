@@ -30,14 +30,14 @@ extension PaymentSession {
 
     public func presentPaymentSheet(viewController: UIViewController, configuration: PaymentSheet.Configuration, completion: @escaping (PaymentSheetResult) -> ()){
         PaymentSession.isPresented = true
-        let paymentSheet = PaymentSheet(paymentIntentClientSecret: PaymentSession.paymentIntentClientSecret ?? "", configuration: configuration)
+        let paymentSheet = PaymentSheet(sdkAuthorization: PaymentSession.sdkAuthorization ?? "", configuration: configuration)
         paymentSheet.present(from: viewController, completion: completion)
     }
 
     // for external frameworks
     public func presentPaymentSheetWithParams(viewController: UIViewController, params: [String: Any], completion: @escaping (PaymentSheetResult) -> ()){
         PaymentSession.isPresented = true
-        let paymentSheet = PaymentSheet(paymentIntentClientSecret: PaymentSession.paymentIntentClientSecret ?? "", configuration: PaymentSheet.Configuration())
+        let paymentSheet = PaymentSheet(sdkAuthorization: PaymentSession.sdkAuthorization ?? "", configuration: PaymentSheet.Configuration())
         paymentSheet.presentWithParams(from: viewController, props: params, completion: completion)
     }
 
@@ -48,7 +48,7 @@ extension PaymentSession {
         RNHeadlessManager.sharedInstance.reinvalidateBridge()
         let hyperParams = HyperParams.getHyperParams()
         let props: [String: Any] = [
-            "clientSecret": PaymentSession.paymentIntentClientSecret as Any,
+            "sdkAuthorization": PaymentSession.sdkAuthorization as Any,
             "publishableKey": APIClient.shared.publishableKey as Any,
             "hyperParams": hyperParams,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,

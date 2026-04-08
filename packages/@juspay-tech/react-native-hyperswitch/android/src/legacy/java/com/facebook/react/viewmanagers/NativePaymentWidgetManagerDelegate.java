@@ -28,9 +28,6 @@ public class NativePaymentWidgetManagerDelegate<T extends View, U extends BaseVi
       case "widgetType":
         mViewManager.setWidgetType(view, value == null ? null : (String) value);
         break;
-      case "clientSecret":
-        mViewManager.setClientSecret(view, value == null ? null : (String) value);
-        break;
       case "sdkAuthorization":
         mViewManager.setSdkAuthorization(view, value == null ? null : (String) value);
         break;

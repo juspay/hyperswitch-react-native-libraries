@@ -8,7 +8,7 @@ export interface Spec extends TurboModule {
     customLogUrl: undefined | string,
     customParams: undefined | Object
   ): Promise<void>;
-  initPaymentSession(paymentIntentClientSecret: string): Promise<string>;
+  initPaymentSession(sdkAuthorization: string): Promise<string>;
   presentPaymentSheet(configuration: Object): Promise<string>;  
   // Headless Payment Methods
   getCustomerSavedPaymentMethods(): Promise<string>;
