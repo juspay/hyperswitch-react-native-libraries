@@ -10,14 +10,17 @@ import UIKit
 
 @objc(NativePaymentWidget)
 internal class NativePaymentWidget: RCTViewManager {
-
-    override func view() -> (NativePaymentWidgetView) {
-        return NativePaymentWidgetView()
+    private var nativePaymentWidgetView: NativePaymentWidgetView?
+    
+    override func view() -> NativePaymentWidgetView {
+      self.nativePaymentWidgetView = NativePaymentWidgetView()
+      return self.nativePaymentWidgetView ?? NativePaymentWidgetView()
     }
 
     @objc override static func requiresMainQueueSetup() -> Bool {
         return false
     }
+
     @objc func showWidget(_ reactTag: NSNumber) {
         //        bridge.uiManager.addUIBlock { uiManager, viewRegistry in
         //            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
@@ -31,25 +34,50 @@ internal class NativePaymentWidget: RCTViewManager {
         //                        view.removeWidget()
         //        }
     }
+
+    @objc func confirmPayment(_ reactTag: NSNumber) {
+        bridge.uiManager.addUIBlock { uiManager, viewRegistry in
+          guard let _view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return
+          }
+          print("-- react Tag: ", reactTag);
+          print("-- root Tag from bundle: ", self.nativePaymentWidgetView?.id?.stringValue);
+          
+          HyperModule.shared?.confirmPayment(self.nativePaymentWidgetView?.id?.stringValue ?? "", resolve: {
+                response in print("-- confirm payment resposne: ", response)
+            }, reject: {
+                a, b, error in print("-- confirm payment error: ", a, b, error)
+            })
+        }
+    }
 }
 
-internal class NativePaymentWidgetView: UIView, RNResponseHandler {
+internal class NativePaymentWidgetView: UIView {
 
     @objc private var rootView: RCTRootView?
     @objc private var widgetId: String?
     @objc private var widgetType: String?
     @objc private var clientSecret: String?
     @objc private var options: [String: Any]?
-    @objc private var onPaymentResult: RCTDirectEventBlock?
+    @objc internal var onPaymentResult: RCTDirectEventBlock?
+    internal var id: NSNumber?
 
     @objc func didSetProps() {
+      print()
         if let clientSecret = clientSecret {
+            // Track CVC widget active state
+            if widgetType == "cvcWidget" {
+                HyperswitchModule.isCvcWidgetActive = true
+            }
+
             RNViewManager.sharedInstance.responseHandler = self
+
             let hyperParams = HyperParams.getHyperParams()
+            var configuration = self.options ?? [:]
+            configuration["hideConfirmButton"] = true
             let props: [String : Any] = [
-                "configuration": self.options as Any,
+                "configuration": configuration,
                 "type": self.widgetType as Any,
-                "widgetId": self.widgetId as Any,
+                "widgetId": self.reactTag as Any,
                 "clientSecret": clientSecret as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
@@ -59,8 +87,16 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
             ]
             let initialProperties = ["props": props]
             self.rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties:initialProperties as [String : Any])
+
             if let rootView = self.rootView {
+                self.id = rootView.reactTag
                 self.addSubview(rootView)
+                NotificationCenter.default.addObserver(
+                    self,
+                    selector: #selector(handleWidgetResponse(_:)),
+                    name: .hyperWidgetPaymentResult,
+                    object: nil
+                )
             }
         }
     }
@@ -73,7 +109,6 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
         super.init(frame: frame)
     }
 
-
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -85,12 +120,26 @@ internal class NativePaymentWidgetView: UIView, RNResponseHandler {
         }
     }
 
-    func didReceiveResponse(response: String?, error: Error?) {
-        if let onPaymentResult = onPaymentResult,
-           let response = response  {
-            onPaymentResult(["result": response])
-            // TODO: temp 
+    @objc private func handleWidgetResponse(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let rootTag = userInfo["rootTag"] as? NSNumber,
+              let response = userInfo["response"] as? String,
+              rootTag == self.id else { return }
+        onPaymentResult?(["result": response])
+        let shouldRemoveView = userInfo["shouldRemoveView"] as? Bool ?? false
+        if shouldRemoveView {
             self.rootView?.removeFromSuperview()
+            NotificationCenter.default.removeObserver(self, name: .hyperWidgetPaymentResult, object: nil)
         }
+    }
+
+    override func removeFromSuperview() {
+        if widgetType == "cvcWidget" {
+            HyperswitchModule.isCvcWidgetActive = false
+        }
+        rootView?.removeFromSuperview()
+        rootView = nil
+        super.removeFromSuperview()
+
     }
 }

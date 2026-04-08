@@ -10,6 +10,15 @@ export interface Spec extends TurboModule {
   ): Promise<void>;
   initPaymentSession(paymentIntentClientSecret: string): Promise<string>;
   presentPaymentSheet(configuration: Object): Promise<string>;
+  confirmPayment(reactTag: number, callback: (result: string) => void): void;
+  
+  // Headless Payment Methods
+  getCustomerSavedPaymentMethods(): Promise<string>;
+  getCustomerDefaultSavedPaymentMethodData(): Promise<string>;
+  getCustomerLastUsedPaymentMethodData(): Promise<string>;
+  confirmWithCustomerDefaultPaymentMethod(reactTag: number): Promise<string>;
+  confirmWithCustomerLastUsedPaymentMethod(reactTag: number): Promise<string>;
+  confirmWithCustomerPaymentToken(paymentToken: string): Promise<string>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>(

@@ -9,17 +9,20 @@ import Foundation
 import React
 
 internal class RNViewManager: NSObject {
-    
+
     internal var responseHandler: RNResponseHandler?
     internal var rootView: RCTRootView?
-    
+
+    // Promise storage for confirmPayment feature
+    internal var confirmPromises: [String: RCTPromiseResolveBlock] = [:]
+    internal var confirmRejectors: [String: RCTPromiseRejectBlock] = [:]
+
     internal lazy var bridge: RCTBridge = {
         RCTBridge.init(delegate: self, launchOptions: nil)
     }()
-    
-    
+
     internal static let sharedInstance = RNViewManager()
-    
+
     internal func viewForModule(_ moduleName: String, initialProperties: [String : Any]?) -> RCTRootView {
         let rootView: RCTRootView = RCTRootView(
             bridge: self.bridge,

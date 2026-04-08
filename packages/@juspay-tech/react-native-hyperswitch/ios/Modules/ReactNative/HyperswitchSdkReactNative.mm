@@ -23,7 +23,7 @@ RCT_EXPORT_METHOD(initialise:(nonnull NSString *)publishableKey
 RCT_EXPORT_METHOD(initPaymentSession:(nonnull NSString *)paymentIntentClientSecret
                   resolve:(nonnull RCTPromiseResolveBlock)resolve
                   reject:(nonnull RCTPromiseRejectBlock)reject) {
-  
+
   [HyperswitchModule.shared initPaymentSessionWithpaymentIntentClientSecret:paymentIntentClientSecret resolve:resolve reject:reject];
 }
 
@@ -34,11 +34,55 @@ RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)configuration
   [HyperswitchModule.shared presentPaymentSheetWithConfiguration:configuration resolver:resolve rejecter:reject];
 }
 
-
-//- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-//(const facebook::react::ObjCTurboModule::InitParams &)params
+//RCT_EXPORT_METHOD(confirmPayment:(nonnull NSString *)widgetId
+//                  resolve:(nonnull RCTPromiseResolveBlock)resolve
+//                  reject:(nonnull RCTPromiseRejectBlock)reject)
 //{
-//  return std::make_shared<facebook::react::NativeHyperswitchSdkReactNativeSpecJSI>(params);
+//  [HyperswitchModule.shared confirmPaymentWithWidgetId:widgetId resolve:resolve reject:reject];
 //}
+
+#pragma mark - Headless Payment Methods
+
+RCT_EXPORT_METHOD(getCustomerSavedPaymentMethods:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared getCustomerSavedPaymentMethodsWithResolve:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getCustomerDefaultSavedPaymentMethodData:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared getCustomerDefaultSavedPaymentMethodDataWithResolve:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getCustomerLastUsedPaymentMethodData:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared getCustomerLastUsedPaymentMethodDataWithResolve:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(NSInteger)reactTag
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared confirmWithCustomerDefaultPaymentMethodWithReactTag:reactTag withResolve:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(NSInteger)reactTag
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  [HyperswitchModule.shared confirmWithCustomerLastUsedPaymentMethodWithReactTag:reactTag withResolve:resolve reject:reject];
+}
+
++ (BOOL)requiresMainQueueSetup
+{
+  return YES;
+}
+
+- (dispatch_queue_t)methodQueue
+{
+  return dispatch_get_main_queue();
+}
 
 @end

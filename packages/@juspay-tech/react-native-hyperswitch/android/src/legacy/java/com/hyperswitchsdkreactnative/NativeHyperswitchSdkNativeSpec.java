@@ -17,6 +17,7 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 import javax.annotation.Nonnull;
 
@@ -67,11 +68,15 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
+  public abstract void notifyWidgetPaymentResult(Integer rootTag, String result);
+
+  @ReactMethod
+  @DoNotStrip
   public abstract void exitCardForm(String result);
 
   @ReactMethod
   @DoNotStrip
-  public abstract void exitWidgetPaymentsheet(double rootTag, String widgetId, String result, boolean reset);
+  public abstract void exitWidgetPaymentsheet(double rootTag, String result, boolean reset);
 
   @ReactMethod
   @DoNotStrip
@@ -83,5 +88,15 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
+  public abstract void emitPaymentEvent(int rootTag, String eventType, ReadableMap payload);
+
+  @ReactMethod
+  @DoNotStrip
   public abstract void onAddPaymentMethod(String data);
+
+  @ReactMethod
+  public abstract void addListener(String eventName);
+
+  @ReactMethod
+  public abstract void removeListeners(Double count);
 }

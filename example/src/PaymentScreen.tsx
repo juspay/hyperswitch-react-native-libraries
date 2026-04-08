@@ -3,13 +3,16 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
   useHyper,
   PaymentWidget,
+  CvcWidget,
   type InitPaymentSessionParams,
   type InitPaymentSessionResult,
   type PresentPaymentSheetResult,
+  type PaymentEvent,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
   getCustomisationOptions,
+  getCvcInputOptions,
   getStatus,
   getErrorMessage,
 } from './utils';
@@ -55,7 +58,16 @@ export default function PaymentScreen() {
   const checkout = async (): Promise<void> => {
     try {
       const { error, paymentResult }: PresentPaymentSheetResult =
-        await presentPaymentSheet(getCustomisationOptions());
+        await presentPaymentSheet(
+          getCustomisationOptions(),
+          (event: PaymentEvent) => {
+            console.log(
+              'PaymentSheet Event:',
+              event.eventName,
+              event.payload
+            );
+          }
+        );
       if (error) {
         console.error('Payment failed:', JSON.stringify(error, null, 2));
         setStatus(`Payment failed: ${error.code}`);
@@ -116,8 +128,38 @@ export default function PaymentScreen() {
           }
         }}
         style={{ width: '100%', height: 400 }}
+        onPaymentEvent={(event: PaymentEvent) => {
+          console.log(
+            'PaymentWidget Events:',
+            event.eventName,
+            event.payload
+          );
+        }}
         options={{ ...getCustomisationOptions('accordion'), clientSecret: clientSecret, sdkAuthorisation: sdkAuthorisation }}
       />
+      <Text style={styles.statusText}>CVC Widget (for saved cards):</Text>
+      {clientSecret && (
+        <CvcWidget
+          options={{
+            ...getCvcInputOptions(),
+            clientSecret: clientSecret,
+            placeholder:"123"
+          }}
+          style={{ width: '30%', height: 80 }}
+          onChange={(event: PaymentEvent) => {
+            console.log('CvcWidget Event:', event.eventName, event.payload);
+            if (event.eventName === 'CVC_STATUS') {
+              const parsed = JSON.parse(event.payload as string);
+              const cvcStatus = parsed.cvcStatus as {
+                isCvcFocused: boolean;
+                isCvcBlur: boolean;
+                isCvcEmpty: boolean;
+              };
+              console.log('CVC Status:', JSON.stringify(cvcStatus, null, 2));
+            }
+          }}
+        />
+      )}
     </View>
   );
 }

@@ -30,8 +30,6 @@ type localeTypes =
   | Ms
   | Tr_CY
 
-type fontFamilyTypes = DefaultIOS | DefaultAndroid | CustomFont(string) | DefaultWeb
-
 type placeholder = {
   cardNumber?: string,
   expiryDate?: string,
@@ -106,16 +104,8 @@ type shapes = {
 }
 
 type font = {
-  family?: fontFamilyTypes,
+  family?: string,
   scale?: float,
-  headingTextSizeAdjust?: float,
-  subHeadingTextSizeAdjust?: float,
-  placeholderTextSizeAdjust?: float,
-  buttonTextSizeAdjust?: float,
-  errorTextSizeAdjust?: float,
-  linkTextSizeAdjust?: float,
-  modalTextSizeAdjust?: float,
-  cardTextSizeAdjust?: float,
 }
 
 type primaryButtonColor = {
@@ -124,8 +114,8 @@ type primaryButtonColor = {
   border?: string,
 }
 type primaryButtonColorType = {
-  light?: primaryButtonColor, 
-  dark?: primaryButtonColor
+  light?: primaryButtonColor,
+  dark?: primaryButtonColor,
 }
 
 type primaryButton = {
@@ -190,10 +180,30 @@ type appearance = {
   layout?: layoutType,
 }
 
+type subscriptionEvent =
+  | @as("PAYMENT_METHOD_INFO_CARD") PaymentMethodInfoCard
+  | @as("PAYMENT_METHOD_STATUS") PaymentMethodStatus
+  | @as("FORM_STATUS") FormStatus
+  | @as("PAYMENT_METHOD_INFO_ADDRESS") PaymentMethodInfoAddress
+  | @as("CVC_STATUS") CvcStatus
+
+@genType
+type cvcAppearance = {
+  colors?: colorType,
+  shapes?: shapes,
+  font?: font,
+}
+
+@genType
+type cvcWidgetOptions = {
+  clientSecret: string,
+  widgetId: string,
+  appearance?: cvcAppearance,
+  placeholder?: string,
+}
+
 @genType
 type options = {
-  clientSecret?: string,
-  sdkAuthorisation?: string,
   allowsDelayedPaymentMethods?: bool,
   appearance?: appearance,
   shippingDetails?: addressDetails,
@@ -215,4 +225,5 @@ type options = {
   customer?: customerConfiguration,
   paymentSheetHeaderLabel?: string,
   savedPaymentSheetHeaderLabel?: string,
+  subscribedEvents?: array<subscriptionEvent>,
 }

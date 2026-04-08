@@ -47,6 +47,7 @@ internal class HyperHeadless: RCTEventEmitter {
     @objc
     private func exitHeadless(_ rnMessage: String) {
         PaymentSession.exitHeadless(rnMessage: rnMessage)
+        // TODO: Widget cleanup for iOS — deferred per IOS_CVCWIDGET_PLAN.md
     }
     
 }

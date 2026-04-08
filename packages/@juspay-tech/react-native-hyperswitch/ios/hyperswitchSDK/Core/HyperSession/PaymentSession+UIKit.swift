@@ -127,6 +127,7 @@ extension PaymentSession {
                     if let message = try JSONSerialization.jsonObject(with: data, options: []) as? [String: String] {
                         guard let status = message["status"] else {
                             completion?(.failed(error: NSError(domain: "UNKNOWN_ERROR", code: 0, userInfo: ["message" : "An error has occurred."])))
+                            completion = nil
                             return
                         }
                         switch status {
@@ -153,7 +154,17 @@ extension PaymentSession {
                     self.completion?(.failed(error: NSError(domain: domain , code: 0, userInfo: userInfo)))
                 }
             }
+            // Reset after delivering the result so the next confirm cycle starts fresh
+            completion = nil
+            hasResponded = false
         }
+    }
+
+    /// Set the completion handler for CvcWidget confirm flow.
+    /// Called by HyperswitchModule.confirmViaWidget before emitting "confirmPayment" on the widget bridge.
+    internal static func setConfirmCompletion(_ handler: @escaping (PaymentResult) -> Void) {
+        hasResponded = false
+        completion = handler
     }
 
     private static func decodePaymentMethodData(_ readableMap: NSDictionary) -> Result<PaymentMethod, PMError> {

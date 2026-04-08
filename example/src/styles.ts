@@ -2,11 +2,21 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    height: '100%',
+    flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 24,
     gap: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
   },
   textInput: {
     display: 'flex',
@@ -28,6 +38,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 36,
   },
+  buttonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  confirmButton: {
+    backgroundColor: '#059669',
+  },
   buttonText: {
     fontSize: 18,
     color: 'white',
@@ -44,6 +60,48 @@ export const styles = StyleSheet.create({
   messageText: {
     fontSize: 18,
     color: 'blue',
+    textAlign: 'center',
+  },
+  methodCard: {
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  methodLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6B7280',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  methodText: {
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  defaultBadge: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#059669',
+    marginTop: 8,
+  },
+  loader: {
+    marginVertical: 16,
+  },
+  widgetStatus: {
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  widgetStatusText: {
+    fontSize: 14,
+    color: '#6B7280',
     textAlign: 'center',
   },
 });

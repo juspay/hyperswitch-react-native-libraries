@@ -13,6 +13,7 @@
 package com.hyperswitchsdkreactnative;
 
 import com.facebook.proguard.annotations.DoNotStrip;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -45,4 +46,28 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
   @ReactMethod
   @DoNotStrip
   public abstract void presentPaymentSheet(ReadableMap configuration, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerSavedPaymentMethods(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerDefaultSavedPaymentMethodData(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void getCustomerLastUsedPaymentMethodData(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerDefaultPaymentMethod(int reactTag, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerLastUsedPaymentMethod(int reactTag, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void confirmWithCustomerPaymentToken(String paymentToken, Promise promise);
 }

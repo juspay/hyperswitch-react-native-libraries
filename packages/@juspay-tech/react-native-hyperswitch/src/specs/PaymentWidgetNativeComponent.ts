@@ -13,6 +13,10 @@ export interface NativeProps extends ViewProps {
     paymentResult?: string;
     error?: string;
   }>;
+  onPaymentEvent?: DirectEventHandler<{
+    eventName: string;
+    payload?: string;
+  }>;
 }
 
 export default codegenNativeComponent<NativeProps>('NativePaymentWidget');

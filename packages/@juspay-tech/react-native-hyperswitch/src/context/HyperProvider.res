@@ -1,106 +1,105 @@
-type hyperProviderData = {
-  publishableKey: string,
-  profileId: string,
-  customBackendUrl?: string,
-  customLogUrl?: string,
-  customParams?: Js.Json.t,
-  isInitialized: bool,
-  error?: string,
-}
+// type hyperProviderData = {
+//   publishableKey: string,
+//   profileId: string,
+//   customBackendUrl?: string,
+//   customLogUrl?: string,
+//   customParams?: Js.Json.t,
+//   isInitialized: bool,
+//   error?: string,
+// }
 
-type result = {
-  paymentResult: string,
-  error: string
-}
+// type result = {
+//   paymentResult: string,
+//   error: string
+// }
 
-type widgetState = {
-  confirmPayment: unit => unit,
-  goBack: unit => unit,
-  showWidget: unit => unit,
-  isConfirmDisabled: bool,
-  isLoading: bool,
-  isReady: bool,
-}
+// type widgetState = {
+//   confirmPayment: unit => unit,
+//   showWidget: unit => unit,
+//   isConfirmDisabled: bool,
+//   isLoading: bool,
+//   isReady: bool,
+// }
 
-let widgetRegistry: ref<Dict.t<widgetState>> = ref(Js.Dict.empty())
+// let widgetRegistry: ref<Dict.t<widgetState>> = ref(Js.Dict.empty())
 
-let registerWidget = (id: string, controller: widgetState) => {
-  Dict.set(widgetRegistry.contents, id, controller)
-}
+// let registerWidget = (id: string, controller: widgetState) => {
+//   Dict.set(widgetRegistry.contents, id, controller)
+// }
 
-let unregisterWidget = (id: string) => {
-  Dict.delete(widgetRegistry.contents, id)
-}
+// let unregisterWidget = (id: string) => {
+//   Dict.delete(widgetRegistry.contents, id)
+// }
 
-let defaultVal: hyperProviderData = {
-  publishableKey: "",
-  profileId: "",
-  isInitialized: false,
-}
+// let defaultVal: hyperProviderData = {
+//   publishableKey: "",
+//   profileId: "",
+//   isInitialized: false,
+// }
 
-let hyperProviderContext = React.createContext((defaultVal, (_: hyperProviderData) => ()))
+// let hyperProviderContext = React.createContext((defaultVal, (_: hyperProviderData) => ()))
 
-module Provider = {
-  let make = React.Context.provider(hyperProviderContext)
-}
+// module Provider = {
+//   let make = React.Context.provider(hyperProviderContext)
+// }
 
-@genType
-let initHyperswitch = (~publishableKey, ~customBackendUrl=?, ~customLogUrl=?, ~customParams=?) => {
-  NativeHyperswitchSdk.nativeHyperswitchSdk.initialise(
-    ~publishableKey,
-    ~customBackendUrl?,
-    ~customLogUrl?,
-    ~customParams?,
-  )
-}
+// @genType
+// let initHyperswitch = (~publishableKey, ~customBackendUrl=?, ~customLogUrl=?, ~customParams=?) => {
+//   NativeHyperswitchSdk.nativeHyperswitchSdk.initialise(
+//     ~publishableKey,
+//     ~customBackendUrl?,
+//     ~customLogUrl?,
+//     ~customParams?,
+//   )
+// }
 
-@genType @react.component
-let make = (
-  ~children: React.element,
-  ~publishableKey,
-  ~profileId,
-  ~customBackendUrl=?,
-  ~customLogUrl=?,
-  ~customParams=?,
-) => {
-  let (state, setState) = React.useState(_ => {
-    publishableKey,
-    profileId,
-    ?customBackendUrl,
-    ?customLogUrl,
-    ?customParams,
-    isInitialized: false,
-  })
+// @genType @react.component
+// let make = (
+//   ~children: React.element,
+//   ~publishableKey,
+//   ~profileId,
+//   ~customBackendUrl=?,
+//   ~customLogUrl=?,
+//   ~customParams=?,
+// ) => {
+//   let (state, setState) = React.useState(_ => {
+//     publishableKey,
+//     profileId,
+//     ?customBackendUrl,
+//     ?customLogUrl,
+//     ?customParams,
+//     isInitialized: false,
+//   })
 
-  let getError = (~error="Failed to initialize Hyperswitch") => {...state, error}
+//   let getError = (~error="Failed to initialize Hyperswitch") => {...state, error}
 
-  let initialise = async () => {
-    try {
-      let _ = await initHyperswitch(~publishableKey, ~customBackendUrl?, ~customLogUrl?, ~customParams?)
-      setState(_ => {
-        ...state,
-        isInitialized:true,
-      })
-    } catch {
-    | Exn.Error(obj) =>
-      switch Exn.message(obj) {
-      | Some(error) => setState(_ => getError(~error))
-      | None => setState(_ => getError())
-      }
-    | _ => setState(_ => getError())
-    }
-  }
+//   let initialise = async () => {
+//     try {
+//       let _ = await initHyperswitch(~publishableKey, ~customBackendUrl?, ~customLogUrl?, ~customParams?)
+//       setState(_ => {
+//         ...state,
+//         isInitialized:true,
+//       })
+//     } catch {
+//     | Exn.Error(obj) =>
+//       switch Exn.message(obj) {
+//       | Some(error) => setState(_ => getError(~error))
+//       | None => setState(_ => getError())
+//       }
+//     | _ => setState(_ => getError())
+//     }
+//   }
 
-  React.useEffect1(() => {
-    if (publishableKey != "") {
-      initialise()->ignore
-    }
-    None
-  }, [publishableKey])
+//   React.useEffect1(() => {
+//     if (publishableKey != "") {
+//       initialise()->ignore
+//     }
+//     None
+//   }, [publishableKey])
 
-  let setState = React.useCallback1(val => {
-    setState(_ => val)
-  }, [setState])
+//   let setState = React.useCallback1(val => {
+//     setState(_ => val)
+//   }, [setState])
 
-  <Provider value=(state, setState)> children </Provider>
-}
+//   <Provider value=(state, setState)> children </Provider>
+// }
