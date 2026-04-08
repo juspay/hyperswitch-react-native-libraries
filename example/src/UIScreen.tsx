@@ -42,6 +42,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(
     null
   );
+  const [paymentId, setPaymentId] = useState<string>('');
   const [lastUsedMethod, setLastUsedMethod] =
     useState<SavedPaymentMethod | null>(null);
   const [defaultMethod, setDefaultMethod] = useState<SavedPaymentMethod | null>(
@@ -59,6 +60,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const createPaymentIntent = useCallback(async (): Promise<{
     clientSecret: string;
     sdkAuthorization: string;
+    paymentId: string;
   }> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
@@ -66,12 +68,43 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+    setPaymentId(data.payment_id);
+
+    return {
+      clientSecret: data.clientSecret,
+      sdkAuthorization: data.sdkAuthorization,
+      paymentId: data.payment_id,
+    };
+  }, [baseURL]);
+
+    const updatePaymentIntent = useCallback(async (): Promise<{
+    clientSecret: string;
+    sdkAuthorization: string;
+  }> => {
+    console.log('Updating payment intent with ID:', paymentId);
+    const response = await fetch(`${baseURL}/update-payment`,
+
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_id: paymentId, // Use a valid payment ID for testing
+        }),
+      }
+    );
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to update payment intent');
+    }
 
     return {
       clientSecret: data.clientSecret,
       sdkAuthorization: data.sdkAuthorization,
     };
-  }, [baseURL]);
+  }, [baseURL, paymentId]);
 
   const updateIntent = useCallback(async (): Promise<void> => {
     if (!paymentSession) {
@@ -83,7 +116,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     try {
       setLoading(true);
       const callBack = async () => {
-        const { sdkAuthorization } = await createPaymentIntent();
+        const { sdkAuthorization } = await updatePaymentIntent();
         return sdkAuthorization;
       };
       const result = await paymentSession.updateIntent(callBack);
@@ -110,7 +143,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     try {
       setLoading(true);
       const result = await paymentSession.presentPaymentSheet(
-        getCustomisationOptions(),
+        getCustomisationOptions()
         // (event) => {
         //   console.log('PaymentSheet Event:', event);
         // }
@@ -464,7 +497,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           )}
 
           <Text style={styles.statusText}>CVC Widget — Default Card:</Text>
-          {clientSecret && (
+          {clientSecret && defaultMethod && (
             <CvcWidget
               options={{
                 ...getCvcInputOptions(),
@@ -494,29 +527,29 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
               onBlur={() => console.log('CvcWidget [last-used-card] Blur')}
             />
           )}
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
+            onPress={refreshSavedMethods}
+            // disabled={isLoading || !paymentSession}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Loading...' : 'Refresh Saved Methods'}
+            </Text>
+          </TouchableOpacity>
 
-          {renderPaymentMethod(lastUsedMethod, 'Last Used Method')}
-          {renderPaymentMethod(defaultMethod, 'Default Method')}
-
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={refreshSavedMethods}
-          disabled={isLoading || !paymentSession}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Loading...' : 'Refresh Saved Methods'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
-          onPress={confirmWithDefault}
-          disabled={isLoading || !defaultMethod}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Processing...' : 'Confirm with Default'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.confirmButton,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={confirmWithDefault}
+            // disabled={isLoading || !defaultMethod}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Processing...' : 'Confirm with Default'}
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[
@@ -531,30 +564,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
               {isLoading ? 'Processing...' : 'Confirm with Last Used'}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              styles.confirmButton,
-              isLoading && styles.buttonDisabled,
-            ]}
-            onPress={confirmWithDefault}
-            disabled={isLoading || !defaultMethod}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Processing...' : 'Confirm with Default'}
-            </Text>
-          </TouchableOpacity>
-         <TouchableOpacity
-          style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
-          onPress={confirmWithLastUsed}
-          disabled={isLoading || !lastUsedMethod}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Processing...' : 'Confirm with Last Used'}
-          </Text>
-        </TouchableOpacity>
-
           {isLoading && (
             <ActivityIndicator
               size="large"
