@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import {
   initPaymentSession,
   type HyperInstance,
@@ -7,19 +14,12 @@ import {
   type HeadlessResponse,
   type SavedPaymentMethod,
 } from '@juspay-tech/react-native-hyperswitch';
-import {
-  initialBaseUrl,
-  getStatus,
-  getErrorMessage,
-} from './utils';
+import { initialBaseUrl, getStatus, getErrorMessage } from './utils';
 import { styles } from './styles';
 
 interface HeadlessScreenProps {
   hyperPromise: Promise<HyperInstance>;
 }
-
-// Type alias for convenience
-type PaymentMethod = SavedPaymentMethod;
 
 export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
   const [status, setStatus] = useState<string>('');
@@ -27,16 +27,18 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [clientSecret, setClientSecret] = useState<string>('');
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
-  const [lastUsedMethod, setLastUsedMethod] = useState<PaymentMethod | null>(null);
-  const [defaultMethod, setDefaultMethod] = useState<PaymentMethod | null>(null);
+  const [lastUsedMethod, setLastUsedMethod] = useState<SavedPaymentMethod | null>(null);
+  const [defaultMethod, setDefaultMethod] = useState<SavedPaymentMethod | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const createPaymentIntent = useCallback(async (): Promise<string> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to create payment intent');
     }
+
     return data.clientSecret;
   }, [baseURL]);
 
@@ -49,8 +51,6 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       const secret = await createPaymentIntent();
       setClientSecret(secret);
 
-
-      console.log('-- HeadlessScreen:', "Initializing session with secret:", secret);
       const session = await initPaymentSession(hyperPromise, secret);
       setPaymentSession(session);
 
@@ -75,15 +75,14 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
     try {
       setLoading(true);
       setStatus('Fetching last used method...');
-    
 
       const result = await paymentSession.getCustomerLastUsedPaymentMethodData() as HeadlessResponse;
       console.log('-- HeadlessScreen:', 'Last used method:', result);
+
       if (result.status === 'succeeded' && result.data) {
-        const paymentMethod = result.data;
-        setLastUsedMethod(paymentMethod);
+        setLastUsedMethod(result.data);
         setStatus('Last used method fetched');
-        setMessage(`Method: ${paymentMethod.payment_method_str}`);
+        setMessage(`Method: ${result.data.payment_method_str}`);
       } else {
         setLastUsedMethod(null);
         setStatus('No method found');
@@ -113,10 +112,9 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       console.log('-- HeadlessScreen:', 'Default method:', result);
 
       if (result.status === 'succeeded' && result.data) {
-        const paymentMethod = result.data;
-        setDefaultMethod(paymentMethod);
+        setDefaultMethod(result.data);
         setStatus('Default method fetched');
-        setMessage(`Method: ${paymentMethod.payment_method_str}`);
+        setMessage(`Method: ${result.data.payment_method_str}`);
       } else {
         setDefaultMethod(null);
         setStatus('No method found');
@@ -137,7 +135,6 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
       setMessage('Please initialize session first');
       return;
     }
-    console.log('-- HeadlessScreen:', 'Confirm with last used method called');
 
     try {
       setLoading(true);
@@ -182,26 +179,22 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
     }
   };
 
-  const renderPaymentMethod = (method: PaymentMethod | null, label: string) => {
+  const renderPaymentMethod = (method: SavedPaymentMethod | null, label: string) => {
     if (!method) return null;
 
-    const cardDetails = method.card;
+    const { card } = method;
 
     return (
       <View style={styles.methodCard}>
         <Text style={styles.methodLabel}>{label}</Text>
         <Text style={styles.methodText}>Type: {method.payment_method_str}</Text>
-        {cardDetails && (
+        {card && (
           <>
+            <Text style={styles.methodText}>Card: **** {card.last4_digits}</Text>
+            <Text style={styles.methodText}>Scheme: {card.scheme}</Text>
+            <Text style={styles.methodText}>Holder: {card.card_holder_name}</Text>
             <Text style={styles.methodText}>
-              Card: **** {cardDetails.last4_digits}
-            </Text>
-            <Text style={styles.methodText}>Scheme: {cardDetails.scheme}</Text>
-            <Text style={styles.methodText}>
-              Holder: {cardDetails.card_holder_name}
-            </Text>
-            <Text style={styles.methodText}>
-              Expires: {cardDetails.expiry_month}/{cardDetails.expiry_year}
+              Expires: {card.expiry_month}/{card.expiry_year}
             </Text>
           </>
         )}
@@ -216,64 +209,64 @@ export default function HeadlessScreen({ hyperPromise }: HeadlessScreenProps) {
   return (
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       <TextInput
-          style={styles.textInput}
-          placeholder="Enter base URL"
-          value={baseURL}
-          onChangeText={setBaseURL}
-        />
+        style={styles.textInput}
+        placeholder="Enter base URL"
+        value={baseURL}
+        onChangeText={setBaseURL}
+      />
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={initializeSession}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Initializing...' : '1. Initialize Session'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={initializeSession}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Initializing...' : '1. Initialize Session'}
+        </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={fetchLastUsedMethod}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Fetching...' : '2. Get Last Used Method'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={fetchLastUsedMethod}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Fetching...' : '2. Get Last Used Method'}
+        </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={fetchDefaultMethod}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Fetching...' : '3. Get Default Method'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={fetchDefaultMethod}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Fetching...' : '3. Get Default Method'}
+        </Text>
+      </TouchableOpacity>
 
-        {renderPaymentMethod(lastUsedMethod, 'Last Used Method')}
-        {renderPaymentMethod(defaultMethod, 'Default Method')}
+      {renderPaymentMethod(lastUsedMethod, 'Last Used Method')}
+      {renderPaymentMethod(defaultMethod, 'Default Method')}
 
-        <TouchableOpacity 
-          style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]} 
-          onPress={confirmWithLastUsed}
-          disabled={loading || !lastUsedMethod}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Processing...' : 'Confirm with Last Used'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]}
+        onPress={confirmWithLastUsed}
+        disabled={loading || !lastUsedMethod}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Processing...' : 'Confirm with Last Used'}
+        </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]} 
-          onPress={confirmWithDefault}
-          disabled={loading || !defaultMethod}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Processing...' : 'Confirm with Default'}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]}
+        onPress={confirmWithDefault}
+        disabled={loading || !defaultMethod}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Processing...' : 'Confirm with Default'}
+        </Text>
+      </TouchableOpacity>
 
       {loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
 

@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   scrollContainer: {
-    flex: 1,
+    flexGrow: 1,
   },
   title: {
     fontSize: 24,
@@ -19,8 +19,6 @@ export const styles = StyleSheet.create({
     color: '#333',
   },
   textInput: {
-    display: 'flex',
-    flexDirection: 'column',
     borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 36,
@@ -28,7 +26,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     width: '100%',
     backgroundColor: 'white',
-    // color: '',
   },
   button: {
     width: '100%',
@@ -91,17 +88,5 @@ export const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: 16,
-  },
-  widgetStatus: {
-    width: '100%',
-    backgroundColor: '#F3F4F6',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  widgetStatusText: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
   },
 });
