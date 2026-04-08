@@ -57,6 +57,7 @@ export const getCustomisationOptions = (layout='tabs') => {
       'CVC_STATUS',
       
     ] as PaymentEventName[],
+    hideConfirmButton : true
   };
 
   return options;

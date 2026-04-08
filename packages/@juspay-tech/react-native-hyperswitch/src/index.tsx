@@ -55,6 +55,11 @@ export type {
   widgetController as WidgetController,
 } from './types/HyperTypes.gen';
 
+// PaymentWidget ref type for imperative handle
+export type {
+  paymentWidgetRef as PaymentWidgetRef,
+} from './views/PaymentWidget.gen';
+
 export type {
   options as PaymentSheetOptions,
 } from './types/PaymentSheetConfiguration.gen';

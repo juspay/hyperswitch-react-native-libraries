@@ -1,8 +1,6 @@
 // useWidget.res
 // Hook for accessing widget methods within HyperElements context
 
-open NativeHyperswitchSdk
-
 type useWidget = {
   isReady: bool,
   confirmPayment: string => promise<NativeHyperswitchSdk.paymentResult>,
@@ -23,22 +21,9 @@ let useWidget = () => {
     None
   }, [isInitialized])
 
-  // confirmPayment method - triggers payment confirmation via native module
-  // Returns the actual payment result from the native SDK instead of calling onPaymentResult callback
-  let confirmPayment = React.useCallback1((widgetId: string) => {
-    if !isReady {
-      Promise.resolve(
-        (
-          {
-            status: "failed",
-            message: "Widget is not ready",
-          }: NativeHyperswitchSdk.paymentResult
-        ),
-      )
-    } else {
-      WidgetRegistry.confirmPayment(widgetId)
-    }
-  }, [isReady])
+  let confirmPayment = React.useCallback0((widgetId: string) => {
+    WidgetRegistry.confirmPayment(widgetId)
+  })
   {
     isReady,
     confirmPayment,
