@@ -39,6 +39,13 @@ internal class NativePaymentWidget: RCTViewManager {
             view.confirmPayment(rnCallback)
         }
     }
+
+    @objc func confirmPaymentCVC(_ reactTag: NSNumber, _ paymentToken: String, _ paymentMethodId: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
+        bridge.uiManager.addUIBlock { _, viewRegistry in
+            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
+            view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+        }
+  }
 }
 
 internal class NativePaymentWidgetView: UIView {
@@ -58,8 +65,6 @@ internal class NativePaymentWidgetView: UIView {
             if widgetType == "cvcWidget" {
                 HyperswitchModule.isCvcWidgetActive = true
             }
-
-            RNViewManager.sharedInstance.responseHandler = self
 
             let hyperParams = HyperParams.getHyperParams()
             var configuration = self.options ?? [:]
@@ -137,6 +142,24 @@ internal class NativePaymentWidgetView: UIView {
           "actionType": "confirmPayment"
       ]
       self.rootView?.bridge.enqueueJSCall("RCTDeviceEventEmitter", method: "emit", args: ["triggerWidgetAction", eventData], completion: nil)
+    }
+
+    internal func confirmCVCPayment(paymentToken: String, paymentMethodId: String, resolve: @escaping RCTResponseSenderBlock) {
+        if let tag = self.rctRootTag {
+            WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmCVCPayment) { [weak self] response, shouldRemoveView in
+                guard let self = self else { return }
+                resolve([response])
+            }
+        }
+
+
+        let payload: [String: Any] = [
+            "actionType": "CONFIRM_CVC_PAYMENT",
+            "rootTag": self.rctRootTag ?? -1,
+            "paymentToken": paymentToken,
+            "paymentMethodId": paymentMethodId
+        ]
+        self.rootView?.bridge.enqueueJSCall("RCTDeviceEventEmitter", method: "emit", args: ["triggerWidgetAction", payload], completion: nil)
     }
 
     deinit {

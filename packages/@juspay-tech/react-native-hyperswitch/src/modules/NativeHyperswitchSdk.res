@@ -97,6 +97,8 @@ type confirmWithCustomerPaymentToken = string => promise<string>
 
 type confirmPayment = (int, paymentResult  => unit) => unit
 
+type confirmPaymentCVC = (int, string, string, paymentResult => unit) => unit
+
 type nativeHyperswitchSdk = {
   initialise: initialise,
   initPaymentSession: initPaymentSession,
@@ -116,13 +118,12 @@ type nativeHyperswitchSdk = {
 @module("../specs/NativeHyperswitchSdkReactNative")
 external nativeHyperswitchSdk: nativeHyperswitchSdk = "default"
 
-
-
-// Nativemodule with NativePaymentWidget 
+// Nativemodule with NativePaymentWidget
 
 type nativePaymentWidget = {
   // New methods
   confirmPayment: confirmPayment,
+  confirmPaymentCVC: confirmPaymentCVC,
 }
 
 
@@ -140,10 +141,27 @@ let getFunctionFromModule = (dict: Dict.t<'a>, key: string, default) => {
 
 let nativePaymentWidget = {
   confirmPayment: getFunctionFromModule(nativePaymentWidgetDict, "confirmPayment", (_, _) => ()),
+  confirmPaymentCVC: getFunctionFromModule(nativePaymentWidgetDict, "confirmPaymentCVC", (
+    _,
+    _,
+    _,
+    _,
+  ) => ()),
 }
 
 let confirmPayment = (viewId: int, callback: paymentResult => unit) => {
   nativePaymentWidget.confirmPayment(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}
+
+let confirmPaymentCVC = (
+  viewId: int,
+  paymentToken: string,
+  paymentMethodId: string,
+  callback: paymentResult => unit,
+) => {
+  nativePaymentWidget.confirmPaymentCVC(viewId, paymentToken, paymentMethodId, (result: paymentResult) => {
     callback(result)
   })
 }

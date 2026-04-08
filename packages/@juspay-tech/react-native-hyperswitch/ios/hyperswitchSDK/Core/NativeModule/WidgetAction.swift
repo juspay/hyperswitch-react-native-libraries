@@ -17,7 +17,9 @@ internal enum WidgetAction {
     /// Passive event listener for payment result notifications.
     /// Registered at widget mount, stays active for the widget's lifetime.
     case paymentEvent
-  
-  
+
+
     /// Other cases like: updateIntent, subscription events
+    /// For CVC widget
+    case confirmCVCPayment
 }
