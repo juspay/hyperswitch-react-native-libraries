@@ -155,6 +155,10 @@ class PaymentWidgetView : FrameLayout {
     this.fragment?.confirmPayment(callback)
   }
 
+  fun confirmCvcPayment(callback: Callback, paymentToken: String, paymentMethodId: String) {
+    this.fragment?.confirmCvcPayment(callback, paymentToken, paymentMethodId)
+  }
+
   fun setPaymentIntent(clientSecret: String) {
     this.clientSecret = clientSecret
   }

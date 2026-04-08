@@ -160,8 +160,32 @@ let make = React.forwardRef((
     [viewId],
   )
 
+  let warningEmitted = React.useRef(false)
+
+  React.useEffect0(() => {
+    switch (options, onPaymentEvent) {
+    | (Some(opts), Some(callback)) if !warningEmitted.current =>
+      let subscribedEventStrings: option<array<string>> = opts.subscribedEvents->Obj.magic
+      let invalidEvents = EventValidator.validateSubscribedEventStrings(subscribedEventStrings)
+      if Array.length(invalidEvents) > 0 {
+        warningEmitted.current = true
+        emitUnknownEventWarningWidget(callback, invalidEvents)
+      }
+      ()
+    | _ => ()
+    }
+    None
+  })
+
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
+  }
+
+  let onPaymentEventInternal = (event: NativeModuleTypes.paymentEventNative) => {
+    switch onPaymentEvent {
+    | Some(callback) => callback(event.nativeEvent)
+    | None => ()
+    }
   }
 
   // Render conditions

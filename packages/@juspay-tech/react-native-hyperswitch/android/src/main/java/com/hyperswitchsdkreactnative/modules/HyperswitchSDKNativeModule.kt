@@ -21,7 +21,8 @@ import io.hyperswitch.payments.GooglePayCallbackManager
  */
 
 enum class EventName {
-  CONFIRM_PAYMENT_ACTION
+  CONFIRM_PAYMENT_ACTION,
+  CONFIRM_CVC_PAYMENT
 }
 
 class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :

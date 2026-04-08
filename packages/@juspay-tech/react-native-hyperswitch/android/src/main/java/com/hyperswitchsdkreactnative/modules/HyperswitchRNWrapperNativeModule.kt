@@ -1,6 +1,7 @@
 package com.hyperswitchsdkreactnative.modules
 
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
@@ -12,6 +13,7 @@ import com.hyperswitchsdkreactnative.headless.PaymentMethodType
 import com.hyperswitchsdkreactnative.headless.PaymentResult
 import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
+import com.hyperswitchsdkreactnative.views.PaymentWidgetViewManager
 import org.json.JSONObject
 
 
@@ -168,12 +170,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       defaultData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            HeadlessFlowController.confirmViaWidget(
-              widgetId = widgetId,
-              paymentToken = pm.paymentToken,
-              paymentMethodId = pm.paymentMethodId,
-              resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
-            )
+            confirmViaWidgetView(widgetId, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
@@ -212,12 +209,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       lastUsedData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            HeadlessFlowController.confirmViaWidget(
-              widgetId = widgetId,
-              paymentToken = pm.paymentToken,
-              paymentMethodId = pm.paymentMethodId,
-              resultHandler = { result -> promise?.resolve(paymentResultToString(result)) }
-            )
+            confirmViaWidgetView(widgetId, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
@@ -252,6 +244,39 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     handler.confirmWithCustomerPaymentToken(paymentToken, null) { result ->
       promise?.resolve(paymentResultToString(result))
     }
+  }
+
+  /**
+   * Routes a card confirm through CvcWidget's view/fragment by looking up the
+   * PaymentWidgetView from the widgetId→view map and calling confirmCvcPayment.
+   * The fragment emits "triggerWidgetAction" with CONFIRM_CVC_PAYMENT, and the
+   * CvcWidget JS bundle handles CVC lookup + confirm API call.
+   * Result flows back through exitWidgetPaymentsheet → HyperFragment.resolveConfirmPayment → callback.
+   */
+  private fun confirmViaWidgetView(
+    widgetId: String,
+    paymentToken: String,
+    paymentMethodId: String,
+    promise: Promise?
+  ) {
+    val view = PaymentWidgetViewManager.getCvcWidgetView(widgetId)
+    if (view == null) {
+      promise?.resolve(
+        serializeResult("failed", "NO_WIDGET", "CvcWidget '$widgetId' not found or not mounted")
+      )
+      return
+    }
+    view.confirmCvcPayment(
+      Callback { args ->
+        if (args.isNotEmpty()) {
+          promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
+        } else {
+          promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
+        }
+      },
+      paymentToken,
+      paymentMethodId
+    )
   }
 
   fun resetView() {

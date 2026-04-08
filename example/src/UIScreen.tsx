@@ -240,6 +240,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           </>
         )}
         <Text style={styles.methodText}>Last Used: {method.last_used_at}</Text>
+        <Text style={styles.methodText}>Payment Token: {method.payment_token}</Text>
         {method.default_payment_method_set && (
           <Text style={styles.defaultBadge}>DEFAULT</Text>
         )}

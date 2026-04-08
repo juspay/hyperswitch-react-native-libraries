@@ -273,9 +273,10 @@ public class HyperswitchModule: NSObject {
 
   // MARK: - CvcWidget Confirm Routing
 
-  /// Emit "confirmPayment" event on the widget bridge so CvcWidget.res handles the confirm.
-  /// CvcWidget reads CVC from CvcRegistry, calls confirmCardPayment, which calls exitHeadless
-  /// when done — routing back through PaymentSession.exitHeadless → completion → resolve.
+  /// Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge so CvcWidget.res
+  /// handles the confirm. CvcWidget reads CVC from CvcRegistry, calls confirmCardPayment,
+  /// which calls exitHeadless when done — routing back through PaymentSession.exitHeadless →
+  /// completion → resolve.
   private static func confirmViaWidget(
       widgetId: String,
       paymentToken: String,
@@ -287,15 +288,27 @@ public class HyperswitchModule: NSObject {
           resolve(paymentResultToDict(result))
       }
 
-      // Emit "confirmPayment" on the widget bridge
+      // Look up the CvcWidget view to get the rootTag
+      guard let widgetView = NativePaymentWidgetView.getCvcWidgetView(widgetId: widgetId),
+            let rootTag = widgetView.id else {
+          resolve([
+              "status": "failed",
+              "code": "NO_WIDGET",
+              "message": "CvcWidget '\(widgetId)' not found or not mounted"
+          ])
+          return
+      }
+
+      // Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge
       let payload: [String: Any] = [
+          "actionType": "CONFIRM_CVC_PAYMENT",
+          "rootTag": rootTag,
           "paymentToken": paymentToken,
-          "paymentMethodId": paymentMethodId,
-          "widgetId": widgetId
+          "paymentMethodId": paymentMethodId
       ]
       DispatchQueue.main.async {
           if let hyperModule = RNViewManager.sharedInstance.bridge.module(for: HyperModule.self) as? HyperModule {
-              hyperModule.emitConfirmPayment(data: payload)
+              hyperModule.sendEvent(withName: "triggerWidgetAction", body: payload)
           } else {
               resolve([
                   "status": "failed",

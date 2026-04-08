@@ -3,25 +3,66 @@ let createView = viewId => {
 }
 
 @react.component @genType
-let make = (
+let make = React.forwardRef((
   ~options: PaymentSheetConfiguration.cvcWidgetOptions,
   ~onChange: option<NativeModuleTypes.paymentEventResult => unit>=?,
   ~onFocus: option<unit => unit>=?,
   ~onBlur: option<unit => unit>=?,
   ~style: option<ReactNative.Style.t>=?,
+  _ref,
 ) => {
   let (viewId, setViewId) = React.useState(_ => None)
   let viewRef: React.ref<Nullable.t<unit>> = React.useRef(Nullable.null)
+  let isRegisteredRef = React.useRef(false)
+
+  // Detect native view and get node handle when ready (with retry)
   React.useEffect0(() => {
-    switch Nullable.toOption(viewRef.current) {
-    | Some(_) =>
-      setViewId(_ => Some(ReactNativeUtils.findNodeHandle(viewRef.current)))
-      ()
-    | None => ()
+    let isMounted = {contents: true}
+
+    let rec findNodeHandle = attempt => {
+      if !isMounted.contents {
+        ()
+      } else {
+        switch Js.Nullable.toOption(viewRef.current) {
+        | Some(_) =>
+          let id = ReactNativeUtils.findNodeHandle(viewRef.current)
+          if id != -1 {
+            setViewId(_ => Some(id))
+          } else if attempt < 20 {
+            let _ = Js.Global.setTimeout(() => findNodeHandle(attempt + 1), 100)
+          }
+        | None =>
+          if attempt < 20 {
+            let _ = Js.Global.setTimeout(() => findNodeHandle(attempt + 1), 100)
+          }
+        }
+      }
     }
-    None
+
+    findNodeHandle(0)
+
+    Some(() => isMounted.contents = false)
   })
 
+  // Register/unregister widget with registry
+  React.useEffect1(() => {
+    switch viewId {
+    | Some(id) =>
+      WidgetRegistry.registerWidget(options.widgetId, id)
+      isRegisteredRef.current = true
+      Some(
+        () => {
+          if isRegisteredRef.current {
+            WidgetRegistry.unregisterWidget(options.widgetId)
+            isRegisteredRef.current = false
+          }
+        },
+      )
+    | None => None
+    }
+  }, [viewId])
+
+  // Create native view when viewId available
   React.useEffect1(() => {
     switch viewId {
     | Some(id) => createView(id)
@@ -32,7 +73,6 @@ let make = (
 
   let onPaymentEventInternal = (event: NativeModuleTypes.paymentEventNative) => {
     // Forward the raw event to onChange
-    Console.log2("Received payment event from native layer:", event.nativeEvent)
     switch onChange {
     | Some(callback) => callback(event.nativeEvent)
     | None => ()
@@ -100,4 +140,4 @@ let make = (
     options={fullOptions}
     ?style
   />
-}
+})

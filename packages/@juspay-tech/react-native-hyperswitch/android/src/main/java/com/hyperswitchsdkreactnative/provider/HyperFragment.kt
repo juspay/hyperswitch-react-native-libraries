@@ -20,6 +20,8 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
+import com.hyperswitchsdkreactnative.headless.ExitHeadlessCallBackManager
+import com.hyperswitchsdkreactnative.headless.PaymentResult
 import com.hyperswitchsdkreactnative.modules.EventName
 import com.proyecto26.inappbrowser.ChromeTabsDismissedEvent
 import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
@@ -111,6 +113,47 @@ class HyperFragment : ReactFragment() {
     val map = Arguments.createMap()
     map.putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
     map.putInt("rootTag", rootTag)
+    reactDelegate.currentReactContext
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("triggerWidgetAction", map)
+  }
+
+  fun confirmCvcPayment(callback: Callback, paymentToken: String, paymentMethodId: String) {
+    val rootTag = view?.id ?: -1
+    if(rootTag == -1){
+      callback.invoke("ERROR","FAILED")
+      return
+    }
+
+    // Wire ExitHeadlessCallBackManager so that when CvcWidget JS calls exitHeadless(result),
+    // the result flows back to our callback → promise.resolve in the wrapper module.
+    ExitHeadlessCallBackManager.setCallback { result: PaymentResult ->
+      val json = org.json.JSONObject()
+      when (result) {
+        is PaymentResult.Completed -> {
+          json.put("status", "success")
+          json.put("message", "Payment confirmed successfully")
+          json.put("data", result.data)
+        }
+        is PaymentResult.Failed -> {
+          json.put("status", "failed")
+          json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
+          json.put("message", result.throwable.message ?: "An error has occurred.")
+        }
+        is PaymentResult.Canceled -> {
+          json.put("status", "cancelled")
+          json.put("message", "Payment confirmation cancelled")
+          json.put("data", result.data)
+        }
+      }
+      callback.invoke(json.toString())
+    }
+
+    val map = Arguments.createMap()
+    map.putString("actionType", EventName.CONFIRM_CVC_PAYMENT.name)
+    map.putInt("rootTag", rootTag)
+    map.putString("paymentToken", paymentToken)
+    map.putString("paymentMethodId", paymentMethodId)
     reactDelegate.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("triggerWidgetAction", map)

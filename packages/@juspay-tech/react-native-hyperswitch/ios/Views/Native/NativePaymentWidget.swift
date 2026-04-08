@@ -53,8 +53,15 @@ internal class NativePaymentWidget: RCTViewManager {
 
 internal class NativePaymentWidgetView: UIView {
 
+    // Static registry of widgetId → NativePaymentWidgetView for CVC widgets
+    private static var cvcWidgetViews: [String: NativePaymentWidgetView] = [:]
+
+    static func getCvcWidgetView(widgetId: String) -> NativePaymentWidgetView? {
+        return cvcWidgetViews[widgetId]
+    }
+
     @objc private var rootView: RCTRootView?
-    @objc private var widgetId: String? // TODO: to remove widgetId
+    @objc private var widgetId: String?
     @objc private var widgetType: String?
     @objc private var clientSecret: String?
     @objc private var options: [String: Any]?
@@ -67,6 +74,9 @@ internal class NativePaymentWidgetView: UIView {
             // Track CVC widget active state
             if widgetType == "cvcWidget" {
                 HyperswitchModule.isCvcWidgetActive = true
+                if let wid = self.widgetId {
+                    NativePaymentWidgetView.cvcWidgetViews[wid] = self
+                }
             }
 
             RNViewManager.sharedInstance.responseHandler = self
@@ -136,6 +146,9 @@ internal class NativePaymentWidgetView: UIView {
     override func removeFromSuperview() {
         if widgetType == "cvcWidget" {
             HyperswitchModule.isCvcWidgetActive = false
+            if let wid = self.widgetId {
+                NativePaymentWidgetView.cvcWidgetViews.removeValue(forKey: wid)
+            }
         }
         rootView?.removeFromSuperview()
         rootView = nil
