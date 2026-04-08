@@ -40,6 +40,7 @@ typealias EventCallback = (OnEventResult) -> Unit
 enum class CallbackType {
   PAYMENT_RESULT,
   CONFIRM_ACTION,
+  CONFIRM_CVC_ACTION,
   ON_EVENT
 }
 
@@ -114,7 +115,7 @@ class HyperFragment : ReactFragment() {
     try {
       when (type) {
         CallbackType.PAYMENT_RESULT -> {
-          val confirmCallback = callbacks[CallbackType.CONFIRM_ACTION] as? HyperCallback.Payment
+          val confirmCallback = callbacks.remove(CallbackType.CONFIRM_ACTION) as? HyperCallback.Payment
           if (confirmCallback != null) {
             confirmCallback.fn.invoke(parsed.toWritableMap())
             if(this.onExit != null){
@@ -152,15 +153,26 @@ class HyperFragment : ReactFragment() {
 
 
   fun confirmCvcPayment(callback: Callback, paymentToken: String, paymentMethodId: String) {
+    if (callbacks.containsKey(CallbackType.CONFIRM_CVC_ACTION)) {
+      val json = JSONObject()
+      json.put("status", "error")
+      json.put("message", "CVC payment already in progress")
+      json.put("code", "ALREADY_IN_PROGRESS")
+      callback.invoke(json.toString())
+      return
+    }
     val rootTag = view?.id ?: -1
     if (rootTag == -1) {
       callback.invoke("ERROR", "FAILED")
       return
     }
 
+    callbacks[CallbackType.CONFIRM_CVC_ACTION] = HyperCallback.Payment(callback)
+
     // Wire ExitHeadlessCallBackManager so that when CvcWidget JS calls exitHeadless(result),
     // the result flows back to our callback → promise.resolve in the wrapper module.
     ExitHeadlessCallBackManager.setCallback { result: HeadlessPaymentResult ->
+      callbacks.remove(CallbackType.CONFIRM_CVC_ACTION)
       val json = JSONObject()
       when (result) {
         is HeadlessPaymentResult.Completed -> {
@@ -182,7 +194,7 @@ class HyperFragment : ReactFragment() {
         }
       }
       callback.invoke(json.toString())
-    } as (com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult) -> Unit
+    }
 
 
     val map = Arguments.createMap()
