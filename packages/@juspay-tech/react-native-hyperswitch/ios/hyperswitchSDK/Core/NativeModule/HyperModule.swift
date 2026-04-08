@@ -36,15 +36,6 @@ internal class HyperModule: RCTEventEmitter {
     self.sendEvent(withName: "confirm", body: data)
   }
 
-  @objc
-  func confirmPayment(_ rootTag: NSNumber) {
-    let eventData: [String: Any] = [
-      "rootTag": rootTag,
-      "actionType": "confirmPayment"
-    ]
-    self.sendEvent(withName: "triggerWidgetAction", body: eventData)
-  }
-
   // MARK: WIP
   //    @objc func confirmEC(data: [String: Any]) {
   //        self.sendEvent(withName: "confirmEC", body: data)
@@ -111,7 +102,7 @@ internal class HyperModule: RCTEventEmitter {
       rootTag: rootTag,
       action: .confirmPayment,
       response: result,
-      shouldRemoveView: true
+      shouldRemoveView: false
     )
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,

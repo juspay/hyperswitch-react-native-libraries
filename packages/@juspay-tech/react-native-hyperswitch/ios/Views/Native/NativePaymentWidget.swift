@@ -74,9 +74,6 @@ internal class NativePaymentWidgetView: UIView {
                 self.rctRootTag = rootView.reactTag
                 self.addSubview(rootView)
 
-                // Register passive event listener at mount time.
-                // This fires for payment result notifications that don't originate
-                // from a confirmPayment call (e.g. redirect completions, 3DS callbacks).
                 WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag, action: .paymentEvent) { [weak self] response, shouldRemoveView in
                     guard let self = self else { return }
                     self.onPaymentResult?(["result": response])
@@ -128,7 +125,11 @@ internal class NativePaymentWidgetView: UIView {
         }
       }
 
-      HyperModule.shared?.confirmPayment(self.rctRootTag ?? -1)
+      let eventData: [String: Any] = [
+          "rootTag": self.rctRootTag ?? -1,
+          "actionType": "confirmPayment"
+      ]
+      self.rootView?.bridge.enqueueJSCall("RCTDeviceEventEmitter", method: "emit", args: ["triggerWidgetAction", eventData], completion: nil)
     }
 
     deinit {
