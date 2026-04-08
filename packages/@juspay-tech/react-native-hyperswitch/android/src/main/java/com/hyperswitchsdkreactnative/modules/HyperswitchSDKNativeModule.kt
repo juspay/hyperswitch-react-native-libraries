@@ -1,6 +1,7 @@
 package com.hyperswitchsdkreactnative.modules
 
 import android.util.Log
+import androidx.fragment.app.FragmentManager
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactContext
@@ -8,10 +9,13 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.UIManagerModule
 import org.json.JSONException
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
 import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resetView
 import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule.Companion.resolvePromise
+import com.hyperswitchsdkreactnative.provider.CallbackType
 import com.hyperswitchsdkreactnative.provider.HyperFragment
 import io.hyperswitch.payments.GooglePayCallbackManager
 
@@ -81,10 +85,32 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  private fun findFragmentWithRootTag(rootTag: Int, onFound: (HyperFragment?) -> Unit) {
+    val uiManagerModule =
+      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
+
+    if (uiManagerModule == null) {
+      onFound(null)
+      return
+    }
+
+    uiManagerModule.addUIBlock { nvhm ->
+      try {
+        val reactRootView = nvhm.resolveView(rootTag)
+        onFound(FragmentManager.findFragment<HyperFragment>(reactRootView))
+      } catch (e: IllegalViewOperationException) {
+        onFound(null)
+      } catch (e: IllegalStateException) {
+        onFound(null)
+      }
+    }
+  }
 
   override fun notifyWidgetPaymentResult(rootTag: Int, result: String) {
     try {
-      HyperFragment.resolveConfirmPayment(rootTag, result)
+      findFragmentWithRootTag(rootTag, {
+        it?.notifyResult(CallbackType.CONFIRM_ACTION, result)
+      })
     } catch (_: Exception) {
       Log.i("HyperModule", "Error in notifyWidgetPaymentResult")
     }
@@ -113,7 +139,9 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     result: String,
     reset: Boolean
   ) {
-    HyperFragment.onPaymentResultEvent(rootTag.toInt(), result)
+    findFragmentWithRootTag(rootTag.toInt(), {
+      it?.notifyResult(CallbackType.PAYMENT_RESULT, result)
+    })
   }
 
   override fun launchWidgetPaymentSheet(requestObj: String, callback: Callback) {
@@ -133,9 +161,12 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
       if (widgetId.isEmpty()) {
         HyperswitchRNWrapperNativeModule.emitPaymentSheetEvent(eventType, payload)
       } else {
+//        findFragmentWithRootTag(rootTag.toInt(), {
+//          it?.notifyResult(CallbackType.PAYMENT_RESULT, result)
+//        })
 //        WidgetCallbackManager.sendEvent(widgetId, eventType, payload)
-        HyperFragment.onEvents(widgetId, eventType, payload)
-
+//        HyperFragment.onEvents(widgetId, eventType, payload)
+//          HyperFragment.onEvents(widgetId, CallbackType.PAYMENT_RESULT,"", result)
       }
     } catch (e: Exception) {
       Log.e("HyperModule", "Error emitting payment event", e)

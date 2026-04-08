@@ -7,6 +7,7 @@ import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
@@ -66,8 +67,16 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     }
 
     view.onPaymentResult { result ->
+      val parsed = result[0] as? ReadableMap
+      val jsonString = org.json.JSONObject().apply {
+        put("status",  parsed?.getString("status")  ?: "")
+        put("message", parsed?.getString("message") ?: "")
+        parsed?.getString("error")?.let { put("error", it) }
+        parsed?.getString("type")?.let  { put("type",  it) }
+      }.toString()
+
       val event = Arguments.createMap().apply {
-        putString("result", result[0] as String?)
+        putString("result", jsonString)
       }
       try {
         val reactContext = view.context as? ReactContext

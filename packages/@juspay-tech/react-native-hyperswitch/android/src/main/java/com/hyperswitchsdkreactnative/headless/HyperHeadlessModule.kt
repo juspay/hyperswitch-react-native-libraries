@@ -48,21 +48,21 @@ class HyperHeadlessModule internal constructor(private val rct: ReactApplication
             }
 
             override fun confirmWithCustomerDefaultPaymentMethod(
-                cvc: String?, resultHandler: (PaymentResult) -> Unit
+                cvc: String?, resultHandler: (HeadlessPaymentResult) -> Unit
             ) {
                 getPaymentMethodData.getString("payment_token")
                     ?.let { confirmWithCustomerPaymentToken(it, cvc, resultHandler) }
             }
 
             override fun confirmWithCustomerLastUsedPaymentMethod(
-                cvc: String?, resultHandler: (PaymentResult) -> Unit
+                cvc: String?, resultHandler: (HeadlessPaymentResult) -> Unit
             ) {
                 getPaymentMethodData2.getString("payment_token")
                     ?.let { confirmWithCustomerPaymentToken(it, cvc, resultHandler) }
             }
 
             override fun confirmWithCustomerPaymentToken(
-                paymentToken: String, cvc: String?, resultHandler: (PaymentResult) -> Unit
+                paymentToken: String, cvc: String?, resultHandler: (HeadlessPaymentResult) -> Unit
             ) {
                 try {
                     ExitHeadlessCallBackManager.setCallback(resultHandler)
@@ -73,7 +73,7 @@ class HyperHeadlessModule internal constructor(private val rct: ReactApplication
                 } catch (ex: Exception) {
                     val throwable = Throwable("Not Initialised")
                     throwable.initCause(Throwable("Not Initialised"))
-                    resultHandler(PaymentResult.Failed(throwable))
+                    resultHandler(HeadlessPaymentResult.Failed(throwable))
                 }
             }
         }

@@ -27,3 +27,19 @@ let confirmPayment = (widgetId: string): promise<NativeHyperswitchSdk.paymentRes
     }: NativeHyperswitchSdk.paymentResult)
   }
 }
+
+// let updateIntent = (widgetId: string): promise<NativeHyperswitchSdk.paymentResult> => {
+//   switch widgetHashMap.contents->Dict.get(widgetId) {
+//   | Some(nativeId) =>
+//     Promise.make((resolve, _) => {
+//       NativeHyperswitchSdk.updateInte(nativeId, (result: NativeHyperswitchSdk.paymentResult) => {
+//         resolve({status: result.status, message: result.message}: NativeHyperswitchSdk.paymentResult)
+//       })
+//     })
+//   | None =>
+//     Promise.resolve({
+//       status: "failed",
+//       message: "Widget " ++ widgetId ++ " not found or not mounted",
+//     }: NativeHyperswitchSdk.paymentResult)
+//   }
+// }

@@ -5,14 +5,14 @@ interface PaymentSessionHandler {
     fun getCustomerLastUsedPaymentMethodData(): Result<PaymentMethod>
     fun getCustomerSavedPaymentMethodData(): Result<List<PaymentMethod>>
     fun confirmWithCustomerDefaultPaymentMethod(
-        cvc: String? = null, resultHandler: (PaymentResult) -> Unit
+        cvc: String? = null, resultHandler: (HeadlessPaymentResult) -> Unit
     )
 
     fun confirmWithCustomerLastUsedPaymentMethod(
-        cvc: String? = null, resultHandler: (PaymentResult) -> Unit
+        cvc: String? = null, resultHandler: (HeadlessPaymentResult) -> Unit
     )
 
     fun confirmWithCustomerPaymentToken(
-        paymentToken: String, cvc: String? = null, resultHandler: (PaymentResult) -> Unit
+        paymentToken: String, cvc: String? = null, resultHandler: (HeadlessPaymentResult) -> Unit
     )
 }

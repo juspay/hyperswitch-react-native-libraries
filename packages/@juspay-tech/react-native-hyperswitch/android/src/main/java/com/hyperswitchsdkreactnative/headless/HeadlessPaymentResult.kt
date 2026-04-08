@@ -8,15 +8,15 @@ import kotlinx.parcelize.Parcelize
 /**
  * Result to be passed to the callback of [PaymentLauncher]
  */
-sealed class PaymentResult : Parcelable {
+sealed class HeadlessPaymentResult : Parcelable {
     @Parcelize
-    class Completed(val data: String) : PaymentResult()
+    class Completed(val data: String) : HeadlessPaymentResult()
 
     @Parcelize
-    class Failed(val throwable: Throwable) : PaymentResult()
+    class Failed(val throwable: Throwable) : HeadlessPaymentResult()
 
     @Parcelize
-    class Canceled(val data: String) : PaymentResult()
+    class Canceled(val data: String) : HeadlessPaymentResult()
 
     @JvmSynthetic
     fun toBundle() = Bundle().apply {
@@ -27,7 +27,7 @@ sealed class PaymentResult : Parcelable {
         private const val EXTRA = "extra_args"
 
         @JvmSynthetic
-        fun fromIntent(intent: Intent?): PaymentResult {
+        fun fromIntent(intent: Intent?): HeadlessPaymentResult {
             return intent?.getParcelableExtra(EXTRA)
                 ?: Failed(IllegalStateException("Failed to get PaymentResult from Intent"))
         }

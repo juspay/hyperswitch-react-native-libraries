@@ -10,24 +10,24 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.facebook.react.ReactFragment
 import com.facebook.react.ReactHost
-import com.facebook.react.ReactInstanceEventListener
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactRootView
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
-import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
 import com.hyperswitchsdkreactnative.headless.ExitHeadlessCallBackManager
-import com.hyperswitchsdkreactnative.headless.PaymentResult
+import com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult
 import com.hyperswitchsdkreactnative.modules.EventName
 import com.proyecto26.inappbrowser.ChromeTabsDismissedEvent
 import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
 import io.hyperswitch.redirect.RedirectEvent
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
+import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
 data class OnEventResult(
@@ -37,117 +37,153 @@ data class OnEventResult(
 
 typealias EventCallback = (OnEventResult) -> Unit
 
-class HyperFragment : ReactFragment() {
-  private lateinit var onPaymentResult: Callback
+enum class CallbackType {
+  PAYMENT_RESULT,
+  CONFIRM_ACTION,
+  ON_EVENT
+}
 
-  private lateinit var eventResultCallback: EventCallback
+sealed class HyperCallback {
+  class Payment(val fn: Callback) : HyperCallback()
+  class Event(val fn: EventCallback) : HyperCallback()
+}
+
+class HyperFragment : ReactFragment() {
+
+  /**
+   * Instance-level registry. No companion object, no static map.
+   * Keyed by [CallbackType] so each slot is independently replaceable.
+   */
+  private val callbacks = ConcurrentHashMap<CallbackType, HyperCallback>()
+
+
+  private var onExit : (() -> Unit)? = null
+
+  fun setOnExit(callback: () -> Unit){
+    onExit = callback
+  }
+
   fun setOnPaymentResult(callback: Callback) {
-    this.onPaymentResult = callback
-    paymentEventCallbacks[view?.id ?: -1] = onPaymentResult
+    callbacks[CallbackType.PAYMENT_RESULT] = HyperCallback.Payment(callback)
   }
 
   fun setOnEventCallback(eventCallback: EventCallback) {
-    this.eventResultCallback = eventCallback
-    onEventCallBacks[this.getWidgetIdFromLaunchOptions()] = eventCallback
-  }
-
-  private fun getWidgetIdFromLaunchOptions(): String{
-    val launchOptions = arguments?.getBundle("arg_launch_options")
-    return try {
-      launchOptions?.getBundle("props")?.getString("widgetId")
-    } catch (e: Exception) {
-      "-1"
-    }.toString()
-  }
-
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    registerEventBus()
-    reactDelegate.reactInstanceManager?.addReactInstanceEventListener(listener)
-  }
-
-  private val listener = object : ReactInstanceEventListener {
-    override fun onReactContextInitialized(reactContext: ReactContext) {
-      val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
-      if (::onPaymentResult.isInitialized) {
-        paymentEventCallbacks[rootTag] = onPaymentResult
-      }
-
-      if (::eventResultCallback.isInitialized) {
-        onEventCallBacks[getWidgetIdFromLaunchOptions()] = eventResultCallback
-      }
-    }
-  }
-
-  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-    super.onViewCreated(view, savedInstanceState)
-
-    // ReactRootView is the root of this fragment
-    val reactRootView = view as? ReactRootView ?: return
-
-    // Wait for RN tree to mount, then fix scroll interception
-    reactRootView.setOnHierarchyChangeListener(
-      object : ViewGroup.OnHierarchyChangeListener {
-        override fun onChildViewAdded(parent: View?, child: View?) {
-          // Once RN tree is mounted, fix scroll interception for all ReactScrollViews
-          view.post { fixScrollInterception(reactRootView) }
-        }
-
-        override fun onChildViewRemoved(parent: View?, child: View?) {}
-      }
-    )
+    callbacks[CallbackType.ON_EVENT] = HyperCallback.Event(eventCallback)
   }
 
   fun confirmPayment(callback: Callback) {
-    val rootTag = view?.id
-    if(rootTag == -1){
-      callback.invoke("ERROR","FAILED")
+    if (callbacks.containsKey(CallbackType.CONFIRM_ACTION)) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "Payment already in progress",
+          "ALREADY_IN_PROGRESS"
+        )
+      )
       return
     }
-
-    if (confirmActionCallbacks.get(rootTag) != null) {
-      callback.invoke("ERROR", "ALREADY_IN_PROGRESS")
+    val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+    if (rootTag == -1) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "React context not ready",
+          "REACT_CONTEXT_NOT_READY"
+        )
+      )
       return
     }
-    confirmActionCallbacks[rootTag as Int] = callback
-    val map = Arguments.createMap()
-    map.putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
-    map.putInt("rootTag", rootTag)
+    callbacks[CallbackType.CONFIRM_ACTION] = HyperCallback.Payment(callback)
     reactDelegate.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-      ?.emit("triggerWidgetAction", map)
+      ?.emit("triggerWidgetAction", Arguments.createMap().apply {
+        putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
+        putInt("rootTag", rootTag)
+      })
   }
+
+  /**
+   * Called directly on this instance by the native module after finding the
+   * fragment via [UIManagerModule] + [androidx.fragment.app.FragmentManager.findFragment].
+   *
+   * PAYMENT_RESULT  → fires CONFIRM_ACTION if present, otherwise PAYMENT_RESULT.
+   * CONFIRM_ACTION  → fires and removes CONFIRM_ACTION (one-shot resolve).
+   */
+  fun notifyResult(type: CallbackType, result: String) {
+    val parsed = parseResult(result)
+    try {
+      when (type) {
+        CallbackType.PAYMENT_RESULT -> {
+          val confirmCallback = callbacks[CallbackType.CONFIRM_ACTION] as? HyperCallback.Payment
+          if (confirmCallback != null) {
+            confirmCallback.fn.invoke(parsed.toWritableMap())
+            if(this.onExit != null){
+              this.onExit!!.invoke()
+            }
+          } else {
+            (callbacks[CallbackType.PAYMENT_RESULT] as? HyperCallback.Payment)?.fn?.invoke(parsed.toWritableMap())
+          }
+        }
+
+        CallbackType.CONFIRM_ACTION -> {
+          (callbacks.remove(CallbackType.CONFIRM_ACTION) as? HyperCallback.Payment)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+        }
+
+        else -> Log.i("HyperFragment", "notifyResult: unhandled type $type")
+      }
+    } catch (e: Exception) {
+      Log.e("HyperFragment", "Error in notifyResult", e)
+    }
+  }
+
+  /**
+   * Called directly on this instance for streaming widget lifecycle events.
+   */
+  fun notifyEvent(eventType: String, result: ReadableMap) {
+    try {
+      (callbacks[CallbackType.ON_EVENT] as? HyperCallback.Event)
+        ?.fn?.invoke(OnEventResult(eventType, result))
+    } catch (e: Exception) {
+      Log.e("HyperFragment", "Error in notifyEvent", e)
+    }
+  }
+
 
   fun confirmCvcPayment(callback: Callback, paymentToken: String, paymentMethodId: String) {
     val rootTag = view?.id ?: -1
-    if(rootTag == -1){
-      callback.invoke("ERROR","FAILED")
+    if (rootTag == -1) {
+      callback.invoke("ERROR", "FAILED")
       return
     }
 
     // Wire ExitHeadlessCallBackManager so that when CvcWidget JS calls exitHeadless(result),
     // the result flows back to our callback → promise.resolve in the wrapper module.
-    ExitHeadlessCallBackManager.setCallback { result: PaymentResult ->
-      val json = org.json.JSONObject()
+    ExitHeadlessCallBackManager.setCallback { result: HeadlessPaymentResult ->
+      val json = JSONObject()
       when (result) {
-        is PaymentResult.Completed -> {
+        is HeadlessPaymentResult.Completed -> {
           json.put("status", "success")
           json.put("message", "Payment confirmed successfully")
           json.put("data", result.data)
         }
-        is PaymentResult.Failed -> {
+
+        is HeadlessPaymentResult.Failed -> {
           json.put("status", "failed")
           json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
           json.put("message", result.throwable.message ?: "An error has occurred.")
         }
-        is PaymentResult.Canceled -> {
+
+        is HeadlessPaymentResult.Canceled -> {
           json.put("status", "cancelled")
           json.put("message", "Payment confirmation cancelled")
           json.put("data", result.data)
         }
       }
       callback.invoke(json.toString())
-    }
+    } as (com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult) -> Unit
+
 
     val map = Arguments.createMap()
     map.putString("actionType", EventName.CONFIRM_CVC_PAYMENT.name)
@@ -160,54 +196,67 @@ class HyperFragment : ReactFragment() {
   }
 
 
-  /**
-   * Fix scroll interception for ReactScrollViews inside this fragment.
-   * This enables the inner RN ScrollView to properly receive and handle touch events
-   * even when nested inside another RN ScrollView (in a separate React root).
-   */
-  @SuppressLint("ClickableViewAccessibility")
-  private fun fixScrollInterception(root: ViewGroup) {
-    // Enable nested scrolling on the root
-    root.isNestedScrollingEnabled = true
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Walk the tree and fix all ReactScrollViews
-    findReactScrollViews(root).forEach { scrollView ->
-      scrollView.isNestedScrollingEnabled = true
-      scrollView.setOnTouchListener { v, event ->
-        when (event.action) {
-          MotionEvent.ACTION_DOWN,
-          MotionEvent.ACTION_MOVE -> {
-            // Tell parent to not intercept - we want to handle this scroll
-            v.parent?.requestDisallowInterceptTouchEvent(true)
-          }
+  private fun createPaymentResult(
+    status: String,
+    message: String,
+    error: String? = null,
+    type: String? = null
+  ): ReadableMap = Arguments.createMap().apply {
+    putString("status", status)
+    putString("message", message)
+    error?.let { putString("error", it) }
+    type?.let { putString("type", it) }
+  }
+  private data class PaymentResult(
+    val status: String,
+    val message: String,
+    val error: String? = null,
+    val type: String? = null
+  )
 
-          MotionEvent.ACTION_UP,
-          MotionEvent.ACTION_CANCEL -> {
-            // Release the intercept lock
-            v.parent?.requestDisallowInterceptTouchEvent(false)
-          }
-        }
-        // Return false to let the ScrollView's normal touch handling continue
-        false
-      }
+  private fun parseResult(result: String): PaymentResult {
+    // Plain status strings from RN bridge (e.g. "cancelled", "failed", "ok")
+    val trimmed = result.trim()
+    if (!trimmed.startsWith("{")) {
+      return PaymentResult(status = trimmed, message = trimmed)
+    }
+    return try {
+      val json = org.json.JSONObject(trimmed)
+      PaymentResult(
+        status = json.optString("status", ""),
+        message = json.optString("message", ""),
+        error = json.optString("error").takeIf { json.has("error") },
+        type = json.optString("type").takeIf { json.has("type") }
+      )
+    } catch (e: Exception) {
+      PaymentResult(status = "error", message = trimmed, error = "PARSE_ERROR")
     }
   }
 
-  /**
-   * Recursively find all ReactScrollViews and ReactHorizontalScrollViews in the view hierarchy.
-   */
-  private fun findReactScrollViews(root: ViewGroup): List<ViewGroup> {
-    val result = mutableListOf<ViewGroup>()
-    for (i in 0 until root.childCount) {
-      val child = root.getChildAt(i)
-      if (child is ReactScrollView || child is ReactHorizontalScrollView) {
-        result.add(child as ViewGroup)
+  private fun PaymentResult.toWritableMap(): WritableMap = Arguments.createMap().apply {
+    putString("status", status)
+    putString("message", message)
+    error?.let { putString("error", it) }
+    type?.let { putString("type", it) }
+  }
+
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    registerEventBus()
+  }
+
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
+    val reactRootView = view as? ReactRootView ?: return
+    reactRootView.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
+      override fun onChildViewAdded(parent: View?, child: View?) {
+        view.post { fixScrollInterception(reactRootView) }
       }
-      if (child is ViewGroup) {
-        result.addAll(findReactScrollViews(child))
-      }
-    }
-    return result
+      override fun onChildViewRemoved(parent: View?, child: View?) {}
+    })
   }
 
   override fun onCreateView(
@@ -225,14 +274,6 @@ class HyperFragment : ReactFragment() {
     return view
   }
 
-  override fun getReactNativeHost(): ReactNativeHost {
-    return ReactNativeController.getReactNativeHost()
-  }
-
-  override fun getReactHost(): ReactHost {
-    return ReactNativeController.getReactHost()
-  }
-
   override fun onDestroyView() {
     (view as? ReactRootView)?.unmountReactApplication()
     super.onDestroyView()
@@ -241,106 +282,75 @@ class HyperFragment : ReactFragment() {
   override fun onDestroy() {
     super.onDestroy()
     unRegisterEventBus()
+    callbacks.clear()
   }
 
-  private fun registerEventBus() {
-    if (!EventBus.getDefault().isRegistered(this)) {
-      EventBus.getDefault().register(this)
+  // ── Scroll fix ────────────────────────────────────────────────────────────
+
+  @SuppressLint("ClickableViewAccessibility")
+  private fun fixScrollInterception(root: ViewGroup) {
+    root.isNestedScrollingEnabled = true
+    findReactScrollViews(root).forEach { scrollView ->
+      scrollView.isNestedScrollingEnabled = true
+      scrollView.setOnTouchListener { v, event ->
+        when (event.action) {
+          MotionEvent.ACTION_DOWN,
+          MotionEvent.ACTION_MOVE -> v.parent?.requestDisallowInterceptTouchEvent(true)
+          MotionEvent.ACTION_UP,
+          MotionEvent.ACTION_CANCEL -> v.parent?.requestDisallowInterceptTouchEvent(false)
+        }
+        false
+      }
     }
+  }
+
+  private fun findReactScrollViews(root: ViewGroup): List<ViewGroup> {
+    val result = mutableListOf<ViewGroup>()
+    for (i in 0 until root.childCount) {
+      val child = root.getChildAt(i)
+      if (child is ReactScrollView || child is ReactHorizontalScrollView) result.add(child as ViewGroup)
+      if (child is ViewGroup) result.addAll(findReactScrollViews(child))
+    }
+    return result
+  }
+
+  // ── EventBus ──────────────────────────────────────────────────────────────
+
+  private fun registerEventBus() {
+    if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this)
   }
 
   fun unRegisterEventBus() {
-    if (EventBus.getDefault().isRegistered(this)) {
-      EventBus.getDefault().unregister(this)
-    }
+    if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this)
   }
 
   @Subscribe
   fun onEvent(event: RedirectEvent) {
     unRegisterEventBus()
-    EventBus.getDefault().post(
-      ChromeTabsDismissedEvent(
-        event.message,
-        event.resultType,
-        event.isError
-      )
-    )
+    EventBus.getDefault().post(ChromeTabsDismissedEvent(event.message, event.resultType, event.isError))
     startActivity(ChromeTabsManagerActivity.createDismissIntent(requireContext()))
   }
 
-  companion object {
-    @Volatile
-    private var confirmActionCallbacks = ConcurrentHashMap<Int, Callback>()
+  override fun getReactNativeHost(): ReactNativeHost = ReactNativeController.getReactNativeHost()
+  override fun getReactHost(): ReactHost = ReactNativeController.getReactHost()
 
-    @Volatile
-    private var paymentEventCallbacks = ConcurrentHashMap<Int, Callback>()
-
-    @Volatile
-    private var onEventCallBacks = ConcurrentHashMap<String, EventCallback>()
-    fun onPaymentResultEvent(rootTag: Int, result: String) {
-      try {
-        confirmActionCallbacks[rootTag]?.invoke(result)
-        paymentEventCallbacks[rootTag]?.invoke(result)
-      } catch (e: Exception) {
-        e.printStackTrace()
-        Log.e("HyperModule", "Error in paymentResult")
-      }
-    }
-
-    fun onEvents(widgetId: String, eventType: String, result: ReadableMap) {
-      try {
-        onEventCallBacks[widgetId]?.invoke(
-          OnEventResult(
-            eventType,
-            result
-          )
-        )
-      } catch (_: Exception) {
-        Log.e("HyperModule", "Error in resolveConfirmPayment")
-      }
-    }
-
-    fun resolveConfirmPayment(rootTag: Int, result: String) {
-      try {
-        confirmActionCallbacks[rootTag]?.invoke(result)
-        confirmActionCallbacks.remove(rootTag)
-      } catch (e: Exception) {
-        e.printStackTrace()
-        Log.e("HyperModule", "Error in resolveConfirmPayment")
-      }
-    }
-  }
+  // ─── Builder ──────────────────────────────────────────────────────────────
 
   class Builder {
-    var mComponentName: String? = null
-    var mLaunchOptions: Bundle? = null
-    var mFabricEnabled: Boolean = false
-    fun setComponentName(componentName: String?): Builder {
-      mComponentName = componentName
-      return this
-    }
+    private var mComponentName: String? = null
+    private var mLaunchOptions: Bundle? = null
+    private var mFabricEnabled: Boolean = false
 
-    fun setLaunchOptions(launchOptions: Bundle?): Builder {
-      mLaunchOptions = launchOptions
-      return this
-    }
+    fun setComponentName(componentName: String?) = apply { mComponentName = componentName }
+    fun setLaunchOptions(launchOptions: Bundle?) = apply { mLaunchOptions = launchOptions }
+    fun setFabricEnabled(fabricEnabled: Boolean) = apply { mFabricEnabled = fabricEnabled }
 
-    fun build(): HyperFragment {
-      val ARG_COMPONENT_NAME = "arg_component_name"
-      val ARG_LAUNCH_OPTIONS = "arg_launch_options"
-      val ARG_FABRIC_ENABLED = "arg_fabric_enabled"
-      val fragment = HyperFragment()
-      val args = Bundle()
-      args.putString(ARG_COMPONENT_NAME, mComponentName)
-      args.putBundle(ARG_LAUNCH_OPTIONS, mLaunchOptions)
-      args.putBoolean(ARG_FABRIC_ENABLED, mFabricEnabled)
-      fragment.setArguments(args)
-      return fragment
-    }
-
-    fun setFabricEnabled(fabricEnabled: Boolean): Builder {
-      mFabricEnabled = fabricEnabled
-      return this
+    fun build(): HyperFragment = HyperFragment().also { fragment ->
+      fragment.arguments = Bundle().apply {
+        putString("arg_component_name", mComponentName)
+        putBundle("arg_launch_options", mLaunchOptions)
+        putBoolean("arg_fabric_enabled", mFabricEnabled)
+      }
     }
   }
 }

@@ -123,7 +123,7 @@ let make = React.forwardRef((
           switch Nullable.toOption(viewRef.current) {
           | None =>
             Promise.resolve(
-              ({status: "failed", message: "Widget not ready"}: NativeHyperswitchSdk.paymentResult),
+              ({status: "failed", message: "Widget not ready", error: "Widget not ready"}: NativeHyperswitchSdk.paymentResult),
             )
           | Some(_) =>
             let id = ReactNativeUtils.findNodeHandle(viewRef.current)
@@ -133,6 +133,7 @@ let make = React.forwardRef((
                   {
                     status: "failed",
                     message: "Widget not ready",
+                    error: "Unable to find native view handle",
                   }: NativeHyperswitchSdk.paymentResult
                 ),
               )
@@ -146,6 +147,7 @@ let make = React.forwardRef((
                         {
                           status: result.status,
                           message: result.message,
+                          // error: result.error,
                         }: NativeHyperswitchSdk.paymentResult
                       ),
                     )
@@ -178,6 +180,7 @@ let make = React.forwardRef((
   })
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
+    Console.log2("Received payment result from native:", event.nativeEvent)
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import {
   PaymentWidget,
   CvcWidget,
   HyperElements,
   initPaymentSession,
+  useWidget,
   type HyperElementsOptions,
   type HyperInstance,
   type PaymentEvent,
@@ -38,7 +39,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [defaultMethod, setDefaultMethod] = useState<PaymentMethod | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [sessionInitializing, setSessionInitializing] = useState<boolean>(false);
-
+  const widgetRef = useRef<any>(null);
   // Guard against double-initialization from React strict mode / fast re-renders
   const sessionInitRef = useRef(false);
 
@@ -71,7 +72,26 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   }, [createPaymentIntent]);
 
   const checkout = async (): Promise<void> => {
-    console.log('Checkout initiated');
+    // if (!widget.isReady) {
+    //   setStatus('Error');
+    //   setMessage('Widget not ready yet');
+    //   return;
+    // }
+    
+    try {
+      setLoading(true);
+      setStatus('Starting checkout...');
+      let result = await widgetRef.current.confirmPayment();
+      console.log('Checkout result:', result);
+      setStatus(getStatus(result?.status));
+      setMessage(result?.message || result?.status);
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      setStatus('Checkout Error');
+      setMessage(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -281,6 +301,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           {message && <Text style={styles.messageText}>{message}</Text>}
         </View>
         <PaymentWidget
+          ref={widgetRef}
           widgetId="payment-widget"
           onPaymentResult={(result: any) => {
             console.log('Payment Result from Widget:', result);
@@ -297,6 +318,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
             ...getCustomisationOptions('accordion'), 
           }}
         />
+        <TouchableOpacity style={styles.button} onPress={checkout}><Text>Checkout</Text></TouchableOpacity>
 
         <Text style={styles.title}>CVC Widget + Headless</Text>
 

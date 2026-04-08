@@ -24,6 +24,7 @@ let useWidget = () => {
   let confirmPayment = React.useCallback0((widgetId: string) => {
     WidgetRegistry.confirmPayment(widgetId)
   })
+  
   {
     isReady,
     confirmPayment,

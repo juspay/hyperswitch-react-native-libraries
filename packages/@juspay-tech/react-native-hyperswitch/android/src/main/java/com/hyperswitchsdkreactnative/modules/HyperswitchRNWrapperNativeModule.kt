@@ -10,7 +10,7 @@ import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
 import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
 import com.hyperswitchsdkreactnative.headless.PMError
 import com.hyperswitchsdkreactnative.headless.PaymentMethodType
-import com.hyperswitchsdkreactnative.headless.PaymentResult
+import com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult
 import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
 import com.hyperswitchsdkreactnative.provider.HyperProvider
 import com.hyperswitchsdkreactnative.views.PaymentWidgetViewManager
@@ -321,20 +321,20 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
      * Convert PaymentResult (Throwable-based Failed) to JSON string.
      * Old pattern: code in throwable.cause.message, message in throwable.message
      */
-    private fun paymentResultToString(result: PaymentResult): String {
+    private fun paymentResultToString(result: HeadlessPaymentResult): String {
       val json = JSONObject()
       when (result) {
-        is PaymentResult.Completed -> {
+        is HeadlessPaymentResult.Completed -> {
           json.put("status", "success")
           json.put("message", "Payment confirmed successfully")
           json.put("data", result.data)
         }
-        is PaymentResult.Failed -> {
+        is HeadlessPaymentResult.Failed -> {
           json.put("status", "failed")
           json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
           json.put("message", result.throwable.message ?: "An error has occurred.")
         }
-        is PaymentResult.Canceled -> {
+        is HeadlessPaymentResult.Canceled -> {
           json.put("status", "cancelled")
           json.put("message", "Payment confirmation cancelled")
           json.put("data", result.data)

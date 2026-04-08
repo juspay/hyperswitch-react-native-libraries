@@ -207,10 +207,12 @@ class PaymentWidgetView : FrameLayout {
       callback?.let { originalCallback ->
         this.fragment?.setOnPaymentResult { args ->
           originalCallback.invoke(*args)
-          removeWidget()
         }
       }
       onEventCallback?.let { it -> this.fragment?.setOnEventCallback(it) }
+      this.fragment?.setOnExit {
+        removeWidget()
+      }
     }
   }
 
