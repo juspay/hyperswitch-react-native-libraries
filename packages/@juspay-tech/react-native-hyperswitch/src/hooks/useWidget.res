@@ -24,6 +24,10 @@ let useWidget = () => {
   let confirmPayment = React.useCallback0((widgetId: string) => {
     WidgetRegistry.confirmPayment(widgetId)
   })
+
+  // let updateIntent = React.useCallback0(() => {
+  //     WidgetRegistry.updateIntent()
+  // })
   
   {
     isReady,

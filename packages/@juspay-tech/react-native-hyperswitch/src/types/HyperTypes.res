@@ -25,6 +25,11 @@ type hyperInstance = {
   // completeUpdateIntent: string => promise<Js.Json.t>,
 }
 
+type paymentEvent = {
+  eventName: string,
+  payload?: JSON.t,
+}
+
 // UsePaymentSession response type
 @genType
 type paymentSession = {
@@ -33,4 +38,8 @@ type paymentSession = {
   confirmWithCustomerDefaultPaymentMethod: string => promise<nativeResponse>,
   confirmWithCustomerLastUsedPaymentMethod: string => promise<nativeResponse>,
   confirmWithCustomerPaymentToken: string => promise<nativeResponse>,
+  presentPaymentSheet: (NativeHyperswitchSdk.presentPaymentSheetParams, option<paymentEvent => unit>) => promise<NativeHyperswitchSdk.presentPaymentSheetResult>,
+  updateIntent: (~sdkAuthorization: string) => promise<nativeResponse>
 }
+
+

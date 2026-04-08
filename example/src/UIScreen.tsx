@@ -45,6 +45,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [sessionInitializing, setSessionInitializing] = useState<boolean>(false);
   const [paymentCompleted, setPaymentCompleted] = useState<boolean>(false);
+  const [showWidget, setShowWidget] = useState<boolean>(true);
 
   const widget = useWidget();
   const sessionInitRef = useRef(false);
@@ -63,6 +64,31 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     };
   }, [baseURL]);
 
+  const checkout = useCallback(async (): Promise<void> => {
+    if (!paymentSession) {
+      setStatus('Error');
+      setMessage('Payment session not initialized');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await paymentSession.presentPaymentSheet(getCustomisationOptions(), ()=>{
+        
+      });
+      console.log('Checkout result:', result);
+
+      setStatus(getStatus(result?.status));
+      setMessage(result?.message || result?.status);
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      setStatus('Checkout Error');
+      setMessage(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, [paymentSession, clientSecret]);
+
   const setup = useCallback(async (): Promise<void> => {
     try {
       sessionInitRef.current = false;
@@ -74,6 +100,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       setLastUsedMethod(null);
       setDefaultMethod(null);
       setPaymentCompleted(false);
+      setShowWidget(true);
       setStatus('Ready to checkout');
       setMessage('');
     } catch (error) {
@@ -83,8 +110,14 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     }
   }, [createPaymentIntent]);
 
-  const confirmPayment = async (): Promise<void> => {
+  const hideWidgetWithDelay = useCallback(() => {
+    setPaymentCompleted(true);
+    setTimeout(() => {
+      setShowWidget(false);
+    }, 500);
+  }, []);
 
+  const confirmPayment = async (): Promise<void> => {
     try {
       setLoading(true);
       const result = await widget.confirmPayment('payment-widget');
@@ -92,8 +125,8 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
 
       setStatus(getStatus(result?.status));
       setMessage(result?.message || result?.status);
-      if(result?.status === 'succeeded' || result?.status === 'failed') {
-        setPaymentCompleted(true);
+      if (result?.status === 'succeeded' || result?.status === 'failed') {
+        hideWidgetWithDelay();
       }
     } catch (error) {
       console.error('Payment failed:', error);
@@ -278,10 +311,11 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     if (result.errorMessage) {
       setStatus(`Payment failed: ${result.errorMessage}`);
       setMessage('');
+      hideWidgetWithDelay();
     } else {
       setStatus(getStatus(result?.status));
       setMessage(result?.status);
-      setPaymentCompleted(true);
+      hideWidgetWithDelay();
     }
   };
 
@@ -316,13 +350,16 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           <TouchableOpacity style={styles.button} onPress={setup}>
             <Text style={styles.buttonText}>Reload Client Secret</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={checkout}>
+            <Text style={styles.buttonText}>Checkout</Text>
+          </TouchableOpacity>
 
           <View style={styles.status}>
             <Text style={styles.statusText}>{status}</Text>
             {message && <Text style={styles.messageText}>{message}</Text>}
           </View>
 
-          {!paymentCompleted && (
+          {showWidget && (
             <PaymentWidget
               widgetId="payment-widget"
               onPaymentResult={handlePaymentResult}
@@ -332,7 +369,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
             />
           )}
 
-          {!paymentCompleted && (
+          {showWidget && (
             <TouchableOpacity
               style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]}
               onPress={confirmPayment}

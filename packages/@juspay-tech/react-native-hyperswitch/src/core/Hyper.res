@@ -5,6 +5,67 @@
 open NativeHyperswitchSdk
 open ResponseHandler
 
+// Helper to create error result for payment sheet
+let getError = (~error="Unknown error occurred"): presentPaymentSheetResult => {
+  error: {
+    code: "failed",
+    message: error,
+  },
+}
+
+// Parse payment sheet result from native response
+let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
+  try {
+    let parsed = switch Js.typeof(result) {
+    | "string" => Js.Json.parseExn(result->Obj.magic)
+    | _ => result->Obj.magic
+    }
+    let decodedObject = parsed->JSON.Decode.object
+
+    let status =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("status"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+      ->Option.getOr("failed")
+
+    let errorMessage =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("error"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+
+    let message =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("message"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+      ->Option.getOr("")
+
+    let typeData =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("type"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+
+    let paymentResult: paymentResult = {
+      status,
+      message,
+      error: ?errorMessage,
+      type_: ?typeData,
+    }
+
+    switch errorMessage {
+    | Some(err) => {
+        paymentResult,
+        error: {
+          code: "failed",
+          message: err,
+        },
+      }
+    | None => {paymentResult: paymentResult}
+    }
+  } catch {
+  | _ => getError(~error="Failed to parse payment sheet result")
+  }
+}
+
 type globalConfig = {
   publishableKey: string,
   profileId: string,
@@ -143,8 +204,59 @@ let initPaymentSession = (
                     parseNativeResponse,
                   )
                 },
-                
+                presentPaymentSheet: async (
+                  params: presentPaymentSheetParams,
+                  onPaymentEvent: option<HyperTypes.paymentEvent => unit>,
+                ) => {
+                  // let subscribedEventStrings = params.subscribedEvents->Obj.magic
+                  // let invalidEvents = EventValidator.validateSubscribedEventStrings(
+                  //   subscribedEventStrings,
+                  // )
 
+                  let result = try {
+                    let res = await nativeHyperswitchSdk.presentPaymentSheet(params)
+                    res->parsePaymentSheetResult
+                  } catch {
+                  | Exn.Error(obj) =>
+                    switch typeof(obj) {
+                    | #object =>
+                      try {
+                        let errorObj = obj->Obj.magic
+                        let parsedError = errorObj->parsePaymentSheetResult
+                        parsedError
+                      } catch {
+                      | _ =>
+                        switch Exn.message(obj) {
+                        | Some(error) => getError(~error)
+                        | None => getError()
+                        }
+                      }
+                    | _ =>
+                      switch Exn.message(obj) {
+                      | Some(error) => getError(~error)
+                      | None => getError()
+                      }
+                    }
+                  | _ => getError()
+                  }
+
+                  // Call the callback if provided
+                  switch onPaymentEvent {
+                  | Some(callback) =>
+                    callback({
+                      eventName: "PAYMENT_SHEET_RESULT",
+                      payload: result->Obj.magic,
+                    })
+                  | None => ()
+                  }
+
+                  result
+                },
+                updateIntent: (~sdkAuthorization: string) => {
+                  nativeHyperswitchSdk.initPaymentSession(
+                    ~paymentIntentClientSecret=sdkAuthorization,
+                  )->Promise.thenResolve(parseNativeResponse)
+                },
               }: HyperTypes.paymentSession
             ),
           )

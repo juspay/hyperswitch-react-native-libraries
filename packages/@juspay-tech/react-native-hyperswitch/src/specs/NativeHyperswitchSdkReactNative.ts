@@ -9,9 +9,7 @@ export interface Spec extends TurboModule {
     customParams: undefined | Object
   ): Promise<void>;
   initPaymentSession(paymentIntentClientSecret: string): Promise<string>;
-  presentPaymentSheet(configuration: Object): Promise<string>;
-  confirmPayment(reactTag: number, callback: (result: string) => void): void;
-  
+  presentPaymentSheet(configuration: Object): Promise<string>;  
   // Headless Payment Methods
   getCustomerSavedPaymentMethods(): Promise<string>;
   getCustomerDefaultSavedPaymentMethodData(): Promise<string>;

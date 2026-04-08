@@ -112,7 +112,27 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
         it?.notifyResult(CallbackType.CONFIRM_ACTION, result)
       })
     } catch (_: Exception) {
-      Log.i("HyperModule", "Error in notifyWidgetPaymentResult")
+//      Log.i("HyperModule", "Error in notifyWidgetPaymentResult")
+    }
+  }
+
+  override fun onUpdateIntentEvent(rootTag: Int, type: String, result: String) {
+    try {
+      findFragmentWithRootTag(rootTag, {
+        if (type == "UPDATE_INTENT_INIT_RETURNED") {
+          it?.notifyResult(
+            CallbackType.UPDATE_INTENT_INIT,
+            result
+          )
+        } else if (type == "UPDATE_INTENT_COMPLETE_RETURNED") {
+          it?.notifyResult(
+            CallbackType.UPDATE_INTENT_INIT,
+            result
+          )
+        }
+      })
+    } catch (_: Exception) {
+
     }
   }
 

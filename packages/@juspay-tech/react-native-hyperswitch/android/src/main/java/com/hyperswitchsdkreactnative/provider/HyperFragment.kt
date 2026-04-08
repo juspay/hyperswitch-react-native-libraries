@@ -29,6 +29,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
 
 data class OnEventResult(
   val eventName: String,
@@ -41,12 +42,16 @@ enum class CallbackType {
   PAYMENT_RESULT,
   CONFIRM_ACTION,
   CONFIRM_CVC_ACTION,
-  ON_EVENT
+  ON_EVENT,
+  UPDATE_INTENT_INIT,
+  UPDATE_INTENT_COMPLETE
 }
+
 
 sealed class HyperCallback {
   class Payment(val fn: Callback) : HyperCallback()
   class Event(val fn: EventCallback) : HyperCallback()
+  class UpdateIntent(val fn : Callback) : HyperCallback()
 }
 
 class HyperFragment : ReactFragment() {
@@ -70,6 +75,47 @@ class HyperFragment : ReactFragment() {
 
   fun setOnEventCallback(eventCallback: EventCallback) {
     callbacks[CallbackType.ON_EVENT] = HyperCallback.Event(eventCallback)
+  }
+
+  fun triggerUpdateIntentStart(callback: Callback) {
+    val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+    if (rootTag == -1) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "React context not ready",
+          "REACT_CONTEXT_NOT_READY"
+        )
+      )
+      return
+    }
+    callbacks[CallbackType.UPDATE_INTENT_INIT] = HyperCallback.UpdateIntent(callback)
+    reactDelegate.currentReactContext
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("updateIntentInit", Arguments.createMap().apply {
+        putInt("rootTag", rootTag)
+      })
+  }
+
+  fun triggerUpdateIntentComplete(sdkAuthorization: String, callback: Callback) {
+    val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
+    if (rootTag == -1) {
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "React context not ready",
+          "REACT_CONTEXT_NOT_READY"
+        )
+      )
+      return
+    }
+    callbacks[CallbackType.UPDATE_INTENT_COMPLETE] = HyperCallback.UpdateIntent(callback)
+    reactDelegate.currentReactContext
+      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      ?.emit("updateIntentComplete", Arguments.createMap().apply {
+        putString("sdkAuthorization", sdkAuthorization)
+        putInt("rootTag", rootTag)
+      })
   }
 
   fun confirmPayment(callback: Callback) {
@@ -126,6 +172,16 @@ class HyperFragment : ReactFragment() {
           }
         }
 
+        CallbackType.UPDATE_INTENT_INIT ->
+          (callbacks.remove(CallbackType.UPDATE_INTENT_INIT) as? HyperCallback.UpdateIntent)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+
+        CallbackType.UPDATE_INTENT_COMPLETE ->
+          (callbacks.remove(CallbackType.UPDATE_INTENT_INIT) as? HyperCallback.UpdateIntent)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+
         CallbackType.CONFIRM_ACTION -> {
           (callbacks.remove(CallbackType.CONFIRM_ACTION) as? HyperCallback.Payment)?.fn?.invoke(
             parsed.toWritableMap()
@@ -142,10 +198,9 @@ class HyperFragment : ReactFragment() {
   /**
    * Called directly on this instance for streaming widget lifecycle events.
    */
-  fun notifyEvent(eventType: String, result: ReadableMap) {
+  fun notifyEvent(eventType: CallbackType, result: ReadableMap) {
     try {
-      (callbacks[CallbackType.ON_EVENT] as? HyperCallback.Event)
-        ?.fn?.invoke(OnEventResult(eventType, result))
+      (callbacks[eventType] as HyperCallback.UpdateIntent).fn.invoke()
     } catch (e: Exception) {
       Log.e("HyperFragment", "Error in notifyEvent", e)
     }
@@ -320,6 +375,7 @@ class HyperFragment : ReactFragment() {
   fun unRegisterEventBus() {
     if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this)
   }
+
 
   @Subscribe
   fun onEvent(event: RedirectEvent) {

@@ -186,7 +186,6 @@ let make = React.forwardRef((
   })
 
   let onPaymentResultInternal = (event: NativeModuleTypes.nativeEvent) => {
-    Console.log2("Received payment result from native:", event.nativeEvent)
     onPaymentResult(event.nativeEvent.result->Option.getOr("")->parse)
   }
 

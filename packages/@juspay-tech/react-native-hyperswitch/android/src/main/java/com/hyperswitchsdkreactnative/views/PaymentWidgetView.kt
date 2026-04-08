@@ -218,12 +218,16 @@ class PaymentWidgetView : FrameLayout {
   private fun setupLayout(view: View) {
     val callback = object : Choreographer.FrameCallback {
       override fun doFrame(frameTimeNanos: Long) {
-        if (view.isAttachedToWindow) {
-          manuallyLayoutChildren(view)
-          view.viewTreeObserver.dispatchOnGlobalLayout()
-          Choreographer.getInstance().postFrameCallback(this)
-        } else {
-          choreographerCallbacks.remove(view.id)
+        try {
+          if (view.isAttachedToWindow) {
+            manuallyLayoutChildren(view)
+            view.viewTreeObserver.dispatchOnGlobalLayout()
+            Choreographer.getInstance().postFrameCallback(this)
+          } else {
+            choreographerCallbacks.remove(view.id)
+          }
+        }catch (_: Exception){
+
         }
       }
     }

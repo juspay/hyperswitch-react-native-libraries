@@ -2,13 +2,13 @@ package com.hyperswitchsdkreactnative.provider
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-
 internal class HyperProvider internal constructor(private val activity: Activity) {
 
   private var clientSecret: String? = null
