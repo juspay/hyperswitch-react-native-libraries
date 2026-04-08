@@ -41,7 +41,7 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
 
   @ReactMethod
   @DoNotStrip
-  public abstract void initPaymentSession(String paymentIntentClientSecret, Promise promise);
+  public abstract void initPaymentSession(String sdkAuthorization, Promise promise);
 
   @ReactMethod
   @DoNotStrip

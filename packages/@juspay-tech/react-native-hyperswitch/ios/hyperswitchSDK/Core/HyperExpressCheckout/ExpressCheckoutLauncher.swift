@@ -20,23 +20,23 @@ public class ExpressCheckoutLauncher {
     init(){}
     
     static var configuration: PaymentSheet.Configuration?
-    static var intentClientSecret: String?
+    static var sdkAuthorization: String?
     static var completion: ((ExpressCheckoutResult) -> ())?
     static var themes: String?
     
     
-    public convenience init(paymentIntentClientSecret: String, configuration: PaymentSheet.Configuration, themes: String? = nil, completion: @escaping ((ExpressCheckoutResult) -> ())) {
-        
+    public convenience init(sdkAuthorization: String, configuration: PaymentSheet.Configuration, themes: String? = nil, completion: @escaping ((ExpressCheckoutResult) -> ())) {
+
         self.init()
-        
+
         ExpressCheckoutLauncher.configuration = configuration
-        ExpressCheckoutLauncher.intentClientSecret = paymentIntentClientSecret
+        ExpressCheckoutLauncher.sdkAuthorization = sdkAuthorization
         ExpressCheckoutLauncher.themes = themes
         ExpressCheckoutLauncher.completion = completion
-        
+
         let props: [String : Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
-            "clientSecret": paymentIntentClientSecret,
+            "sdkAuthorization": sdkAuthorization,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",
             "confirm": false
@@ -55,7 +55,7 @@ public class ExpressCheckoutLauncher {
             
             let props: [String : Any] = [
                 "type":"widgetPayment",
-                "clientSecret": ExpressCheckoutLauncher.intentClientSecret as Any,
+                "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
@@ -102,7 +102,7 @@ extension ExpressCheckoutLauncher {
         
         var props: [String : Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
-            "clientSecret": ExpressCheckoutLauncher.intentClientSecret as Any,
+            "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",
             "confirm": true

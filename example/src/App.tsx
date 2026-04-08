@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import {
-  HyperInit,
-} from '@juspay-tech/react-native-hyperswitch';
+import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
 import UIScreen from './UIScreen';
 import HeadlessScreen from './HeadlessScreen';
 
@@ -10,14 +8,12 @@ type TabType = 'ui' | 'headless';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('ui');
-  
+
   const publishableKey = process.env.HYPERSWITCH_PUBLISHABLE_KEY;
   const profileId = process.env.PROFILE_ID;
 
   const hyperPromise =
-    publishableKey && profileId ?
-      HyperInit(publishableKey, profileId)
-    : null;
+    publishableKey && profileId ? HyperInit(publishableKey, profileId) : null;
 
   if (!publishableKey || !profileId) {
     return (
@@ -38,24 +34,31 @@ export default function App() {
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'ui' && styles.activeTab]}
           onPress={() => setActiveTab('ui')}
         >
-          <Text style={[styles.tabText, activeTab === 'ui' && styles.activeTabText]}>
+          <Text
+            style={[styles.tabText, activeTab === 'ui' && styles.activeTabText]}
+          >
             UI Mode
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'headless' && styles.activeTab]}
           onPress={() => setActiveTab('headless')}
         >
-          <Text style={[styles.tabText, activeTab === 'headless' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'headless' && styles.activeTabText,
+            ]}
+          >
             Headless Mode
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.content}>
         {activeTab === 'ui' ? (
           <UIScreen hyperPromise={hyperPromise} />
@@ -75,11 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  subText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 8,
   },
   tabContainer: {
     flexDirection: 'row',

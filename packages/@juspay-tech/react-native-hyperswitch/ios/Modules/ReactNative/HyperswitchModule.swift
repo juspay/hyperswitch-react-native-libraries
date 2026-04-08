@@ -31,12 +31,12 @@ public class HyperswitchModule: NSObject {
     resolve(NSNull())
   }
 
-  @objc(initPaymentSessionWithpaymentIntentClientSecret:resolve:reject:)
-  public func initPaymentSession(paymentIntentClientSecret: String,
+  @objc(initPaymentSessionWithSdkAuthorization:resolve:reject:)
+  public func initPaymentSession(sdkAuthorization: String,
                                  resolve: @escaping RCTPromiseResolveBlock,
                                  reject: @escaping RCTPromiseRejectBlock) -> Void {
 
-    self.paymentSession?.initPaymentSession(paymentIntentClientSecret: paymentIntentClientSecret)
+    self.paymentSession?.initPaymentSession(sdkAuthorization: sdkAuthorization)
     resolve(NSNull())
   }
 

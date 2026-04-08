@@ -63,7 +63,7 @@ internal class HyperModule: RCTEventEmitter {
   @objc
   private func presentPaymentSheet(_ request: NSMutableDictionary, _ callBack: @escaping RCTResponseSenderBlock) -> Void {
     DispatchQueue.main.async {
-      let paymentSheet = PaymentSheet(paymentIntentClientSecret: "", configuration: PaymentSheet.Configuration())
+      let paymentSheet = PaymentSheet(sdkAuthorization: "", configuration: PaymentSheet.Configuration())
       paymentSheet.presentWithParams(
         from: (UIApplication.shared.delegate?.window??.rootViewController)!, //TODO: safely check this
         props: request as! [String : Any],

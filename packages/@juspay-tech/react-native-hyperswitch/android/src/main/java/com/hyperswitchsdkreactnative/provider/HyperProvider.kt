@@ -2,16 +2,16 @@ package com.hyperswitchsdkreactnative.provider
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
 import com.hyperswitchsdkreactnative.BuildConfig
-
 internal class HyperProvider internal constructor(private val activity: Activity) {
 
-  private var clientSecret: String? = null
+  private var sdkAuthorization: String? = null
 
   fun initialise(
     publishableKey: String?,
@@ -25,8 +25,8 @@ internal class HyperProvider internal constructor(private val activity: Activity
     Companion.customParams = customParams
   }
 
-  fun initPaymentSession(clientSecret: String) {
-    this.clientSecret = clientSecret
+  fun initPaymentSession(sdkAuthorization: String) {
+    this.sdkAuthorization = sdkAuthorization
   }
 
   fun presentPaymentSheet(readableMap: ReadableMap) {
@@ -40,11 +40,11 @@ internal class HyperProvider internal constructor(private val activity: Activity
           .setComponentName("hyperSwitch")
           .setLaunchOptions(launchOptions.getBundle(
             publishableKey = publishableKey,
-            clientSecret = clientSecret,
             configuration = readableMap,
             customBackendUrl = customBackendUrl,
             customLogUrl = customLogUrl,
             customParams = customParams,
+            sdkAuthorization = sdkAuthorization,
           ))
           .setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
           .build()

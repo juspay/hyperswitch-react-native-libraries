@@ -5,6 +5,73 @@
 open NativeHyperswitchSdk
 open ResponseHandler
 
+// Helper to create error result for payment sheet
+let getError = (~error="Unknown error occurred"): presentPaymentSheetResult => {
+  error: {
+    code: "failed",
+    message: error,
+  },
+}
+
+@module("../utils/PaymentSheetEventManager.res.js")
+external registerCallback: (HyperTypes.paymentEvent => unit) => unit = "registerCallback"
+
+@module("../utils/PaymentSheetEventManager.res.js")
+external unregisterCallback: unit => unit = "unregisterCallback"
+
+// Parse payment sheet result from native response
+let parsePaymentSheetResult = (result: 'a): presentPaymentSheetResult => {
+  try {
+    let parsed = switch Js.typeof(result) {
+    | "string" => Js.Json.parseExn(result->Obj.magic)
+    | _ => result->Obj.magic
+    }
+    let decodedObject = parsed->JSON.Decode.object
+
+    let status =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("status"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+      ->Option.getOr("failed")
+
+    let errorMessage =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("error"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+
+    let message =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("message"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+      ->Option.getOr("")
+
+    let typeData =
+      decodedObject
+      ->Option.flatMap(obj => obj->Dict.get("type"))
+      ->Option.flatMap(json => json->JSON.Decode.string)
+
+    let paymentResult: paymentResult = {
+      status,
+      message,
+      error: ?errorMessage,
+      type_: ?typeData,
+    }
+
+    switch errorMessage {
+    | Some(err) => {
+        paymentResult,
+        error: {
+          code: "failed",
+          message: err,
+        },
+      }
+    | None => {paymentResult: paymentResult}
+    }
+  } catch {
+  | _ => getError(~error="Failed to parse payment sheet result")
+  }
+}
+
 type globalConfig = {
   publishableKey: string,
   profileId: string,
@@ -38,9 +105,9 @@ let setGlobalConfig = (
 // Create a hyper instance with the given config
 let createHyperInstance = (): HyperTypes.hyperInstance => {
   // confirmPayment: (paymentParams: Js.Json.t) => {}
-  initPaymentSession: (sessionParams: string) => {
+  initPaymentSession: (sdkAuthorization : string) => {
     nativeHyperswitchSdk.initPaymentSession(
-      ~paymentIntentClientSecret=sessionParams,
+      ~sdkAuthorization=sdkAuthorization
     )->Promise.thenResolve(parseNativeResponse)
   },
 
@@ -85,15 +152,105 @@ let init = (
   Promise.resolve(createHyperInstance())
 }
 
+let emitUnknownEventWarning = (
+  callback: HyperTypes.paymentEvent => unit,
+  invalidEvents: array<string>,
+) => {
+  let warningPayload = EventValidator.makeUnknownEventWarningPayload(invalidEvents)
+  let payloadJson =
+    Dict.fromArray([
+      ("message", JSON.Encode.string(warningPayload.message)),
+      (
+        "invalidEvents",
+        JSON.Encode.array(warningPayload.invalidEvents->Array.map(JSON.Encode.string)),
+      ),
+      ("validEvents", JSON.Encode.array(warningPayload.validEvents->Array.map(JSON.Encode.string))),
+    ])->JSON.Encode.object
+  callback({
+    eventName: "UNKNOWN_EVENT_SUBSCRIBED",
+    payload: payloadJson,
+  })
+}
+
+let _presentPaymentSheet = async (
+  params: presentPaymentSheetParams,
+  onPaymentEvent: option<HyperTypes.paymentEvent => unit>,
+) => {
+  try {
+    let subscribedEventStrings = params.subscribedEvents->Obj.magic
+    let invalidEvents = EventValidator.validateSubscribedEventStrings(subscribedEventStrings)
+    switch onPaymentEvent {
+    | Some(callback) => {
+        if Array.length(invalidEvents) > 0 {
+          emitUnknownEventWarning(callback, invalidEvents)
+        }
+        registerCallback(callback)
+      }
+    | None => ()
+    }
+    let result = try {
+      let res = await nativeHyperswitchSdk.presentPaymentSheet(params)
+      unregisterCallback()
+      res->parsePaymentSheetResult
+    } catch {
+    | Exn.Error(obj) =>
+      switch typeof(obj) {
+      | #object =>
+        try {
+          let errorObj = obj->Obj.magic
+          let parsedError = errorObj->parsePaymentSheetResult
+          parsedError
+        } catch {
+        | _ =>
+          switch Exn.message(obj) {
+          | Some(error) => getError(~error)
+          | None => getError()
+          }
+        }
+      | _ =>
+        switch Exn.message(obj) {
+        | Some(error) => getError(~error)
+        | None => getError()
+        }
+      }
+    | _ => getError()
+    }
+
+    result
+  } catch {
+  | _ => getError(~error="Failed to present payment sheet")
+  }
+}
+
+let _updateIntent = async (~callback): HyperTypes.nativeResponse => {
+  // Start - wait for all widget init operations to complete
+  let _ = WidgetRegistry.updateIntentInitForAllWidgets()
+
+  let _sdkAuthorization = await callback()
+  // if(_sdkAuthorization == "") {
+  //   {
+  //     status: HyperTypes.Failed,
+  //     message: "Failed to get SDK authorization from callback",
+  //   }
+  // }
+
+  // Complete - wait for all widget complete operations to finish
+  let _ = WidgetRegistry.updateIntentCompleteForAllWidgets(_sdkAuthorization)
+  {
+    status: HyperTypes.Succeeded,
+    message: "Payment intent updated successfully",
+  }
+}
+
 // Initialize payment session
 @genType
 let initPaymentSession = (
   ~hyperPromise: promise<HyperTypes.hyperInstance>,
-  ~paymentIntentClientSecret: string,
+  ~sdkAuthorization: string,
 ): promise<HyperTypes.paymentSession> => {
   hyperPromise->Promise.then(_hyperInstance => {
     nativeHyperswitchSdk.initPaymentSession(
-      ~paymentIntentClientSecret,
+      ~sdkAuthorization,
     )->Promise.then(_initResult => {
       nativeHyperswitchSdk.getCustomerSavedPaymentMethods()->Promise.then(
         _savedMethodsResult => {
@@ -143,8 +300,15 @@ let initPaymentSession = (
                     parseNativeResponse,
                   )
                 },
-                
-
+                presentPaymentSheet: (
+                  params: presentPaymentSheetParams,
+                  onPaymentEvent: option<HyperTypes.paymentEvent => unit>,
+                ) => {
+                  _presentPaymentSheet(params, onPaymentEvent)
+                },
+                updateIntent: (~callback) => {
+                  _updateIntent(~callback)
+                },
               }: HyperTypes.paymentSession
             ),
           )

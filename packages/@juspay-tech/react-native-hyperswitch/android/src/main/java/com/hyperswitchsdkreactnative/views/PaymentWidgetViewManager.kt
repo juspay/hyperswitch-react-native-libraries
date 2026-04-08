@@ -111,11 +111,11 @@ class PaymentWidgetViewManager : SimpleViewManager<PaymentWidgetView>(),
     }
   }
 
-  @ReactProp(name = "clientSecret")
-  override fun setClientSecret(view: PaymentWidgetView, clientSecret: String?) {
-    clientSecret ?: return
-    if (view.getClientSecret() == clientSecret) return
-    view.setPaymentIntent(clientSecret)
+  @ReactProp(name = "sdkAuthorization")
+  override fun setSdkAuthorization(view: PaymentWidgetView, sdkAuthorization: String?) {
+    sdkAuthorization ?: return
+    if (view.getSdkAuthorization() == sdkAuthorization) return
+    view.setSdkAuthorization(sdkAuthorization)
     view.post { view.showWidgetInternal() }
   }
 

@@ -98,6 +98,45 @@ app.get('/health', (req, res) => {
     },
   });
 });
+app.post("/update-payment", async (req, res) => {
+  const { payment_id } = req.body;
+  const hyperswitch_api_key = process.env.HYPERSWITCH_SECRET_KEY;
+  const baseUrl =
+    process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+    process.env.HYPERSWITCH_SERVER_URL || HYPERSWITCH_BASE_URL;
+  const hyperswitch_url = `${baseUrl}/payments/${payment_id}`;
+
+  const headers = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "api-key": hyperswitch_api_key,
+  };
+
+  const updatedPaymentData = {
+    currency: "HKD",
+    amount: 2999,
+    ...req.body,
+  };
+
+  try {
+    const response = await fetch(hyperswitch_url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(updatedPaymentData),
+    });
+
+    const data = await response.json();
+    console.log("update data==>", data);
+    res.send({
+      sdkAuthorization: data.sdk_authorization,
+      clientSecret: data.client_secret,
+    });
+  } catch (error) {
+    res.status(500).send({
+      error: error.message || "Unknown error occurred",
+    });
+  }
+});
 
 app.get('/create-payment-intent', async (req, res) => {
   try {
@@ -128,6 +167,8 @@ app.get('/create-payment-intent', async (req, res) => {
     res.json({
       publishableKey: HYPERSWITCH_PUBLISHABLE_KEY,
       clientSecret: response.data.client_secret,
+      sdkAuthorization: response.data.sdk_authorization,
+      payment_id : response.data.payment_id,
     });
   } catch (error) {
     logger.error(

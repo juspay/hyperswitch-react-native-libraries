@@ -20,11 +20,11 @@ RCT_EXPORT_METHOD(initialise:(nonnull NSString *)publishableKey
   [HyperswitchModule.shared initialiseWithPublishableKey:publishableKey customBackendUrl:customBackendUrl customLogUrl:customLogUrl customParams:customParams resolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(initPaymentSession:(nonnull NSString *)paymentIntentClientSecret
+RCT_EXPORT_METHOD(initPaymentSession:(nonnull NSString *)sdkAuthorization
                   resolve:(nonnull RCTPromiseResolveBlock)resolve
                   reject:(nonnull RCTPromiseRejectBlock)reject) {
 
-  [HyperswitchModule.shared initPaymentSessionWithpaymentIntentClientSecret:paymentIntentClientSecret resolve:resolve reject:reject];
+  [HyperswitchModule.shared initPaymentSessionWithSdkAuthorization:sdkAuthorization resolve:resolve reject:reject];
 }
 
 RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)configuration

@@ -22,6 +22,11 @@ export {
   useWidget,
 } from './hooks/useWidget.gen';
 
+// usePaymentSession - Hook for accessing payment session methods from HyperElements context
+export {
+  usePaymentSession,
+} from './hooks/usePaymentSession.gen';
+
 // PaymentWidget - The payment widget component
 export {
   make as PaymentWidget,
