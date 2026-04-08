@@ -6,6 +6,7 @@ import {
   useWidget,
   type HyperElementsOptions,
   type HyperInstance,
+  type PaymentWidgetRef,
 } from '@juspay-tech/react-native-hyperswitch';
 import {
   initialBaseUrl,
@@ -19,83 +20,118 @@ interface UIScreenProps {
   hyperPromise: Promise<HyperInstance>;
 }
 
-function WidgetContent({ 
-  onStatusUpdate 
-}: { 
-  onStatusUpdate: (status: string, message?: string) => void 
+function WidgetContent({
+  onStatusUpdate
+}: {
+  onStatusUpdate: (status: string, message?: string) => void
 }) {
-  const widget = useWidget();
-  const [isConfirming, setIsConfirming] = useState(false);
-  const widgetRef = React.useRef(null);
-  const handleConfirmPayment = async () => {
-    // if (!widget.isReady) {
-    //   onStatusUpdate('Error', 'Widget is not ready');
-    //   return;
-    // }
+  // useWidget hook - uses global WidgetRegistry internally
+  const widget2 = useWidget();
 
+  const [isConfirming1, setIsConfirming1] = useState(false);
+  const [isConfirming2, setIsConfirming2] = useState(false);
+  const widgetRef1 = React.useRef<PaymentWidgetRef | null>(null);
+  const widgetRef2 = React.useRef<PaymentWidgetRef | null>(null);
+
+  // Using ref approach
+  const handleConfirmPayment1 = async () => {
     try {
-      setIsConfirming(true);
-      onStatusUpdate('Confirming...', 'Payment confirmation in progress');
-      // Call confirmPayment with widgetId
-      const result = await widgetRef.current?.confirmPayment();
-      // Parse the result
+      setIsConfirming1(true);
+      onStatusUpdate('Confirming Widget 1 (ref)...', 'Payment confirmation in progress');
+      const result = await widgetRef1.current?.confirmPayment();
       const status = result?.status || 'unknown';
       const message = result?.message || 'Payment confirmation completed';
-      
-      onStatusUpdate(getStatus(status), message);
-      setIsConfirming(false);
+
+      onStatusUpdate(getStatus(status), `Widget 1 (ref): ${message}`);
+      setIsConfirming1(false);
     } catch (error) {
-      onStatusUpdate('Error', getErrorMessage(error));
-      setIsConfirming(false);
+      onStatusUpdate('Error', `Widget 1 (ref): ${getErrorMessage(error)}`);
+      setIsConfirming1(false);
+    }
+  };
+
+  // Using useWidget hook approach - directly calls registry without isReady check
+  const handleConfirmPayment2 = async () => {
+    try {
+      setIsConfirming2(true);
+      onStatusUpdate('Confirming Widget 2 (useWidget)...', 'Payment confirmation in progress');
+      const result = await widget2.confirmPayment('payment-widget-2');
+      const status = result?.status || 'unknown';
+      const message = result?.message || 'Payment confirmation completed';
+
+      onStatusUpdate(getStatus(status), `Widget 2 (useWidget): ${message}`);
+      setIsConfirming2(false);
+    } catch (error) {
+      onStatusUpdate('Error', `Widget 2 (useWidget): ${getErrorMessage(error)}`);
+      setIsConfirming2(false);
     }
   };
 
   return (
     <>
-        <PaymentWidget
-      ref= {widgetRef}
-        widgetId="payment-widget-2"
+      {/* First PaymentWidget */}
+      <PaymentWidget
+        ref={widgetRef1}
+        widgetId="payment-widget-1"
         onPaymentResult={(result: any) => {
           if (result.errorMessage) {
-            onStatusUpdate(`Payment failed: ${result.errorMessage}`);
+            onStatusUpdate(`Widget 1 Payment failed: ${result.errorMessage}`);
           } else {
-            onStatusUpdate(getStatus(result?.status), result?.status);
+            onStatusUpdate(getStatus(result?.status), `Widget 1: ${result?.status}`);
           }
         }}
-        style={{ width: '100%', height: 400 }}
-        options={{ 
-          ...getCustomisationOptions('accordion'), 
+        style={{ width: '100%', height: 300 }}
+        options={{
+          ...getCustomisationOptions('accordion'),
         }}
       />
-      {/* Confirm Payment Button */}
-      <TouchableOpacity 
+
+      {/* Confirm Payment Button for Widget 1 */}
+      <TouchableOpacity
         style={[
-          styles.button, 
+          styles.button,
           styles.confirmButton,
-          (isConfirming) && styles.buttonDisabled
-        ]} 
-        onPress={handleConfirmPayment}
-        disabled={ isConfirming}
+          (isConfirming1) && styles.buttonDisabled
+        ]}
+        onPress={handleConfirmPayment1}
+        disabled={isConfirming1}
       >
         <Text style={styles.buttonText}>
-          {
-          isConfirming ? 'Confirming...' : 
-           widget.isLoading ? 'Loading...' : 
-           'Confirm Payment (useWidget)'
-           }
+          {isConfirming1 ? 'Confirming...' : 'Confirm Payment Widget 1'}
         </Text>
       </TouchableOpacity>
 
-      {/* Widget Status */}
-      {/* <View style={styles.widgetStatus}>
-        <Text style={styles.widgetStatusText}>
-          Widget Status: {widget.isReady ? 'Ready' : 'Initializing'}
+      {/* Second PaymentWidget */}
+      <PaymentWidget
+        ref={widgetRef2}
+        widgetId="payment-widget-2"
+        onPaymentResult={(result: any) => {
+          if (result.errorMessage) {
+            onStatusUpdate(`Widget 2 Payment failed: ${result.errorMessage}`);
+          } else {
+            onStatusUpdate(getStatus(result?.status), `Widget 2: ${result?.status}`);
+          }
+        }}
+        style={{ width: '100%', height: 300, marginTop: 20 }}
+        options={{
+          ...getCustomisationOptions('accordion'),
+        }}
+      />
+
+      {/* Confirm Payment Button for Widget 2 */}
+      <TouchableOpacity
+        style={[
+          styles.button,
+          styles.confirmButton,
+          (isConfirming2) && styles.buttonDisabled
+        ]}
+        onPress={handleConfirmPayment2}
+        disabled={isConfirming2}
+      >
+        <Text style={styles.buttonText}>
+          {isConfirming2 ? 'Confirming...' : 'Confirm Payment Widget 2'}
         </Text>
-        <Text style={styles.widgetStatusText}>
-          Loading: {widget.isLoading ? 'Yes' : 'No'} | 
-          Disabled: {widget.isConfirmDisabled ? 'Yes' : 'No'}
-        </Text>
-      </View> */}
+      </TouchableOpacity>
     </>
   );
 }
@@ -135,10 +171,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     setMessage('Use the "Confirm Payment" button below to trigger payment via useWidget hook');
   };
 
-  const handleStatusUpdate = (newStatus: string, newMessage?: string) => {
+  const handleStatusUpdate = useCallback((newStatus: string, newMessage?: string) => {
     setStatus(newStatus);
     setMessage(newMessage || null);
-  };
+  }, []);
 
   useEffect(() => {
     setup();
