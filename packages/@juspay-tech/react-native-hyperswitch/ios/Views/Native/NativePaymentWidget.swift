@@ -74,12 +74,12 @@ internal class NativePaymentWidgetView: UIView {
                 self.rctRootTag = rootView.reactTag
                 self.addSubview(rootView)
 
-                // Register callback with the WidgetResponseRegistry
-                WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag) { [weak self] response, shouldRemoveView in
+                // Register passive event listener at mount time.
+                // This fires for payment result notifications that don't originate
+                // from a confirmPayment call (e.g. redirect completions, 3DS callbacks).
+                WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag, action: .paymentEvent) { [weak self] response, shouldRemoveView in
                     guard let self = self else { return }
                     self.onPaymentResult?(["result": response])
-                    self.responseSenderCallback?([["result": response]])
-                    self.responseSenderCallback = nil
                     if shouldRemoveView {
                         self.rootView?.removeFromSuperview()
                     }
@@ -116,12 +116,24 @@ internal class NativePaymentWidgetView: UIView {
       }
 
       self.responseSenderCallback = rnCallback
+
+      if let tag = self.rctRootTag {
+        WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmPayment) { [weak self] response, shouldRemoveView in
+            guard let self = self else { return }
+            self.responseSenderCallback?([["result": response]])
+            self.responseSenderCallback = nil
+            if shouldRemoveView {
+                self.rootView?.removeFromSuperview()
+            }
+        }
+      }
+
       HyperModule.shared?.confirmPayment(self.rctRootTag ?? -1)
     }
 
     deinit {
         if let tag = rctRootTag {
-            WidgetResponseRegistry.shared.unregister(rootTag: tag)
+            WidgetResponseRegistry.shared.unregisterAll(rootTag: tag)
         }
     }
 }

@@ -109,6 +109,13 @@ internal class HyperModule: RCTEventEmitter {
   private func exitWidgetPaymentsheet(_ rootTag: NSNumber, _ result: String, _ reset: Bool) {
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
+      action: .confirmPayment,
+      response: result,
+      shouldRemoveView: true
+    )
+    WidgetResponseRegistry.shared.dispatch(
+      rootTag: rootTag,
+      action: .paymentEvent,
       response: result,
       shouldRemoveView: true
     )
@@ -150,6 +157,13 @@ internal class HyperModule: RCTEventEmitter {
   private func notifyWidgetPaymentResult(_ rootTag: NSNumber, _ rnMessage: String) {
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
+      action: .confirmPayment,
+      response: rnMessage,
+      shouldRemoveView: false
+    )
+    WidgetResponseRegistry.shared.dispatch(
+      rootTag: rootTag,
+      action: .paymentEvent,
       response: rnMessage,
       shouldRemoveView: false
     )
