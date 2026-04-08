@@ -109,6 +109,16 @@ class HyperFragment : ReactFragment() {
       )
       return
     }
+    if(callbacks[CallbackType.UPDATE_INTENT_COMPLETE] != null){
+      callback.invoke(
+        createPaymentResult(
+          "error",
+          "Update intent complete already in progress",
+          "ALREADY_IN_PROGRESS"
+        )
+      )
+      return
+    }
     callbacks[CallbackType.UPDATE_INTENT_COMPLETE] = HyperCallback.UpdateIntent(callback)
     reactDelegate.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
