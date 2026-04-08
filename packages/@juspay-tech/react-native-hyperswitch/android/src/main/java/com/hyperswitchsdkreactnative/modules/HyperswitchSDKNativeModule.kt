@@ -126,7 +126,7 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
           )
         } else if (type == "UPDATE_INTENT_COMPLETE_RETURNED") {
           it?.notifyResult(
-            CallbackType.UPDATE_INTENT_INIT,
+            CallbackType.UPDATE_INTENT_COMPLETE,
             result
           )
         }

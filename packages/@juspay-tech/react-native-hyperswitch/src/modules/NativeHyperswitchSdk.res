@@ -123,6 +123,8 @@ external nativeHyperswitchSdk: nativeHyperswitchSdk = "default"
 type nativePaymentWidget = {
   // New methods
   confirmPayment: confirmPayment,
+  updateIntentInitForWidget: (int, paymentResult => unit) => unit,
+  updateIntentCompleteForWidget: (int, string, paymentResult => unit) => unit,
 }
 
 
@@ -140,10 +142,24 @@ let getFunctionFromModule = (dict: Dict.t<'a>, key: string, default) => {
 
 let nativePaymentWidget = {
   confirmPayment: getFunctionFromModule(nativePaymentWidgetDict, "confirmPayment", (_, _) => ()),
+  updateIntentInitForWidget: getFunctionFromModule(nativePaymentWidgetDict, "updateIntentInitForWidget", (_, _) => ()),
+  updateIntentCompleteForWidget: getFunctionFromModule(nativePaymentWidgetDict, "updateIntentCompleteForWidget", (_, _, _) => ()),
 }
 
 let confirmPayment = (viewId: int, callback: paymentResult => unit) => {
   nativePaymentWidget.confirmPayment(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}
+
+let updateIntentInitForWidget = (viewId: int, callback: paymentResult => unit) => {
+  nativePaymentWidget.updateIntentInitForWidget(viewId, (result: paymentResult) => {
+    callback(result)
+  })
+}
+
+let updateIntentCompleteForWidget = (viewId: int, sdkAuthorization: string, callback: paymentResult => unit) => {
+  nativePaymentWidget.updateIntentCompleteForWidget(viewId, sdkAuthorization, (result: paymentResult) => {
     callback(result)
   })
 }

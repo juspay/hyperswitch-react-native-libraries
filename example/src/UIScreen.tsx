@@ -39,18 +39,27 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [clientSecret, setClientSecret] = useState<string>('');
   const [sdkAuthorisation, setSdkAuthorisation] = useState<string>('');
-  const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
-  const [lastUsedMethod, setLastUsedMethod] = useState<SavedPaymentMethod | null>(null);
-  const [defaultMethod, setDefaultMethod] = useState<SavedPaymentMethod | null>(null);
+  const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(
+    null
+  );
+  const [lastUsedMethod, setLastUsedMethod] =
+    useState<SavedPaymentMethod | null>(null);
+  const [defaultMethod, setDefaultMethod] = useState<SavedPaymentMethod | null>(
+    null
+  );
   const [loading, setLoading] = useState<boolean>(false);
-  const [sessionInitializing, setSessionInitializing] = useState<boolean>(false);
+  const [sessionInitializing, setSessionInitializing] =
+    useState<boolean>(false);
   const [paymentCompleted, setPaymentCompleted] = useState<boolean>(false);
   const [showWidget, setShowWidget] = useState<boolean>(true);
 
   const widget = useWidget();
   const sessionInitRef = useRef(false);
 
-  const createPaymentIntent = useCallback(async (): Promise<{ clientSecret: string; sdkAuthorisation: string }> => {
+  const createPaymentIntent = useCallback(async (): Promise<{
+    clientSecret: string;
+    sdkAuthorization: string;
+  }> => {
     const response = await fetch(`${baseURL}/create-payment-intent`);
     const data = await response.json();
 
@@ -60,9 +69,36 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
 
     return {
       clientSecret: data.clientSecret,
-      sdkAuthorisation: data.sdkAuthorisation,
+      sdkAuthorization: data.sdkAuthorization,
     };
   }, [baseURL]);
+
+  const updateIntent = useCallback(async (): Promise<void> => {
+    if (!paymentSession) {
+      setStatus('Error');
+      setMessage('Payment session not initialized');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const callBack = async () => {
+        const { sdkAuthorization } = await createPaymentIntent();
+        return sdkAuthorization;
+      };
+      const result = await paymentSession.updateIntent(callBack);
+      console.log('Update Intent result:', result);
+
+      setStatus(getStatus(result?.status));
+      setMessage(result?.message || result?.status);
+    } catch (error) {
+      console.error('Update Intent failed:', error);
+      setStatus('Update Intent Error');
+      setMessage(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, [paymentSession, createPaymentIntent]);
 
   const checkout = useCallback(async (): Promise<void> => {
     if (!paymentSession) {
@@ -73,9 +109,12 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
 
     try {
       setLoading(true);
-      const result = await paymentSession.presentPaymentSheet(getCustomisationOptions(), ()=>{
-        
-      });
+      const result = await paymentSession.presentPaymentSheet(
+        getCustomisationOptions(),
+        // (event) => {
+        //   console.log('PaymentSheet Event:', event);
+        // }
+      );
       console.log('Checkout result:', result);
 
       setStatus(getStatus(result?.status));
@@ -161,14 +200,20 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           setLastUsedMethod(lastUsedResult.data);
         } else {
           setLastUsedMethod(null);
-          console.log('No last-used method:', lastUsedResult.message || lastUsedResult.code);
+          console.log(
+            'No last-used method:',
+            lastUsedResult.message || lastUsedResult.code
+          );
         }
 
         if (defaultResult.status === 'succeeded' && defaultResult.data) {
           setDefaultMethod(defaultResult.data);
         } else {
           setDefaultMethod(null);
-          console.log('No default method:', defaultResult.message || defaultResult.code);
+          console.log(
+            'No default method:',
+            defaultResult.message || defaultResult.code
+          );
         }
 
         setStatus('Ready — saved methods loaded');
@@ -239,7 +284,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       // setLoading(true);
       setStatus('Confirming with CVC (last used)...');
 
-      const result = await paymentSession.confirmWithCustomerLastUsedPaymentMethod('last-used-card') as HeadlessResponse;
+      const result =
+        (await paymentSession.confirmWithCustomerLastUsedPaymentMethod(
+          'last-used-card'
+        )) as HeadlessResponse;
       console.log('Confirm with last used (CVC) result:', result);
 
       setStatus(getStatus(result.status));
@@ -264,7 +312,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       // setLoading(true);
       setStatus('Confirming with CVC (default)...');
 
-      const result = await paymentSession.confirmWithCustomerDefaultPaymentMethod('default-card') as HeadlessResponse;
+      const result =
+        (await paymentSession.confirmWithCustomerDefaultPaymentMethod(
+          'default-card'
+        )) as HeadlessResponse;
       console.log('Confirm with default (CVC) result:', result);
 
       setStatus(getStatus(result.status));
@@ -278,7 +329,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     }
   };
 
-  const renderPaymentMethod = (method: SavedPaymentMethod | null, label: string) => {
+  const renderPaymentMethod = (
+    method: SavedPaymentMethod | null,
+    label: string
+  ) => {
     if (!method) return null;
 
     const { card } = method;
@@ -289,16 +343,22 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
         <Text style={styles.methodText}>Type: {method.payment_method_str}</Text>
         {card && (
           <>
-            <Text style={styles.methodText}>Card: **** {card.last4_digits}</Text>
+            <Text style={styles.methodText}>
+              Card: **** {card.last4_digits}
+            </Text>
             <Text style={styles.methodText}>Scheme: {card.scheme}</Text>
-            <Text style={styles.methodText}>Holder: {card.card_holder_name}</Text>
+            <Text style={styles.methodText}>
+              Holder: {card.card_holder_name}
+            </Text>
             <Text style={styles.methodText}>
               Expires: {card.expiry_month}/{card.expiry_year}
             </Text>
           </>
         )}
         <Text style={styles.methodText}>Last Used: {method.last_used_at}</Text>
-        <Text style={styles.methodText}>Payment Token: {method.payment_token}</Text>
+        <Text style={styles.methodText}>
+          Payment Token: {method.payment_token}
+        </Text>
         {method.default_payment_method_set && (
           <Text style={styles.defaultBadge}>DEFAULT</Text>
         )}
@@ -324,7 +384,11 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   };
 
   const handleCvcEvent = (widgetId: string) => (event: PaymentEvent) => {
-    console.log(`CvcWidget [${widgetId}] Event:`, event.eventName, event.payload);
+    console.log(
+      `CvcWidget [${widgetId}] Event:`,
+      event.eventName,
+      event.payload
+    );
   };
 
   const hyperElementsOptions: HyperElementsOptions = {
@@ -353,6 +417,9 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           <TouchableOpacity style={styles.button} onPress={checkout}>
             <Text style={styles.buttonText}>Checkout</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={updateIntent}>
+            <Text style={styles.buttonText}>Update Intent</Text>
+          </TouchableOpacity>
 
           <View style={styles.status}>
             <Text style={styles.statusText}>{status}</Text>
@@ -371,7 +438,11 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
 
           {showWidget && (
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton, loading && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                styles.confirmButton,
+                loading && styles.buttonDisabled,
+              ]}
               onPress={confirmPayment}
               disabled={loading}
             >
@@ -447,6 +518,33 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           </Text>
         </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.confirmButton,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={confirmWithLastUsed}
+            disabled={isLoading || !lastUsedMethod}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Processing...' : 'Confirm with Last Used'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.confirmButton,
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={confirmWithDefault}
+            disabled={isLoading || !defaultMethod}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Processing...' : 'Confirm with Default'}
+            </Text>
+          </TouchableOpacity>
          <TouchableOpacity
           style={[styles.button, styles.confirmButton, isLoading && styles.buttonDisabled]}
           onPress={confirmWithLastUsed}
@@ -457,7 +555,13 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           </Text>
         </TouchableOpacity>
 
-          {isLoading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
+          {isLoading && (
+            <ActivityIndicator
+              size="large"
+              color="#007AFF"
+              style={styles.loader}
+            />
+          )}
         </View>
       </HyperElements>
     </ScrollView>

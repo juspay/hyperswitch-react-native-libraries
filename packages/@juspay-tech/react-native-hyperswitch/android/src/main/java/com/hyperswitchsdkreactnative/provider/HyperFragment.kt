@@ -77,7 +77,7 @@ class HyperFragment : ReactFragment() {
     callbacks[CallbackType.ON_EVENT] = HyperCallback.Event(eventCallback)
   }
 
-  fun triggerUpdateIntentStart(callback: Callback) {
+  fun updatePaymentIntentInit(callback: Callback) {
     val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
     if (rootTag == -1) {
       callback.invoke(
@@ -97,7 +97,7 @@ class HyperFragment : ReactFragment() {
       })
   }
 
-  fun triggerUpdateIntentComplete(sdkAuthorization: String, callback: Callback) {
+  fun updatePaymentIntentComplete(sdkAuthorization: String, callback: Callback) {
     val rootTag = reactDelegate.reactRootView?.rootViewTag ?: -1
     if (rootTag == -1) {
       callback.invoke(
@@ -178,7 +178,7 @@ class HyperFragment : ReactFragment() {
           )
 
         CallbackType.UPDATE_INTENT_COMPLETE ->
-          (callbacks.remove(CallbackType.UPDATE_INTENT_INIT) as? HyperCallback.UpdateIntent)?.fn?.invoke(
+          (callbacks.remove(CallbackType.UPDATE_INTENT_COMPLETE) as? HyperCallback.UpdateIntent)?.fn?.invoke(
             parsed.toWritableMap()
           )
 
@@ -198,9 +198,10 @@ class HyperFragment : ReactFragment() {
   /**
    * Called directly on this instance for streaming widget lifecycle events.
    */
-  fun notifyEvent(eventType: CallbackType, result: ReadableMap) {
+  fun notifyEvent(eventType: String, result: ReadableMap) {
     try {
-      (callbacks[eventType] as HyperCallback.UpdateIntent).fn.invoke()
+      (callbacks[CallbackType.ON_EVENT] as? HyperCallback.Event)
+        ?.fn?.invoke(OnEventResult(eventType, result))
     } catch (e: Exception) {
       Log.e("HyperFragment", "Error in notifyEvent", e)
     }

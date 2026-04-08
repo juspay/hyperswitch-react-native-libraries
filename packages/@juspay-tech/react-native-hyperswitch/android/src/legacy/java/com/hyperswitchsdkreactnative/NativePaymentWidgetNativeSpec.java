@@ -24,4 +24,13 @@ public abstract class NativePaymentWidgetNativeSpec extends ReactContextBaseJava
   @ReactMethod
   @DoNotStrip
   public abstract void confirmPayment(Integer reactTag, Callback callback);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void updateIntentInitForWidget(Integer rootTag,Callback callback);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void updateIntentCompleteForWidget(Integer rootTag, String sdkAuthorization, Callback callback);
+
 }
