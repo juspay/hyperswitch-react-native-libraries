@@ -242,6 +242,52 @@ let _updateIntent = async (~callback): HyperTypes.nativeResponse => {
   }
 }
 
+// Helper to extract string field from JSON data
+let getStringFromJsonData = (data: option<Js.Json.t>, key: string): option<string> => {
+  data
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(dict => dict->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.string)
+}
+
+// Helper to extract payment data and call confirmPaymentCVC
+let confirmWithStoredPaymentMethod = (
+  reactTag: int,
+  storedResponse: option<HyperTypes.nativeResponse>,
+  errorContext: string,
+): promise<HyperTypes.nativeResponse> => {
+  switch storedResponse {
+  | Some(response) =>
+    switch response.status {
+    | Succeeded =>
+      switch (getStringFromJsonData(response.data, "payment_token"), getStringFromJsonData(response.data, "payment_method_id")) {
+      | (Some(paymentToken), Some(paymentMethodId)) =>
+        Promise.make((resolve, _reject) => {
+          NativeHyperswitchSdk.confirmPaymentCVC(reactTag, paymentToken, paymentMethodId, result => {
+            resolve(parseNativeResponse(result))
+          })
+        })
+      | _ =>
+        Promise.resolve(
+          parseNativeResponse(
+            `{"status":"failed","code":"NO_PAYMENT_DATA","message":"Payment token or method ID not found"}`,
+          ),
+        )
+      }
+    | _ =>
+      Promise.resolve(
+        parseNativeResponse(`{"status":"failed","code":"NO_PAYMENT_METHOD","message":"${errorContext} request did not succeed"}`),
+      )
+    }
+  | None =>
+    Promise.resolve(
+      parseNativeResponse(
+        `{"status":"failed","code":"NO_PAYMENT_METHOD","message":"No ${errorContext} found. Please call getter first"}`,
+      ),
+    )
+  }
+}
+
 // Initialize payment session
 @genType
 let initPaymentSession = (
@@ -254,25 +300,43 @@ let initPaymentSession = (
     )->Promise.then(_initResult => {
       nativeHyperswitchSdk.getCustomerSavedPaymentMethods()->Promise.then(
         _savedMethodsResult => {
+          // Create refs to store payment method data
+          let defaultPaymentMethodDataRef = ref(None)
+          let lastUsedPaymentMethodDataRef = ref(None)
+
           Promise.resolve(
             (
               {
                 getCustomerDefaultSavedPaymentMethodData: () => {
-                  nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()->Promise.thenResolve(
-                    parseNativeResponse,
-                  )
+                  nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()->Promise.then(response => {
+                    let parsedResponse = parseNativeResponse(response)
+                    // Store the parsed response in ref for later use
+                    defaultPaymentMethodDataRef := Some(parsedResponse)
+                    Promise.resolve(parsedResponse)
+                  })
                 },
                 getCustomerLastUsedPaymentMethodData: () => {
-                  nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()->Promise.thenResolve(
-                    parseNativeResponse,
-                  )
+                  nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()->Promise.then(response => {
+                    let parsedResponse = parseNativeResponse(response)
+                    // Store the parsed response in ref for later use
+                    lastUsedPaymentMethodDataRef := Some(parsedResponse)
+                    Promise.resolve(parsedResponse)
+                  })
                 },
                 confirmWithCustomerDefaultPaymentMethod: widgetId => {
                   switch WidgetRegistry.getWidget(widgetId) {
                   | Some(reactTag) =>
-                    nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(
-                      reactTag,
-                    )->Promise.thenResolve(parseNativeResponse)
+                    if ReactNative.Platform.os == #android {
+                      nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(
+                        reactTag,
+                      )->Promise.thenResolve(parseNativeResponse)
+                    } else {
+                      confirmWithStoredPaymentMethod(
+                        reactTag,
+                        defaultPaymentMethodDataRef.contents,
+                        "default payment method",
+                      )
+                    }
                   | None =>
                     Promise.resolve(
                       parseNativeResponse(
@@ -284,9 +348,17 @@ let initPaymentSession = (
                 confirmWithCustomerLastUsedPaymentMethod: widgetId => {
                   switch WidgetRegistry.getWidget(widgetId) {
                   | Some(reactTag) =>
-                    nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(
-                      reactTag,
-                    )->Promise.thenResolve(parseNativeResponse)
+                    if ReactNative.Platform.os == #android {
+                      nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(
+                        reactTag,
+                      )->Promise.thenResolve(parseNativeResponse)
+                    } else {
+                      confirmWithStoredPaymentMethod(
+                        reactTag,
+                        lastUsedPaymentMethodDataRef.contents,
+                        "last used payment method",
+                      )
+                    }
                   | None =>
                     Promise.resolve(
                       parseNativeResponse(

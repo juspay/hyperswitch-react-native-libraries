@@ -32,7 +32,6 @@ import { styles } from './styles';
 interface UIScreenProps {
   hyperPromise: Promise<HyperInstance>;
 }
-
 export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const [status, setStatus] = useState<string>('');
   const [message, setMessage] = useState<string>('');
@@ -201,12 +200,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     if (!sdkAuthorization || sessionInitRef.current) return;
 
     sessionInitRef.current = true;
-
     const initAndFetch = async () => {
       try {
         setSessionInitializing(true);
@@ -242,7 +239,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
             defaultResult.message || defaultResult.code
           );
         }
-
         setStatus('Ready — saved methods loaded');
         setMessage('Session + saved methods initialized automatically');
       } catch (error) {
@@ -253,7 +249,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
         setSessionInitializing(false);
       }
     };
-
     initAndFetch();
   }, [sdkAuthorization, hyperPromise]);
 
@@ -267,11 +262,9 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       setMessage('Session not initialized yet');
       return;
     }
-
     try {
       setLoading(true);
       setStatus('Refreshing saved methods...');
-
       const [lastUsedResult, defaultResult] = await Promise.all([
         paymentSession.getCustomerLastUsedPaymentMethodData() as Promise<HeadlessResponse>,
         paymentSession.getCustomerDefaultSavedPaymentMethodData() as Promise<HeadlessResponse>,
@@ -288,7 +281,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       } else {
         setDefaultMethod(null);
       }
-
       setStatus('Saved methods refreshed');
       setMessage('Last-used and default methods re-fetched');
     } catch (error) {
@@ -299,14 +291,12 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       setLoading(false);
     }
   };
-
   const confirmWithLastUsed = async () => {
     if (!paymentSession) {
       setStatus('Error');
       setMessage('Please wait for session to initialize');
       return;
     }
-
     try {
       // setLoading(true);
       setStatus('Confirming with CVC (last used)...');
@@ -316,7 +306,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           'last-used-card'
         )) as HeadlessResponse;
       console.log('Confirm with last used (CVC) result:', result);
-
       setStatus(getStatus(result.status));
       setMessage(result.message || result.status);
     } catch (error) {
@@ -327,14 +316,12 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
       setLoading(false);
     }
   };
-
   const confirmWithDefault = async () => {
     if (!paymentSession) {
       setStatus('Error');
       setMessage('Please wait for session to initialize');
       return;
     }
-
     try {
       // setLoading(true);
       setStatus('Confirming with CVC (default)...');
@@ -344,7 +331,6 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
           'default-card'
         )) as HeadlessResponse;
       console.log('Confirm with default (CVC) result:', result);
-
       setStatus(getStatus(result.status));
       setMessage(result.message || result.status);
     } catch (error) {
@@ -421,9 +407,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const hyperElementsOptions: HyperElementsOptions = {
     sdkAuthorization: sdkAuthorization || undefined,
   };
-
   const isLoading = loading || sessionInitializing;
-
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <HyperElements hyper={hyperPromise} options={hyperElementsOptions}>
