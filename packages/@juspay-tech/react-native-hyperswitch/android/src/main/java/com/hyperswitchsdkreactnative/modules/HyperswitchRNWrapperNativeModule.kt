@@ -62,6 +62,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
         paymentSessionHandler = null
 
         sdkAuthorization?.let {
+          HyperswitchRNWrapperNativeModule.sdkAuthorization = sdkAuthorization
           provider.initPaymentSession(sdkAuthorization = sdkAuthorization)
         }
         promise?.resolve(null)
