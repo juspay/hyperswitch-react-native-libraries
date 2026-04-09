@@ -76,7 +76,7 @@ internal class NativePaymentWidgetView: UIView {
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
                 "customLogUrl": APIClient.shared.customLogUrl as Any,
                 "customParams": APIClient.shared.customParams as Any,
-                "subscribedEvents": configuration["subscribedEvents"] as Any,
+                "from": "rn"
             ]
             let initialProperties = ["props": props]
             self.rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties:initialProperties as [String : Any])
@@ -84,6 +84,7 @@ internal class NativePaymentWidgetView: UIView {
             if let rootView = self.rootView {
                 self.rctRootTag = rootView.reactTag
                 self.addSubview(rootView)
+                rootView.backgroundColor = .clear
 
                 WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag, action: .paymentEvent) { [weak self] response, shouldRemoveView in
                     guard let self = self else { return }
@@ -153,7 +154,7 @@ internal class NativePaymentWidgetView: UIView {
 
     internal func confirmCVCPayment(paymentToken: String, paymentMethodId: String, resolve: @escaping RCTResponseSenderBlock) {
         if let tag = self.rctRootTag {
-          WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmCVCPayment) { [weak self] response, shouldRemoveView in
+            WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmCVCPayment) { [weak self] response, shouldRemoveView in
                 guard let self = self else { return }
                 resolve([response["data"]])
             }

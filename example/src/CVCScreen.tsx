@@ -338,10 +338,9 @@ export default function CVCScreen({ hyperPromise }: CVCScreenProps) {
           <Text style={styles.statusText}>CVC Widget — Default Card:</Text>
           {sdkAuthorization && defaultMethod && (
             <CvcWidget
+              id='default-card'
               options={{
                 ...getCvcInputOptions(),
-                sdkAuthorization,
-                widgetId: 'default-card',
                 placeholder: '123',
               }}
               style={{ width: '30%', height: 80 }}
@@ -354,10 +353,9 @@ export default function CVCScreen({ hyperPromise }: CVCScreenProps) {
           <Text style={styles.statusText}>CVC Widget — Last Used Card:</Text>
           {sdkAuthorization && lastUsedMethod && (
             <CvcWidget
+              id='last-used-card'
               options={{
                 ...getCvcInputOptions(),
-                sdkAuthorization,
-                widgetId: 'last-used-card',
                 placeholder: '456',
               }}
               style={{ width: '30%', height: 80 }}
