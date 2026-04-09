@@ -90,7 +90,7 @@ class HyperFragment : ReactFragment() {
       return
     }
     callbacks[CallbackType.UPDATE_INTENT_INIT] = HyperCallback.UpdateIntent(callback)
-    reactDelegate.currentReactContext
+    reactNativeHost.reactInstanceManager.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("updateIntentInit", Arguments.createMap().apply {
         putInt("rootTag", rootTag)
@@ -120,7 +120,7 @@ class HyperFragment : ReactFragment() {
       return
     }
     callbacks[CallbackType.UPDATE_INTENT_COMPLETE] = HyperCallback.UpdateIntent(callback)
-    reactDelegate.currentReactContext
+    reactNativeHost.reactInstanceManager.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("updateIntentComplete", Arguments.createMap().apply {
         putString("sdkAuthorization", sdkAuthorization)
@@ -151,7 +151,7 @@ class HyperFragment : ReactFragment() {
       return
     }
     callbacks[CallbackType.CONFIRM_ACTION] = HyperCallback.Payment(callback)
-    reactDelegate.currentReactContext
+    reactNativeHost.reactInstanceManager.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("triggerWidgetAction", Arguments.createMap().apply {
         putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
@@ -274,7 +274,7 @@ class HyperFragment : ReactFragment() {
     map.putInt("rootTag", rootTag)
     map.putString("paymentToken", paymentToken)
     map.putString("paymentMethodId", paymentMethodId)
-    reactDelegate.currentReactContext
+    reactNativeHost.reactInstanceManager.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("triggerWidgetAction", map)
   }

@@ -80,6 +80,9 @@
   "workspaces": [
     "../example"
   ],
+  "dependencies": {
+    "@rescript/std": "11.1.4"
+  },
   "devDependencies": {
     "@babel/runtime": "^7.25.0",
     "@commitlint/config-conventional": "^19.6.0",
@@ -110,7 +113,7 @@
     "react-native": "0.76.9",
     "react-native-builder-bob": "^0.40.8",
     "release-it": "^19.0.5",
-    "rescript": "11",
+    "rescript": "11.1.4",
     "rescript-react-native": "^0.78.0",
     "rollup": "^4.52.5",
     "rollup-plugin-terser": "^7.0.2",

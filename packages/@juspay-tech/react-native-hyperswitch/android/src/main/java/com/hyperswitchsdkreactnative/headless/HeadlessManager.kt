@@ -2,10 +2,10 @@ package com.hyperswitchsdkreactnative.headless
 
 import android.app.Application
 import android.os.Bundle
+import com.hyperswitchsdkreactnative.BuildConfig
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.UiThreadUtil
-import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactInstanceEventListener
 import com.facebook.react.ReactNativeHost
@@ -15,7 +15,7 @@ import com.hyperswitchsdkreactnative.provider.ReactNativeController
 
 /**
  * Manages starting HeadlessJsTask for headless payment methods.
- * 
+ *
  * Uses the RN wrapper's ReactNativeController to start a HeadlessJsTask
  * named "HyperHeadless" which runs the JS bundle's headless task logic.
  */
@@ -50,7 +50,7 @@ object HeadlessManager {
 
         UiThreadUtil.runOnUiThread {
             val reactContext: ReactContext? = try {
-                if (ReactNativeFeatureFlags.enableBridgelessArchitecture()) {
+                if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
                     reactHost.currentReactContext
                 } else {
                     reactNativeHost.reactInstanceManager?.currentReactContext
@@ -63,7 +63,7 @@ object HeadlessManager {
                 invokeStartTask(reactContext, props)
             } else {
                 // ReactContext not yet ready, wait for initialization
-                if (ReactNativeFeatureFlags.enableBridgelessArchitecture()) {
+                if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
                     reactHost.addReactInstanceEventListener(
                         object : ReactInstanceEventListener {
                             override fun onReactContextInitialized(context: ReactContext) {

@@ -7,6 +7,7 @@
     "in-source": true
   },
   "bsc-flags": ["-open RescriptCore"],
+  "external-stdlib": "@rescript/std",
   "suffix": ".res.js",
   "sources": [
     {

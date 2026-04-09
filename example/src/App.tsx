@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
-import UIScreen from './UIScreen';
 import HeadlessScreen from './HeadlessScreen';
 import PaymentScreenWithHook from './PaymentScreen';
 import CVCScreen from './CVCScreen';
