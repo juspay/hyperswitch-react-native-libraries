@@ -55,4 +55,19 @@ internal class HyperHeadless: RCTEventEmitter {
             shouldRemoveView: false
         )
     }
+  
+    @objc func emitPaymentEvent(_ rootTag: Int, eventType: String, payload: [String: Any]) {
+     print("HEY",rootTag)
+  }
+
+  func notifyEvent(eventType: String, payload: [String: Any]?) {
+//      if let callback = callbacks[.onEvent] as? ((OnEventResult) -> Void) {
+//          callback(OnEventResult(eventName: eventType, payload: payload))
+//      }
+  }
+
+  struct OnEventResult {
+      let eventName: String
+      let payload: [String: Any]?
+  }
 }
