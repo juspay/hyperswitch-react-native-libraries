@@ -114,31 +114,31 @@ internal class NativePaymentWidgetView: UIView {
     }
 
     internal func confirmPayment(_ rnCallback: @escaping RCTResponseSenderBlock) {
-      // avoiding duplicate confirm calls (confirmPayment triggered multiple times from RN layer)
-      if self.responseSenderCallback != nil {
-        let response = ["status": "failed", "error": "invalid call"]
-        rnCallback([["result": response]])
-        return
-      }
-
-      self.responseSenderCallback = rnCallback
-
-      if let tag = self.rctRootTag {
-        WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmPayment) { [weak self] response, shouldRemoveView in
-            guard let self = self else { return }
-            self.responseSenderCallback?([["result": response]])
-            self.responseSenderCallback = nil
-            if shouldRemoveView {
-                self.rootView?.removeFromSuperview()
-            }
+        // avoiding duplicate confirm calls (confirmPayment triggered multiple times from RN layer)
+        if self.responseSenderCallback != nil {
+          let response = ["status": "failed", "error": "invalid call"]
+          rnCallback([["result": response]])
+          return
         }
-      }
 
-      let eventData: [String: Any] = [
-          "rootTag": self.rctRootTag ?? -1,
-          "actionType": "confirmPayment"
-      ]
-      self.rootView?.bridge.enqueueJSCall("RCTDeviceEventEmitter", method: "emit", args: ["triggerWidgetAction", eventData], completion: nil)
+        self.responseSenderCallback = rnCallback
+
+        if let tag = self.rctRootTag {
+          WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmPayment) { [weak self] response, shouldRemoveView in
+              guard let self = self else { return }
+              self.responseSenderCallback?([["result": response]])
+              self.responseSenderCallback = nil
+              if shouldRemoveView {
+                  self.rootView?.removeFromSuperview()
+              }
+          }
+        }
+
+        let eventData: [String: Any] = [
+            "rootTag": self.rctRootTag ?? -1,
+            "actionType": "CONFIRM_PAYMENT_ACTION"
+        ]
+        self.rootView?.bridge.enqueueJSCall("RCTDeviceEventEmitter", method: "emit", args: ["triggerWidgetAction", eventData], completion: nil)
     }
 
     internal func confirmCVCPayment(paymentToken: String, paymentMethodId: String, resolve: @escaping RCTResponseSenderBlock) {
