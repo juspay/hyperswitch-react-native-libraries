@@ -250,6 +250,20 @@ let getStringFromJsonData = (data: option<Js.Json.t>, key: string): option<strin
   ->Option.flatMap(JSON.Decode.string)
 }
 
+let getBoolFromJsonData = (data: option<Js.Json.t>, key: string): bool => {
+  data
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(dict => dict->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.bool)
+  ->Option.getOr(false)
+}
+
+let failedResponse = (~code: string, ~message: string): promise<HyperTypes.nativeResponse> => {
+  Promise.resolve(
+    parseNativeResponse(`{"status":"failed","code":"${code}","message":"${message}"}`),
+  )
+}
+
 // Helper to extract payment data and call confirmPaymentCVC
 let confirmWithStoredPaymentMethod = (
   reactTag: int,
@@ -284,6 +298,48 @@ let confirmWithStoredPaymentMethod = (
       parseNativeResponse(
         `{"status":"failed","code":"NO_PAYMENT_METHOD","message":"No ${errorContext} found. Please call getter first"}`,
       ),
+    )
+  }
+}
+
+// Confirm with a saved payment method, handling widgetId resolution,
+// requiresCvv check, and platform routing.
+let confirmWithSavedMethod = (
+  ~widgetId: option<string>,
+  ~storedDataRef: ref<option<HyperTypes.nativeResponse>>,
+  ~nativeConfirm: int => promise<string>,
+  ~errorContext: string,
+): promise<HyperTypes.nativeResponse> => {
+  let resolvedTag = widgetId
+    ->Option.flatMap(id => id == "" ? None : Some(id))
+    ->Option.flatMap(WidgetRegistry.getWidget)
+
+  switch (resolvedTag, widgetId) {
+  | (Some(reactTag), _) =>
+    if ReactNative.Platform.os == #android {
+      nativeConfirm(reactTag)->Promise.thenResolve(parseNativeResponse)
+    } else {
+      confirmWithStoredPaymentMethod(reactTag, storedDataRef.contents, errorContext)
+    }
+
+  | (None, None | Some("")) =>
+    let requiresCvv = getBoolFromJsonData(
+      storedDataRef.contents->Option.flatMap(r => r.data),
+      "requires_cvv",
+    )
+    if requiresCvv {
+      failedResponse(
+        ~code="CVC_REQUIRED",
+        ~message="CVC is required for this payment method. Mount a CvcWidget and pass its widgetId.",
+      )
+    } else {
+      nativeConfirm(0)->Promise.thenResolve(parseNativeResponse)
+    }
+
+  | (None, Some(id)) =>
+    failedResponse(
+      ~code="NO_WIDGET",
+      ~message=`CvcWidget '${id}' not found or not mounted`,
     )
   }
 }
@@ -323,50 +379,20 @@ let initPaymentSession = (
                     Promise.resolve(parsedResponse)
                   })
                 },
-                confirmWithCustomerDefaultPaymentMethod: widgetId => {
-                  switch WidgetRegistry.getWidget(widgetId) {
-                  | Some(reactTag) =>
-                    if ReactNative.Platform.os == #android {
-                      nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod(
-                        reactTag,
-                      )->Promise.thenResolve(parseNativeResponse)
-                    } else {
-                      confirmWithStoredPaymentMethod(
-                        reactTag,
-                        defaultPaymentMethodDataRef.contents,
-                        "default payment method",
-                      )
-                    }
-                  | None =>
-                    Promise.resolve(
-                      parseNativeResponse(
-                        `{"status":"failed","code":"NO_WIDGET","message":"CvcWidget '${widgetId}' not found or not mounted"}`,
-                      ),
-                    )
-                  }
-                },
-                confirmWithCustomerLastUsedPaymentMethod: widgetId => {
-                  switch WidgetRegistry.getWidget(widgetId) {
-                  | Some(reactTag) =>
-                    if ReactNative.Platform.os == #android {
-                      nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod(
-                        reactTag,
-                      )->Promise.thenResolve(parseNativeResponse)
-                    } else {
-                      confirmWithStoredPaymentMethod(
-                        reactTag,
-                        lastUsedPaymentMethodDataRef.contents,
-                        "last used payment method",
-                      )
-                    }
-                  | None =>
-                    Promise.resolve(
-                      parseNativeResponse(
-                        `{"status":"failed","code":"NO_WIDGET","message":"CvcWidget '${widgetId}' not found or not mounted"}`,
-                      ),
-                    )
-                  }
-                },
+                confirmWithCustomerDefaultPaymentMethod: widgetId =>
+                  confirmWithSavedMethod(
+                    ~widgetId,
+                    ~storedDataRef=defaultPaymentMethodDataRef,
+                    ~nativeConfirm=nativeHyperswitchSdk.confirmWithCustomerDefaultPaymentMethod,
+                    ~errorContext="default payment method",
+                  ),
+                confirmWithCustomerLastUsedPaymentMethod: widgetId =>
+                  confirmWithSavedMethod(
+                    ~widgetId,
+                    ~storedDataRef=lastUsedPaymentMethodDataRef,
+                    ~nativeConfirm=nativeHyperswitchSdk.confirmWithCustomerLastUsedPaymentMethod,
+                    ~errorContext="last used payment method",
+                  ),
                 confirmWithCustomerPaymentToken: token => {
                   nativeHyperswitchSdk.confirmWithCustomerPaymentToken(token)->Promise.thenResolve(
                     parseNativeResponse,
