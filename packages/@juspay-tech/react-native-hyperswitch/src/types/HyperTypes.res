@@ -35,8 +35,8 @@ type paymentEvent = {
 type paymentSession = {
   getCustomerDefaultSavedPaymentMethodData: unit => promise<nativeResponse>,
   getCustomerLastUsedPaymentMethodData: unit => promise<nativeResponse>,
-  confirmWithCustomerDefaultPaymentMethod: string => promise<nativeResponse>,
-  confirmWithCustomerLastUsedPaymentMethod: string => promise<nativeResponse>,
+  confirmWithCustomerDefaultPaymentMethod: option<string> => promise<nativeResponse>,
+  confirmWithCustomerLastUsedPaymentMethod: option<string> => promise<nativeResponse>,
   confirmWithCustomerPaymentToken: string => promise<nativeResponse>,
   // presentPaymentSheet: (NativeHyperswitchSdk.presentPaymentSheetParams) => promise<NativeHyperswitchSdk.presentPaymentSheetResult>,
 

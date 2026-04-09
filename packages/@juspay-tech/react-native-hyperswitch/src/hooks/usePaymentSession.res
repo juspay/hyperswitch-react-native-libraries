@@ -8,8 +8,8 @@ type usePaymentSessionResult = {
   paymentSession: option<HyperTypes.paymentSession>,
   getCustomerDefaultSavedPaymentMethodData: unit => promise<HyperTypes.nativeResponse>,
   getCustomerLastUsedPaymentMethodData: unit => promise<HyperTypes.nativeResponse>,
-  confirmWithCustomerDefaultPaymentMethod: string => promise<HyperTypes.nativeResponse>,
-  confirmWithCustomerLastUsedPaymentMethod: string => promise<HyperTypes.nativeResponse>,
+  confirmWithCustomerDefaultPaymentMethod: option<string> => promise<HyperTypes.nativeResponse>,
+  confirmWithCustomerLastUsedPaymentMethod: option<string> => promise<HyperTypes.nativeResponse>,
   confirmWithCustomerPaymentToken: string => promise<HyperTypes.nativeResponse>,
   presentPaymentSheet: (
     NativeHyperswitchSdk.presentPaymentSheetParams,
@@ -54,14 +54,14 @@ let usePaymentSession = (): usePaymentSessionResult => {
     }
   })
 
-  let confirmWithCustomerDefaultPaymentMethod = React.useCallback0((widgetId: string) => {
+  let confirmWithCustomerDefaultPaymentMethod = React.useCallback0((widgetId: option<string>) => {
     switch session {
     | Some(s) => s.confirmWithCustomerDefaultPaymentMethod(widgetId)
     | None => Promise.resolve(notReadyResponse)
     }
   })
 
-  let confirmWithCustomerLastUsedPaymentMethod = React.useCallback0((widgetId: string) => {
+  let confirmWithCustomerLastUsedPaymentMethod = React.useCallback0((widgetId: option<string>) => {
     switch session {
     | Some(s) => s.confirmWithCustomerLastUsedPaymentMethod(widgetId)
     | None => Promise.resolve(notReadyResponse)
