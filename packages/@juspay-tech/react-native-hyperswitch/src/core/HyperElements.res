@@ -17,7 +17,7 @@ type hyperElementsData = {
   paymentSession: option<HyperTypes.paymentSession>,
   isInitialized: bool,
   error?: string,
-  sdkAuthorization: string,
+  sdkAuthorization?: string,
 }
 
 // Default values
@@ -25,7 +25,6 @@ let defaultVal: hyperElementsData = {
   hyperInstance: None,
   paymentSession: None,
   isInitialized: false,
-  sdkAuthorization: "",
 }
 
 // Create context

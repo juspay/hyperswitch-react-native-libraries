@@ -41,7 +41,7 @@ type paymentSession = {
   // presentPaymentSheet: (NativeHyperswitchSdk.presentPaymentSheetParams) => promise<NativeHyperswitchSdk.presentPaymentSheetResult>,
 
   presentPaymentSheet: (NativeHyperswitchSdk.presentPaymentSheetParams, option<paymentEvent => unit>) => promise<NativeHyperswitchSdk.presentPaymentSheetResult>,
-  updateIntent: (~callback: unit => promise<string>) => promise<nativeResponse>
+  updateIntent: (~callback: unit => promise<option<string>>) => promise<nativeResponse>
 }
 
 

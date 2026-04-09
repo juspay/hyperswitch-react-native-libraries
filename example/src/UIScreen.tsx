@@ -175,10 +175,10 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   }, [createPaymentIntent]);
 
   const hideWidgetWithDelay = useCallback(() => {
-    setPaymentCompleted(true);
-    setTimeout(() => {
-      setShowWidget(false);
-    }, 500);
+    // setPaymentCompleted(true);
+    // setTimeout(() => {
+    //   setShowWidget(false);
+    // }, 500);
   }, []);
 
   const confirmPayment = async (): Promise<void> => {

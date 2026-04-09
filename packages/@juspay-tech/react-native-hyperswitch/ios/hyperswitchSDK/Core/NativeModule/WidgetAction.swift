@@ -22,4 +22,6 @@ internal enum WidgetAction {
     /// Other cases like: updateIntent, subscription events
     /// For CVC widget
     case confirmCVCPayment
+  
+    case widgetEvent
 }

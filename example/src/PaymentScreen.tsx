@@ -83,7 +83,7 @@ function UIScreenContent({
 
   const updatePaymentIntent = useCallback(async (): Promise<{
     sdkAuthorization: string;
-  }> => {
+  } | undefined> => {
     console.log('Updating payment intent with ID:', paymentId);
     const response = await fetch(
       `${baseURL}/update-payment`,
@@ -101,7 +101,8 @@ function UIScreenContent({
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to update payment intent');
+      // throw new Error(data.error || 'Failed to update payment intent');
+      return
     }
 
     return {
@@ -119,8 +120,8 @@ function UIScreenContent({
     try {
       setLoading(true);
       const result = await paymentSession.updateIntent(async () => {
-        const { sdkAuthorization } = await updatePaymentIntent();
-        return sdkAuthorization;
+        const data = await updatePaymentIntent();
+        return data?.sdkAuthorization || "";
       });
       console.log('Update Intent result:', result);
 
@@ -182,10 +183,10 @@ function UIScreenContent({
   }, [createPaymentIntent]);
 
   const hideWidgetWithDelay = useCallback(() => {
-    setPaymentCompleted(true);
-    setTimeout(() => {
-      setShowWidget(false);
-    }, 500);
+    // setPaymentCompleted(true);
+    // setTimeout(() => {
+    //   setShowWidget(false);
+    // }, 500);
   }, []);
 
   const confirmPayment = async (): Promise<void> => {
@@ -482,12 +483,11 @@ function UIScreenContent({
       )}
 
       <Text style={styles.statusText}>CVC Widget — Default Card:</Text>
-      {sdkAuthorization && defaultMethod && (
+      {defaultMethod && (
         <CvcWidget
+          id='default-card'
           options={{
             ...getCvcInputOptions(),
-            sdkAuthorization,
-            widgetId: 'default-card',
             placeholder: '123',
           }}
           style={{ width: '30%', height: 80 }}
@@ -498,12 +498,11 @@ function UIScreenContent({
       )}
 
       <Text style={styles.statusText}>CVC Widget — Last Used Card:</Text>
-      {sdkAuthorization && lastUsedMethod && (
+      {lastUsedMethod && (
         <CvcWidget
+          id='last-used-card'
           options={{
             ...getCvcInputOptions(),
-            sdkAuthorization,
-            widgetId: 'last-used-card',
             placeholder: '456',
           }}
           style={{ width: '30%', height: 80 }}

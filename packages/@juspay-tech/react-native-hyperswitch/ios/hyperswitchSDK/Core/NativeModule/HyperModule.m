@@ -14,6 +14,7 @@ RCT_EXTERN_METHOD(launchApplePay: (NSString)rnMessage :(RCTResponseSenderBlock)r
 RCT_EXTERN_METHOD(startApplePay: (NSString)rnMessage :(RCTResponseSenderBlock)startCallback)
 RCT_EXTERN_METHOD(presentApplePay: (NSString)rnMessage :(RCTResponseSenderBlock)presentCallback)
 RCT_EXTERN_METHOD(notifyWidgetPaymentResult: (nonnull NSNumber *)rootTag :(NSString)rnMessage)
+RCT_EXTERN_METHOD(emitPaymentEvent: (nonnull NSNumber *)rootTag :(NSString)eventType :(NSDictionary)payload)
 
 + (BOOL)requiresMainQueueSetup
 {

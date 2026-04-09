@@ -79,7 +79,7 @@ let make = React.forwardRef((
       }
     }
 
-    if hyperElementsContext.isInitialized && hyperElementsContext.sdkAuthorization != "" {
+    if hyperElementsContext.isInitialized && hyperElementsContext.sdkAuthorization->Option.getOr("") != "" {
       findNodeHandle(0)
     }
 
@@ -198,12 +198,12 @@ let make = React.forwardRef((
   // Render conditions
   if !hyperElementsContext.isInitialized {
     React.null
-  } else if hyperElementsContext.sdkAuthorization != "" {
+  } else if hyperElementsContext.sdkAuthorization->Option.getOr("") != "" {
     <NativePaymentWidget
       ref={viewRef}
       widgetId={widgetId}
       widgetType={"widgetPaymentSheet"}
-      sdkAuthorization={hyperElementsContext.sdkAuthorization}
+      sdkAuthorization={hyperElementsContext.sdkAuthorization->Option.getOr("")}
       onPaymentResult={onPaymentResultInternal}
       onPaymentEvent={onPaymentEventInternal}
       ?options

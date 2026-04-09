@@ -74,7 +74,7 @@ type nativeEvent = {nativeEvent: paymentResultInternal}
 @genType
 type nativePaymentWidgetType = {
   ref?: ReactNative.Ref.valueRef<unit>,
-  widgetId: string, // sessionId
+  widgetId?: string, // sessionId
   widgetType?: string,
   sdkAuthorization: string,
   options?: PaymentSheetConfiguration.options, // appearance and other configs can be passed as options in JSON string format

@@ -15,7 +15,7 @@ type usePaymentSessionResult = {
     NativeHyperswitchSdk.presentPaymentSheetParams,
     option<HyperTypes.paymentEvent => unit>,
   ) => promise<NativeHyperswitchSdk.presentPaymentSheetResult>,
-  updateIntent: (~callback: unit => promise<string>) => promise<HyperTypes.nativeResponse>,
+  updateIntent: (~callback: unit => promise<option<string>>) => promise<HyperTypes.nativeResponse>,
 }
 
 // Default/error return values for when session is not ready
@@ -85,7 +85,7 @@ let usePaymentSession = (): usePaymentSessionResult => {
     }
   })
 
-  let updateIntent = React.useCallback0((~callback: unit => promise<string>) => {
+  let updateIntent = React.useCallback0((~callback: unit => promise<option<string>>) => {
     switch session {
     | Some(s) => s.updateIntent(~callback)
     | None => Promise.resolve(notReadyResponse)

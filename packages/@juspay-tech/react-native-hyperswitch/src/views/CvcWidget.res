@@ -4,6 +4,7 @@ let createView = viewId => {
 
 @react.component @genType
 let make = React.forwardRef((
+  ~id: option<string>,
   ~options: PaymentSheetConfiguration.cvcWidgetOptions,
   ~onChange: option<NativeModuleTypes.paymentEventResult => unit>=?,
   ~onFocus: option<unit => unit>=?,
@@ -25,9 +26,9 @@ let make = React.forwardRef((
       } else {
         switch Js.Nullable.toOption(viewRef.current) {
         | Some(_) =>
-          let id = ReactNativeUtils.findNodeHandle(viewRef.current)
-          if id != -1 {
-            setViewId(_ => Some(id))
+          let currentId = ReactNativeUtils.findNodeHandle(viewRef.current)
+          if currentId != -1 {
+            setViewId(_ => Some(currentId))
           } else if attempt < 20 {
             let _ = Js.Global.setTimeout(() => findNodeHandle(attempt + 1), 100)
           }
@@ -46,19 +47,19 @@ let make = React.forwardRef((
 
   // Register/unregister widget with registry
   React.useEffect1(() => {
-    switch viewId {
-    | Some(id) =>
-      WidgetRegistry.registerWidget(options.widgetId, id)
+    switch (viewId, id) {
+    | (Some(id), Some(widgetId)) =>
+      WidgetRegistry.registerWidget(widgetId, id)
       isRegisteredRef.current = true
       Some(
         () => {
           if isRegisteredRef.current {
-            WidgetRegistry.unregisterWidget(options.widgetId)
+            WidgetRegistry.unregisterWidget(widgetId)
             isRegisteredRef.current = false
           }
         },
       )
-    | None => None
+    | _ => None
     }
   }, [viewId])
 
@@ -129,14 +130,14 @@ let make = React.forwardRef((
     placeholder: ?options.placeholder->Option.map((cvv): PaymentSheetConfiguration.placeholder => {
       cvv: ?Some(cvv),
     }),
-    sdkAuthorization: options.sdkAuthorization,
+    sdkAuthorization: contextData.sdkAuthorization->Option.getOr(options.sdkAuthorization->Option.getOr("")),
   }
 
   <NativePaymentWidget
     ref={viewRef}
-    widgetId={options.widgetId}
+    widgetId=?{id}
     widgetType="cvcWidget"
-    sdkAuthorization={options.sdkAuthorization}
+    sdkAuthorization={contextData.sdkAuthorization->Option.getOr(options.sdkAuthorization->Option.getOr(""))}
     onPaymentEvent={onPaymentEventInternal}
     options={fullOptions}
     ?style

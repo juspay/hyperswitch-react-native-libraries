@@ -105,10 +105,10 @@ let setGlobalConfig = (
 // Create a hyper instance with the given config
 let createHyperInstance = (): HyperTypes.hyperInstance => {
   // confirmPayment: (paymentParams: Js.Json.t) => {}
-  initPaymentSession: (sdkAuthorization : string) => {
-    nativeHyperswitchSdk.initPaymentSession(
-      ~sdkAuthorization=sdkAuthorization
-    )->Promise.thenResolve(parseNativeResponse)
+  initPaymentSession: (sdkAuthorization: string) => {
+    nativeHyperswitchSdk.initPaymentSession(~sdkAuthorization)->Promise.thenResolve(
+      parseNativeResponse,
+    )
   },
 
   // completeUpdateIntent: (clientSecret: string) => {}
@@ -177,6 +177,7 @@ let _presentPaymentSheet = async (
   onPaymentEvent: option<HyperTypes.paymentEvent => unit>,
 ) => {
   try {
+    params.hideConfirmButton = Some(false)
     let subscribedEventStrings = params.subscribedEvents->Obj.magic
     let invalidEvents = EventValidator.validateSubscribedEventStrings(subscribedEventStrings)
     switch onPaymentEvent {
@@ -226,20 +227,23 @@ let _updateIntent = async (~callback): HyperTypes.nativeResponse => {
   // Start - wait for all widget init operations to complete
   let _ = WidgetRegistry.updateIntentInitForAllWidgets()
 
-  let _sdkAuthorization = await callback()
-  // if(_sdkAuthorization == "") {
-  //   {
-  //     status: HyperTypes.Failed,
-  //     message: "Failed to get SDK authorization from callback",
-  //   }
-  // }
+  let (_sdkAuthorization, _exception) = try {
+    ((await callback())->Option.getOr(""), false)
+  } catch {
+  | _ => ("", true)
+  }
 
   // Complete - wait for all widget complete operations to finish
   let _ = WidgetRegistry.updateIntentCompleteForAllWidgets(_sdkAuthorization)
-  {
-    status: HyperTypes.Succeeded,
-    message: "Payment intent updated successfully",
-  }
+  _exception || _sdkAuthorization == ""
+    ? {
+        status: HyperTypes.Failed,
+        message: "Payment intent failed",
+      }
+    : {
+        status: HyperTypes.Succeeded,
+        message: "Payment intent updated successfully",
+      }
 }
 
 // Helper to extract string field from JSON data
@@ -274,23 +278,31 @@ let confirmWithStoredPaymentMethod = (
   | Some(response) =>
     switch response.status {
     | Succeeded =>
-      switch (getStringFromJsonData(response.data, "payment_token"), getStringFromJsonData(response.data, "payment_method_id")) {
+      switch (
+        getStringFromJsonData(response.data, "payment_token"),
+        getStringFromJsonData(response.data, "payment_method_id"),
+      ) {
       | (Some(paymentToken), Some(paymentMethodId)) =>
         Promise.make((resolve, _reject) => {
-          NativeHyperswitchSdk.confirmPaymentCVC(reactTag, paymentToken, paymentMethodId, result => {
-            resolve(parseNativeResponse(result))
-          })
+          NativeHyperswitchSdk.confirmPaymentCVC(
+            reactTag,
+            paymentToken,
+            paymentMethodId,
+            result => {
+              resolve(parseNativeResponse(result))
+            },
+          )
         })
       | _ =>
         Promise.resolve(
-          parseNativeResponse(
-            `{"status":"failed","code":"NO_PAYMENT_DATA","message":"Payment token or method ID not found"}`,
-          ),
+          parseNativeResponse(`{"status":"failed","code":"NO_PAYMENT_DATA","message":"Payment token or method ID not found"}`),
         )
       }
     | _ =>
       Promise.resolve(
-        parseNativeResponse(`{"status":"failed","code":"NO_PAYMENT_METHOD","message":"${errorContext} request did not succeed"}`),
+        parseNativeResponse(
+          `{"status":"failed","code":"NO_PAYMENT_METHOD","message":"${errorContext} request did not succeed"}`,
+        ),
       )
     }
   | None =>
@@ -351,9 +363,7 @@ let initPaymentSession = (
   ~sdkAuthorization: string,
 ): promise<HyperTypes.paymentSession> => {
   hyperPromise->Promise.then(_hyperInstance => {
-    nativeHyperswitchSdk.initPaymentSession(
-      ~sdkAuthorization,
-    )->Promise.then(_initResult => {
+    nativeHyperswitchSdk.initPaymentSession(~sdkAuthorization)->Promise.then(_initResult => {
       nativeHyperswitchSdk.getCustomerSavedPaymentMethods()->Promise.then(
         _savedMethodsResult => {
           // Create refs to store payment method data
@@ -364,20 +374,24 @@ let initPaymentSession = (
             (
               {
                 getCustomerDefaultSavedPaymentMethodData: () => {
-                  nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()->Promise.then(response => {
-                    let parsedResponse = parseNativeResponse(response)
-                    // Store the parsed response in ref for later use
-                    defaultPaymentMethodDataRef := Some(parsedResponse)
-                    Promise.resolve(parsedResponse)
-                  })
+                  nativeHyperswitchSdk.getCustomerDefaultSavedPaymentMethodData()->Promise.then(
+                    response => {
+                      let parsedResponse = parseNativeResponse(response)
+                      // Store the parsed response in ref for later use
+                      defaultPaymentMethodDataRef := Some(parsedResponse)
+                      Promise.resolve(parsedResponse)
+                    },
+                  )
                 },
                 getCustomerLastUsedPaymentMethodData: () => {
-                  nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()->Promise.then(response => {
-                    let parsedResponse = parseNativeResponse(response)
-                    // Store the parsed response in ref for later use
-                    lastUsedPaymentMethodDataRef := Some(parsedResponse)
-                    Promise.resolve(parsedResponse)
-                  })
+                  nativeHyperswitchSdk.getCustomerLastUsedPaymentMethodData()->Promise.then(
+                    response => {
+                      let parsedResponse = parseNativeResponse(response)
+                      // Store the parsed response in ref for later use
+                      lastUsedPaymentMethodDataRef := Some(parsedResponse)
+                      Promise.resolve(parsedResponse)
+                    },
+                  )
                 },
                 confirmWithCustomerDefaultPaymentMethod: widgetId =>
                   confirmWithSavedMethod(

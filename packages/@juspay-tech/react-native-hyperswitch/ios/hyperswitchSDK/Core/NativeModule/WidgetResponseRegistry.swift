@@ -20,7 +20,7 @@ internal final class WidgetResponseRegistry {
     internal static let shared = WidgetResponseRegistry()
 
     /// Closure signature: (response: String, shouldRemoveView: Bool) -> Void
-    private var handlers: [NSNumber: [WidgetAction: (String, Bool) -> Void]] = [:]
+    private var handlers: [NSNumber: [WidgetAction: (NSDictionary, Bool) -> Void]] = [:]
     private let lock = NSLock()
 
     private init() {}
@@ -30,9 +30,9 @@ internal final class WidgetResponseRegistry {
      * Only one handler per (rootTag, action) — last one wins.
      * Thread-safe: acquires internal lock.
      */
-    internal func register(rootTag: NSNumber, action: WidgetAction, handler: @escaping (String, Bool) -> Void) {
+    internal func register(rootTag: NSNumber, action: WidgetAction, handler: @escaping (NSDictionary, Bool) -> Void) {
         lock.lock()
-        handlers[rootTag, default: [:]][action] = handler
+      handlers[rootTag, default: [:]][action] = handler
         lock.unlock()
     }
 
@@ -76,10 +76,12 @@ internal final class WidgetResponseRegistry {
      * Thread-safe: acquires internal lock.
      */
     @discardableResult
-    internal func dispatch(rootTag: NSNumber, action: WidgetAction, response: String, shouldRemoveView: Bool) -> Bool {
+    internal func dispatch(rootTag: NSNumber, action: WidgetAction, response: NSDictionary, shouldRemoveView: Bool) -> Bool {
         lock.lock()
         let handler = handlers[rootTag]?[action]
-        handlers[rootTag]?.removeValue(forKey: action)
+        if(shouldRemoveView) {
+          handlers[rootTag]?.removeValue(forKey: action)
+        }
         if handlers[rootTag]?.isEmpty == true {
             handlers.removeValue(forKey: rootTag)
         }

@@ -196,8 +196,7 @@ type cvcAppearance = {
 
 @genType
 type cvcWidgetOptions = {
-  sdkAuthorization: string,
-  widgetId: string,
+  sdkAuthorization?: string,
   appearance?: cvcAppearance,
   placeholder?: string,
 }
@@ -227,4 +226,5 @@ type options = {
   paymentSheetHeaderLabel?: string,
   savedPaymentSheetHeaderLabel?: string,
   subscribedEvents?: array<subscriptionEvent>,
+  mutable hideConfirmButton?: bool,
 }

@@ -51,7 +51,7 @@ internal class HyperHeadless: RCTEventEmitter {
         WidgetResponseRegistry.shared.dispatch(
             rootTag: rootTag,
             action: .confirmCVCPayment,
-            response: rnMessage,
+            response: ["data": rnMessage],
             shouldRemoveView: false
         )
     }

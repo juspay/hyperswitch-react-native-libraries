@@ -54,6 +54,7 @@ internal class NativePaymentWidgetView: UIView {
     @objc private var widgetType: String?
     @objc private var sdkAuthorization: String?
     @objc private var options: [String: Any]?
+    @objc private var onPaymentEvent: RCTDirectEventBlock?
     @objc private var onPaymentResult: RCTDirectEventBlock?
     private var responseSenderCallback: RCTResponseSenderBlock?
 
@@ -74,7 +75,8 @@ internal class NativePaymentWidgetView: UIView {
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
                 "customLogUrl": APIClient.shared.customLogUrl as Any,
-                "customParams": APIClient.shared.customParams as Any
+                "customParams": APIClient.shared.customParams as Any,
+                "subscribedEvents": configuration["subscribedEvents"] as Any,
             ]
             let initialProperties = ["props": props]
             self.rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties:initialProperties as [String : Any])
@@ -85,7 +87,15 @@ internal class NativePaymentWidgetView: UIView {
 
                 WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag, action: .paymentEvent) { [weak self] response, shouldRemoveView in
                     guard let self = self else { return }
-                    self.onPaymentResult?(["result": response])
+                    self.onPaymentResult?(["result": response["data"]])
+                    if shouldRemoveView {
+                        self.rootView?.removeFromSuperview()
+                    }
+                }
+              
+                WidgetResponseRegistry.shared.register(rootTag: rootView.reactTag, action: .widgetEvent) { [weak self] response, shouldRemoveView in
+                    guard let self = self else { return }
+                    self.onPaymentEvent?(response["data"] as? [AnyHashable : Any])
                     if shouldRemoveView {
                         self.rootView?.removeFromSuperview()
                     }
@@ -126,7 +136,7 @@ internal class NativePaymentWidgetView: UIView {
         if let tag = self.rctRootTag {
           WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmPayment) { [weak self] response, shouldRemoveView in
               guard let self = self else { return }
-              self.responseSenderCallback?([["result": response]])
+              self.responseSenderCallback?([["result": response["data"]]])
               self.responseSenderCallback = nil
               if shouldRemoveView {
                   self.rootView?.removeFromSuperview()
@@ -143,9 +153,9 @@ internal class NativePaymentWidgetView: UIView {
 
     internal func confirmCVCPayment(paymentToken: String, paymentMethodId: String, resolve: @escaping RCTResponseSenderBlock) {
         if let tag = self.rctRootTag {
-            WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmCVCPayment) { [weak self] response, shouldRemoveView in
+          WidgetResponseRegistry.shared.register(rootTag: tag, action: .confirmCVCPayment) { [weak self] response, shouldRemoveView in
                 guard let self = self else { return }
-                resolve([response])
+                resolve([response["data"]])
             }
         }
 

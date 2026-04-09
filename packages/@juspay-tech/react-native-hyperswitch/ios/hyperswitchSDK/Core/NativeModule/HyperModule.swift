@@ -10,46 +10,46 @@ import React
 
 @objc(HyperModule)
 internal class HyperModule: RCTEventEmitter {
-
+  
   private let applePayPaymentHandler = ApplePayHandler()
   private let expressCheckoutHandler = ExpressCheckoutLauncher()
   private var presentCallback: RCTResponseSenderBlock? = nil
   internal static var shared:HyperModule?
-
+  
   override init() {
     super.init()
     HyperModule.shared = self
   }
-
+  
   @objc
   internal override static func requiresMainQueueSetup() -> Bool {
     return true
   }
-
-    @objc
-    internal override func supportedEvents() -> [String] {
-        return ["confirm", "confirmEC", "initHeadless", "triggerWidgetAction", "updateIntentInit", "updateIntentComplete"]
-    }
-
-    @objc
-    internal func confirm(data: [String: Any]) {
-        self.sendEvent(withName: "confirm", body: data)
-    }
-
-    // MARK: WIP
-    //    @objc func confirmEC(data: [String: Any]) {
-    //        self.sendEvent(withName: "confirmEC", body: data)
-    //    }
-
-
+  
+  @objc
+  internal override func supportedEvents() -> [String] {
+    return ["confirm", "confirmEC", "initHeadless", "triggerWidgetAction", "updateIntentInit", "updateIntentComplete"]
+  }
+  
+  @objc
+  internal func confirm(data: [String: Any]) {
+    self.sendEvent(withName: "confirm", body: data)
+  }
+  
   // MARK: WIP
   //    @objc func confirmEC(data: [String: Any]) {
   //        self.sendEvent(withName: "confirmEC", body: data)
   //    }
-
+  
+  
+  // MARK: WIP
+  //    @objc func confirmEC(data: [String: Any]) {
+  //        self.sendEvent(withName: "confirmEC", body: data)
+  //    }
+  
   @objc
   private func sendMessageToNative(_ rnMessage: String) {}
-
+  
   //React Native Wrapper Function
   @objc
   private func presentPaymentSheet(_ request: NSMutableDictionary, _ callBack: @escaping RCTResponseSenderBlock) -> Void {
@@ -71,68 +71,68 @@ internal class HyperModule: RCTEventEmitter {
       )
     }
   }
-
+  
   @objc
   private func launchWidgetPaymentSheet(_ request: NSMutableDictionary, _ callback: @escaping RCTResponseSenderBlock) -> Void {
     expressCheckoutHandler.launchPaymentSheet(paymentResult: request,callBack: callback)
   }
-
+  
   @objc
   private func onAddPaymentMethod(_ rnMessage: String) -> Void {
     PaymentMethodManagementWidget.onAddPaymentMethod?()
   }
-
+  
   @objc
   private func launchApplePay (_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
     applePayPaymentHandler.startPayment(rnMessage: rnMessage, rnCallback: rnCallback, presentCallback: self.presentCallback)
   }
-
+  
   @objc
   private func startApplePay (_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
     rnCallback([])
   }
-
+  
   @objc
   private func presentApplePay (_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
     self.presentCallback = rnCallback
   }
-
+  
   @objc
   private func exitPaymentsheet(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
     exitSheet(rnMessage)
   }
-
+  
   @objc
   private func exitWidgetPaymentsheet(_ rootTag: NSNumber, _ result: String, _ reset: Bool) {
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
       action: .confirmPayment,
-      response: result,
+      response: ["data": result],
       shouldRemoveView: true
     )
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
       action: .paymentEvent,
-      response: result,
+      response: ["data": result],
       shouldRemoveView: true
     )
   }
-
+  
   @objc
   private func exitPaymentMethodManagement(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
     exitSheet(rnMessage)
   }
-
+  
   @objc
   private func exitCardForm(_ rnMessage: String) {
     var response: String?
     var error: NSError?
-
+    
     if let data = rnMessage.data(using: .utf8) {
       do {
         if let jsonDictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: String] {
           let status = jsonDictionary["status"]
-
+          
           if (status == "failed" || status == "requires_payment_method") {
             error = NSError(domain: (jsonDictionary["code"] ?? "") != "" ? jsonDictionary["code"]! : "UNKNOWN_ERROR", code: 0, userInfo: ["message" : jsonDictionary["message"] ?? "An error has occurred."])
           } else {
@@ -149,33 +149,33 @@ internal class HyperModule: RCTEventEmitter {
       RNViewManager.sharedInstance.responseHandler?.didReceiveResponse(response: "failed", error: NSError(domain: "UNKNOWN_ERROR", code: 0, userInfo: ["message" : "An error has occurred."]))
     }
   }
-
+  
   @objc
   private func notifyWidgetPaymentResult(_ rootTag: NSNumber, _ rnMessage: String) {
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
       action: .confirmPayment,
-      response: rnMessage,
+      response: ["data": rnMessage],
       shouldRemoveView: false
     )
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,
       action: .paymentEvent,
-      response: rnMessage,
+      response: ["data": rnMessage],
       shouldRemoveView: false
     )
   }
-
+  
   @objc
   private func exitSheet(_ rnMessage: String) {
     var response: String?
     var error: NSError?
-
+    
     if let data = rnMessage.data(using: .utf8) {
       do {
         if let jsonDictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: String] {
           let status = jsonDictionary["status"]
-
+          
           if (status == "failed" || status == "requires_payment_method") {
             error = NSError(domain: (jsonDictionary["code"] ?? "") != "" ? jsonDictionary["code"]! : "UNKNOWN_ERROR", code: 0, userInfo: ["message" : jsonDictionary["message"] ?? "An error has occurred."])
           } else {
@@ -198,5 +198,12 @@ internal class HyperModule: RCTEventEmitter {
       }
     }
   }
+  
+  
+  
+  @objc func emitPaymentEvent(_ rootTag: NSNumber, _ eventType: String, _ payload: NSDictionary) {
+    WidgetResponseRegistry.shared.dispatch(rootTag: rootTag, action: .widgetEvent, response: ["data": ["eventName": eventType, "payload": payload]], shouldRemoveView: false)
+  }
+
 }
 
