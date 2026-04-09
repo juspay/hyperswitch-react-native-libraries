@@ -108,7 +108,7 @@ internal class HyperModule: RCTEventEmitter {
       rootTag: rootTag,
       action: .confirmPayment,
       response: result,
-      shouldRemoveView: false
+      shouldRemoveView: true
     )
     WidgetResponseRegistry.shared.dispatch(
       rootTag: rootTag,

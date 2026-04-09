@@ -38,13 +38,13 @@ function UIScreenContent({
   baseURL,
   setBaseURL,
   sdkAuthorization,
-  setSdkAuthorization
+  setSdkAuthorization,
 }: {
   hyperPromise: Promise<HyperInstance>;
   baseURL: string;
   setBaseURL: (url: string) => void;
-  setSdkAuthorization: (sdkAuthorization:string) => void;
-  sdkAuthorization: string
+  setSdkAuthorization: (sdkAuthorization: string) => void;
+  sdkAuthorization: string;
 }) {
   const [status, setStatus] = useState<string>('');
   const [message, setMessage] = useState<string>('');
@@ -548,11 +548,7 @@ function UIScreenContent({
         </Text>
       </TouchableOpacity>
       {isLoading && (
-        <ActivityIndicator
-          size="large"
-          color="#007AFF"
-          style={styles.loader}
-        />
+        <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
       )}
     </View>
   );
@@ -562,9 +558,8 @@ export default function PaymentScreenWithHook({ hyperPromise }: UIScreenProps) {
   const [baseURL, setBaseURL] = useState<string>(initialBaseUrl);
   const [sdkAuthorization, setSdkAuthorization] = useState<string>('');
 
-  const hyperElementsOptions: HyperElementsOptions = {
-    sdkAuthorization: sdkAuthorization || undefined,
-  };
+  const hyperElementsOptions: HyperElementsOptions | undefined =
+    sdkAuthorization ? { sdkAuthorization } : undefined;
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>

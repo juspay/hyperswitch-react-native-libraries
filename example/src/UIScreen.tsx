@@ -158,7 +158,7 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
   const setup = useCallback(async (): Promise<void> => {
     try {
       sessionInitRef.current = false;
-      const {  sdkAuthorization } = await createPaymentIntent();
+      const { sdkAuthorization } = await createPaymentIntent();
       setsdkAuthorization(sdkAuthorization);
       setPaymentSession(null);
       setLastUsedMethod(null);
@@ -404,9 +404,8 @@ export default function UIScreen({ hyperPromise }: UIScreenProps) {
     );
   };
 
-  const hyperElementsOptions: HyperElementsOptions = {
-    sdkAuthorization: sdkAuthorization || undefined,
-  };
+  const hyperElementsOptions: HyperElementsOptions | undefined =
+    sdkAuthorization ? { sdkAuthorization } : undefined;
   const isLoading = loading || sessionInitializing;
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
