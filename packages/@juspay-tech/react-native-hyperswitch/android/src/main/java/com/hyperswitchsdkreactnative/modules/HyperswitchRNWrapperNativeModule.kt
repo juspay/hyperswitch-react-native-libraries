@@ -273,7 +273,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
           view.confirmCvcPayment(
             Callback { args ->
               if (args.isNotEmpty()) {
-                promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
+                promise?.resolve(args[0])
               } else {
                 promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
               }

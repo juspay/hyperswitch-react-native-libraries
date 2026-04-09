@@ -72,6 +72,10 @@ public abstract class NativeHyperswitchSdkNativeSpec extends ReactContextBaseJav
 
   @ReactMethod
   @DoNotStrip
+  public abstract void notifyCvcPaymentResult(Integer rootTag, String result);
+
+  @ReactMethod
+  @DoNotStrip
   public abstract void exitCardForm(String result);
 
   @ReactMethod
