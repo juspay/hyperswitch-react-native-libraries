@@ -7,7 +7,7 @@ open NativeHyperswitchSdk
 // Options type for HyperElements
 @genType
 type hyperElementsOptions = {
-  sdkAuthorization: string,
+  sdkAuthorization?: string,
 }
 
 // Use hyperInstance type from Hyper module
@@ -72,7 +72,7 @@ let make = (
 
   // Extract sdkAuthorization from options
   let sdkAuthorization = switch options {
-  | Some(opts) => opts.sdkAuthorization
+  | Some(opts) => opts.sdkAuthorization->Option.getOr("")
   | None => ""
   }
 
