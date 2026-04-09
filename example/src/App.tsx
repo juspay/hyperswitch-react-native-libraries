@@ -4,8 +4,9 @@ import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
 import UIScreen from './UIScreen';
 import HeadlessScreen from './HeadlessScreen';
 import PaymentScreenWithHook from './PaymentScreen';
+import CVCScreen from './CVCScreen';
 
-type TabType = 'ui' | 'headless';
+type TabType = 'ui' | 'cvc' | 'headless';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('ui');
@@ -46,6 +47,19 @@ export default function App() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          style={[styles.tab, activeTab === 'cvc' && styles.activeTab]}
+          onPress={() => setActiveTab('cvc')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'cvc' && styles.activeTabText,
+            ]}
+          >
+            CVC Widget
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'headless' && styles.activeTab]}
           onPress={() => setActiveTab('headless')}
         >
@@ -61,9 +75,11 @@ export default function App() {
       </View>
 
       <View style={styles.content}>
-        {activeTab === 'ui' ? (
+        {activeTab === 'ui' && (
           <PaymentScreenWithHook hyperPromise={hyperPromise} />
-        ) : (
+        )}
+        {activeTab === 'cvc' && <CVCScreen hyperPromise={hyperPromise} />}
+        {activeTab === 'headless' && (
           <HeadlessScreen hyperPromise={hyperPromise} />
         )}
       </View>
@@ -71,20 +87,33 @@ export default function App() {
   );
 }
 
+// Midnight Glow Color Palette - Lumina Glass Design System
+// const MIDNIGHT_ABYSS = '#020C1B';
+// const DEEP_COBALT = '#0F3460';
+// const LUMINOUS_INDIGO = '#5E5CE6';
+// const CYBER_GLOW = '#5E5CE6';
+// const GLASS_SURFACE = 'rgba(255, 255, 255, 0.07)';
+// const TEXT_PRIMARY = '#FFFFFF';
+// const TEXT_SECONDARY = 'rgba(255, 255, 255, 0.7)';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // backgroundColor: MIDNIGHT_ABYSS,
   },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    // backgroundColor: MIDNIGHT_ABYSS,
   },
   tabContainer: {
     flexDirection: 'row',
+    // backgroundColor: GLASS_SURFACE,
     backgroundColor: '#f5f5f5',
     paddingTop: 50,
     borderBottomWidth: 1,
+    // borderBottomColor: DEEP_COBALT,
     borderBottomColor: '#ddd',
   },
   tab: {
@@ -93,6 +122,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
+    // backgroundColor: DEEP_COBALT,
+    // borderBottomWidth: 2,
+    // borderBottomColor: LUMINOUS_INDIGO,
     backgroundColor: '#fff',
     borderBottomWidth: 2,
     borderBottomColor: '#007AFF',
@@ -101,13 +133,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontWeight: '500',
+    // color: TEXT_SECONDARY,
+    // fontWeight: '500',
+    // fontFamily: 'Manrope',
   },
   activeTabText: {
     color: '#007AFF',
     fontWeight: '600',
+    // color: LUMINOUS_INDIGO,
+    // fontWeight: '600',
+    // fontFamily: 'Manrope',
   },
   content: {
     flex: 1,
     marginTop: 8,
+    // backgroundColor: MIDNIGHT_ABYSS,
   },
 });
