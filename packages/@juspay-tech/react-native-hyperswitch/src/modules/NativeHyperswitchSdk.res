@@ -13,8 +13,8 @@ type initialise = (
 type initPaymentSession = (~sdkAuthorization: string) => promise<string>
 
 
-// @genType
-// type initPaymentSessionParams = {paymentIntentClientSecret?: string, sdkAuthorization?: string}
+@genType
+type initPaymentSessionParams = {sdkAuthorization?: string}
 
 @genType
 type initPaymentSessionResult = {error?: string}

@@ -56,10 +56,6 @@ export {
   unregisterCallback,
 } from './utils/PaymentSheetEventManager.res.js';
 
-export type {
-  widgetController as WidgetController,
-} from './types/HyperTypes.gen';
-
 // PaymentWidget ref type for imperative handle
 export type {
   paymentWidgetRef as PaymentWidgetRef,
@@ -79,8 +75,6 @@ export { make as CvcWidget } from './views/CvcWidget.gen';
 
 // Headless Payment Response Types
 export type {
-  headlessResponse as HeadlessResponse,
-  headlessResponseStatus as HeadlessResponseStatus,
   cardDetails as CardDetails,
   savedPaymentMethod as SavedPaymentMethod,
 } from './modules/NativeHyperswitchSdk.gen';

@@ -60,7 +60,7 @@ type paymentEventPayload =
 @genType
 type paymentEventResult = {
   eventName: string,
-  payload: JSON.t,
+  payload: Js.Json.t,
 }
 
 type paymentEventNative = {nativeEvent: paymentEventResult}

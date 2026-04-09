@@ -27,7 +27,7 @@ type hyperInstance = {
 
 type paymentEvent = {
   eventName: string,
-  payload?: JSON.t,
+  payload?: Js.Json.t,
 }
 
 // UsePaymentSession response type
