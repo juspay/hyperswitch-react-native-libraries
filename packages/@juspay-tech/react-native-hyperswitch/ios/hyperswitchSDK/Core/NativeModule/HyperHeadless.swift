@@ -6,14 +6,13 @@
 //
 
 import Foundation
-import WebKit
 import React
-
+import WebKit
 
 @objc(HyperHeadless)
 internal class HyperHeadless: RCTEventEmitter {
 
-    internal static var shared:HyperHeadless?
+    internal static var shared: HyperHeadless?
 
     private var setNativeProps: RCTResponseSenderBlock?
     private var confirmWithDefault: RCTResponseSenderBlock?
@@ -40,13 +39,23 @@ internal class HyperHeadless: RCTEventEmitter {
     }
 
     @objc
-    private func getPaymentSession(_ rnMessage: NSDictionary, _ rnMessage2: NSDictionary, _ rnMessage3: NSArray, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        PaymentSession.getPaymentSession(getPaymentMethodData: rnMessage, getPaymentMethodData2: rnMessage2, getPaymentMethodDataArray: rnMessage3, callback: rnCallback)
+    private func getPaymentSession(
+        _ rnMessage: NSDictionary,
+        _ rnMessage2: NSDictionary,
+        _ rnMessage3: NSArray,
+        _ rnCallback: @escaping RCTResponseSenderBlock
+    ) {
+        PaymentSession.getPaymentSession(
+            getPaymentMethodData: rnMessage,
+            getPaymentMethodData2: rnMessage2,
+            getPaymentMethodDataArray: rnMessage3,
+            callback: rnCallback
+        )
     }
 
     @objc
     private func exitHeadless(_ rootTag: NSNumber, _ rnMessage: String) {
-    //        PaymentSession.exitHeadless(rnMessage: rnMessage)
+        //        PaymentSession.exitHeadless(rnMessage: rnMessage)
         // TODO: Widget cleanup for iOS — deferred per IOS_CVCWIDGET_PLAN.md
         WidgetResponseRegistry.shared.dispatch(
             rootTag: rootTag,

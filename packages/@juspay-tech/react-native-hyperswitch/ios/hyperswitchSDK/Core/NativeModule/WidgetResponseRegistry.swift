@@ -32,7 +32,7 @@ internal final class WidgetResponseRegistry {
      */
     internal func register(rootTag: NSNumber, action: WidgetAction, handler: @escaping (NSDictionary, Bool) -> Void) {
         lock.lock()
-      handlers[rootTag, default: [:]][action] = handler
+        handlers[rootTag, default: [:]][action] = handler
         lock.unlock()
     }
 
@@ -79,8 +79,8 @@ internal final class WidgetResponseRegistry {
     internal func dispatch(rootTag: NSNumber, action: WidgetAction, response: NSDictionary, shouldRemoveView: Bool) -> Bool {
         lock.lock()
         let handler = handlers[rootTag]?[action]
-        if(shouldRemoveView) {
-          handlers[rootTag]?.removeValue(forKey: action)
+        if shouldRemoveView {
+            handlers[rootTag]?.removeValue(forKey: action)
         }
         if handlers[rootTag]?.isEmpty == true {
             handlers.removeValue(forKey: rootTag)

@@ -18,12 +18,12 @@ public class PaymentIntentParams: NSObject {
     public var sdkAuthorization: String = ""
     @objc public var paymentMethodParams: PaymentMethodParams?
 
-    public func description() -> [String:Any] {
-        let props: [String:Any] = [
+    public func description() -> [String: Any] {
+        let props: [String: Any] = [
             "publishableKey": APIClient.shared.publishableKey ?? "",
             "sdkAuthorization": self.sdkAuthorization,
             "paymentMethodType": "Card",
-            "paymentMethodData": ""
+            "paymentMethodData": "",
         ]
         return props
     }
