@@ -16,7 +16,7 @@ import Foundation
 
 /// PaymentSheet is a class that handles the presentation and management of a payment sheet interface.
 public class PaymentSheet {
-    
+
     /// The initializer method that sets up the payment sheet with the required parameters.
     internal required init(sdkAuthorization: String, configuration: Configuration) {
         self.sdkAuthorization = sdkAuthorization
@@ -26,5 +26,5 @@ public class PaymentSheet {
     /// The configuration object that holds the settings for the payment sheet.
     internal let configuration: Configuration?
     internal let sdkAuthorization: String
-    internal var completion: ((PaymentSheetResult) -> ())?
+    internal var completion: ((PaymentSheetResult) -> Void)?
 }

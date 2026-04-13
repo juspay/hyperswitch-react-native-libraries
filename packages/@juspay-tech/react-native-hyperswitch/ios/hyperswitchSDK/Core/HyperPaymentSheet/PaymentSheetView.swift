@@ -22,18 +22,18 @@ internal extension PaymentSheet {
         let hyperParams = HyperParams.getHyperParams()
 
         /// Create a dictionary of props to be sent to React Native with configuration, type, sdkAuthorization, publishable key, hyperParams, custom backend URL, themes, and custom parameters.
-        let props: [String : Any] = [
+        let props: [String: Any] = [
             "configuration": configuration as Any,
-            "type":"payment",
+            "type": "payment",
             "sdkAuthorization": self.sdkAuthorization,
             "publishableKey": APIClient.shared.publishableKey as Any,
             "hyperParams": hyperParams,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,
             "customLogUrl": APIClient.shared.customLogUrl as Any,
-            "customParams": APIClient.shared.customParams as Any
+            "customParams": APIClient.shared.customParams as Any,
         ]
         /// Get the root view from the RNViewManager with the "hyperSwitch" module and the props dictionary.
-        let rootView =  RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props]);
+        let rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props])
 
         rootView.backgroundColor = UIColor.clear
         return rootView
@@ -45,18 +45,18 @@ internal extension PaymentSheet {
 
         let hyperParams = HyperParams.getHyperParams()
 
-        let props: [String : Any] = [
+        let props: [String: Any] = [
             "configuration": props,
-            "type":"payment",
+            "type": "payment",
             "sdkAuthorization": self.sdkAuthorization,
             "publishableKey": APIClient.shared.publishableKey as Any,
             "hyperParams": hyperParams,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,
             "customLogUrl": APIClient.shared.customLogUrl as Any,
-            "customParams": APIClient.shared.customParams as Any
+            "customParams": APIClient.shared.customParams as Any,
         ]
 
-        let rootView =  RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props]);
+        let rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props])
 
         rootView.backgroundColor = UIColor.clear
         return rootView
@@ -69,11 +69,9 @@ extension PaymentSheet: RNResponseHandler {
         if let completion = completion {
             if let error = error {
                 completion(.failed(error: error))
-            }
-            else if (response == "cancelled"){
+            } else if response == "cancelled" {
                 completion(.canceled(data: "cancelled"))
-            }
-            else {
+            } else {
                 completion(.completed(data: response ?? "failed"))
             }
         }

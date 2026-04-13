@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import WebKit
 import React
+import WebKit
 
 @frozen public enum ExpressCheckoutResult {
     case completed(data: String)
@@ -16,16 +16,20 @@ import React
 }
 
 public class ExpressCheckoutLauncher {
-    
-    init(){}
-    
+
+    init() {}
+
     static var configuration: PaymentSheet.Configuration?
     static var sdkAuthorization: String?
-    static var completion: ((ExpressCheckoutResult) -> ())?
+    static var completion: ((ExpressCheckoutResult) -> Void)?
     static var themes: String?
-    
-    
-    public convenience init(sdkAuthorization: String, configuration: PaymentSheet.Configuration, themes: String? = nil, completion: @escaping ((ExpressCheckoutResult) -> ())) {
+
+    public convenience init(
+        sdkAuthorization: String,
+        configuration: PaymentSheet.Configuration,
+        themes: String? = nil,
+        completion: @escaping ((ExpressCheckoutResult) -> Void)
+    ) {
 
         self.init()
 
@@ -34,60 +38,57 @@ public class ExpressCheckoutLauncher {
         ExpressCheckoutLauncher.themes = themes
         ExpressCheckoutLauncher.completion = completion
 
-        let props: [String : Any] = [
+        let props: [String: Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
             "sdkAuthorization": sdkAuthorization,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",
-            "confirm": false
+            "confirm": false,
         ]
-//        HyperModule.shared?.confirmEC(data: props) //MARK: WIP
+        //        HyperModule.shared?.confirmEC(data: props) //MARK: WIP
     }
-    
-    
+
     public func launchPaymentSheet(paymentResult: NSMutableDictionary, callBack: @escaping RCTResponseSenderBlock) {
-        
+
         DispatchQueue.main.async {
-            
+
             RNViewManager.sharedInstance.responseHandler = self
-            
+
             let hyperParams = HyperParams.getHyperParams()
-            
-            let props: [String : Any] = [
-                "type":"widgetPayment",
+
+            let props: [String: Any] = [
+                "type": "widgetPayment",
                 "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
                 "customLogUrl": APIClient.shared.customLogUrl as Any,
-                "customParams": APIClient.shared.customParams as Any
+                "customParams": APIClient.shared.customParams as Any,
             ]
-            
-            let rootView =  RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props]);
-            
+
+            let rootView = RNViewManager.sharedInstance.viewForModule("hyperSwitch", initialProperties: ["props": props])
+
             rootView.backgroundColor = UIColor.clear
-            
+
             let paymentSheetViewController = UIViewController()
             paymentSheetViewController.modalPresentationStyle = .overFullScreen
             paymentSheetViewController.view = rootView
-            
+
             RCTPresentedViewController()!.present(paymentSheetViewController, animated: false)
         }
     }
-    
+
 }
 
 extension ExpressCheckoutLauncher: RNResponseHandler {
     func didReceiveResponse(response: String?, error: Error?) {
-        
+
         if let completion = ExpressCheckoutLauncher.completion {
             if let error = error {
                 completion(.failed(error: error))
-            }
-            else if (response == "cancelled"){
+            } else if response == "cancelled" {
                 completion(.canceled(data: "cancelled"))
-            }
-            else {
+            } else {
                 completion(.completed(data: response ?? "failed"))
             }
         }
@@ -96,17 +97,17 @@ extension ExpressCheckoutLauncher: RNResponseHandler {
 
 extension ExpressCheckoutLauncher {
     public func confirm() {
-        
+
         ExpressCheckoutLauncher.completion = ExpressCheckoutLauncher.completion
         RNViewManager.sharedInstance.responseHandler = self
-        
-        var props: [String : Any] = [
+
+        var props: [String: Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
             "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",
-            "confirm": true
+            "confirm": true,
         ]
-//        HyperModule.shared?.confirmEC(data: props) //MARK: WIP
+        //        HyperModule.shared?.confirmEC(data: props) //MARK: WIP
     }
 }
