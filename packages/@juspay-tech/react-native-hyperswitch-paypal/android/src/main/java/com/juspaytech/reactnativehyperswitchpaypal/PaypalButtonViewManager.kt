@@ -6,7 +6,6 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.paypal.android.paymentbuttons.PayPalButtonColor
 import com.paypal.android.paymentbuttons.PayPalButtonLabel
-import com.paypal.android.paymentbuttons.PaymentButtonShape
 
 @ReactModule(name = PaypalButtonViewManager.NAME)
 class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
@@ -48,7 +47,7 @@ class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
 
   @ReactProp(name = "borderRadius", defaultDouble = 0.0)
   fun setBorderRadius(view: PaypalButtonView, value: Double) {
-    view.cornerRadius = value.toInt()
+    view.customCornerRadius = value.toFloat()
   }
 
   companion object {

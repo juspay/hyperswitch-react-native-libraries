@@ -8,15 +8,13 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.paypal.android.paymentbuttons.PayPalButton
 import com.paypal.android.paymentbuttons.PayPalButtonColor
 import com.paypal.android.paymentbuttons.PayPalButtonLabel
-import com.paypal.android.paymentbuttons.PaymentButtonShape
 
 @SuppressLint("ViewConstructor")
 class PaypalButtonView(private val context: ThemedReactContext) : FrameLayout(context) {
 
   var buttonColor: PayPalButtonColor = PayPalButtonColor.GOLD
   var buttonLabel: PayPalButtonLabel = PayPalButtonLabel.PAYPAL
-  var cornerRadius: Int = 10
-  var buttonShape: PaymentButtonShape = PaymentButtonShape.ROUNDED
+  var customCornerRadius: Float = 10.0F
   private var button: PayPalButton? = null
 
   fun addButton() {
@@ -33,8 +31,7 @@ class PaypalButtonView(private val context: ThemedReactContext) : FrameLayout(co
 
     payPalButton.color = buttonColor
     payPalButton.label = buttonLabel
-    payPalButton.shape = buttonShape
-
+    payPalButton.customCornerRadius = customCornerRadius
     payPalButton.setOnClickListener {
       (this.parent as? View)?.performClick() ?: run {
         Log.e("PaypalButtonView", "Unable to find parent of PaypalButtonView.")

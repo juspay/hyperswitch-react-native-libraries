@@ -61,8 +61,6 @@ class PayPalRedirectActivity : Activity() {
             else -> PayPalWebCheckoutFundingSource.PAYPAL
         }
 
-        Log.d(TAG, "Starting PayPal checkout - orderId: $orderId, returnUrl: $returnUrl")
-
         val config = CoreConfig(clientId, environment = environment)
         payPalClient = PayPalWebCheckoutClient(this, config, returnUrl)
 
@@ -71,7 +69,6 @@ class PayPalRedirectActivity : Activity() {
         payPalClient?.start(this, request) { startResult ->
             when (startResult) {
                 is PayPalPresentAuthChallengeResult.Success -> {
-                    Log.d(TAG, "PayPal browser launched successfully")
                     browserLaunched = true
                 }
                 is PayPalPresentAuthChallengeResult.Failure -> {
@@ -93,7 +90,6 @@ class PayPalRedirectActivity : Activity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        Log.d(TAG, "onNewIntent called")
 
         if (callbackInvoked) return
 
@@ -105,7 +101,6 @@ class PayPalRedirectActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        Log.d(TAG, "onResume called - browserLaunched: $browserLaunched, callbackInvoked: $callbackInvoked")
 
         // If browser was launched but no deep link received (callbackInvoked is false),
         // user cancelled by closing the browser
@@ -113,7 +108,6 @@ class PayPalRedirectActivity : Activity() {
             // Small delay to ensure onNewIntent didn't just fire
             Handler(Looper.getMainLooper()).postDelayed({
                 if (!callbackInvoked) {
-                    Log.d(TAG, "User cancelled - no deep link received")
                     notifyCancelled()
                 }
             }, 300)
@@ -123,7 +117,6 @@ class PayPalRedirectActivity : Activity() {
     private fun handleFinishResult(result: PayPalWebCheckoutFinishStartResult?) {
         when (result) {
             is PayPalWebCheckoutFinishStartResult.Success -> {
-                Log.d(TAG, "PayPal success - orderId: ${result.orderId}, payerId: ${result.payerId}")
                 notifySuccess(result.orderId ?: "", result.payerId ?: "")
             }
             is PayPalWebCheckoutFinishStartResult.Failure -> {
@@ -134,7 +127,6 @@ class PayPalRedirectActivity : Activity() {
                 )
             }
             is PayPalWebCheckoutFinishStartResult.Canceled -> {
-                Log.d(TAG, "PayPal cancelled (from deep link)")
                 notifyCancelled()
             }
             PayPalWebCheckoutFinishStartResult.NoResult -> {

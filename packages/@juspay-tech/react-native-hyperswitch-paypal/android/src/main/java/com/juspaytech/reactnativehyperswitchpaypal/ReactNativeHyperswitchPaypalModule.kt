@@ -22,7 +22,6 @@ class ReactNativeHyperswitchPaypalModule(reactContext: ReactApplicationContext) 
 
   @ReactMethod
   fun launchPayPal(requestObj: String, callback: Callback) {
-    Log.d(TAG, "launchPayPal called")
 
     try {
       val json = JSONObject(requestObj)
@@ -59,7 +58,6 @@ class ReactNativeHyperswitchPaypalModule(reactContext: ReactApplicationContext) 
   // Called from PayPalRedirectActivity on success
   override fun onSuccess(orderId: String, payerId: String) {
     mainHandler.post {
-      Log.d(TAG, "PayPal success - orderId: $orderId, payerId: $payerId")
       val map = WritableNativeMap()
       map.putString("status", "success")
       map.putString("orderId", orderId)
@@ -72,7 +70,6 @@ class ReactNativeHyperswitchPaypalModule(reactContext: ReactApplicationContext) 
   // Called from PayPalRedirectActivity on cancel
   override fun onCancelled() {
     mainHandler.post {
-      Log.d(TAG, "PayPal cancelled")
       val map = WritableNativeMap()
       map.putString("status", "cancelled")
       currentCallback?.invoke(map)
