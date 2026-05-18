@@ -6,7 +6,14 @@ pre-commit:
       run: npx eslint {staged_files}
     types:
       glob: "*.{js,ts, jsx, tsx}"
-      run: npx tsc
+      run: |
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-paypal/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-trident-3ds/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-scancard/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-samsung-pay/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-netcetera-3ds/tsconfig.json &&
+        npx tsc --noEmit -p packages/@juspay-tech/react-native-hyperswitch-click-to-pay/tsconfig.json
 commit-msg:
   parallel: true
   commands:
