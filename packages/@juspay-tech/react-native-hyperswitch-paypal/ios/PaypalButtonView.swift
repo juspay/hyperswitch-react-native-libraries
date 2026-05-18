@@ -83,19 +83,19 @@ class PaypalButtonView: UIView {
 
   private func mapColor(_ value: String) -> PayPalButton.Color {
     switch value.lowercased() {
-    case "BLUE": return .blue
-    case "SILVER": return .silver
-    case "WHITE": return .white
-    case "BLACK": return .black
+    case "blue": return .blue
+    case "silver": return .silver
+    case "white": return .white
+    case "black": return .black
     default: return .gold
     }
   }
 
   private func mapLabel(_ value: String) -> PayPalButton.Label? {
     switch value.lowercased() {
-    case "CHECKOUT": return .checkout
-    case "BUYNOW": return .buyNow
-    case "PAY": return .payWith
+    case "checkout": return .checkout
+    case "buynow": return .buyNow
+    case "pay": return .payWith
     default: return nil
     }
   }
