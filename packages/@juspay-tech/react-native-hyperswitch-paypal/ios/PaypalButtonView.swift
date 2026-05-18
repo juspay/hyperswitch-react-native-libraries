@@ -5,18 +5,17 @@ class PaypalButtonView: UIView {
 
   private var payPalButton: PayPalButton?
   private var containerView: UIView?
-  private var needsRebuild: Bool = false
 
   @objc dynamic var buttonColor: String = "gold" {
-    didSet { scheduleRebuild() }
+    didSet { updateButton() }
   }
 
   @objc dynamic var buttonLabel: String = "paypal" {
-    didSet { scheduleRebuild() }
+    didSet { updateButton() }
   }
 
   @objc dynamic var borderRadius: Double = 0 {
-    didSet { scheduleRebuild() }
+    didSet { updateButton() }
   }
 
   override init(frame: CGRect) {
@@ -30,9 +29,9 @@ class PaypalButtonView: UIView {
   }
 
   private func setupButton() {
-    containerView?.removeFromSuperview()
-    payPalButton = nil
-    containerView = nil
+    if let existingButton = payPalButton {
+      existingButton.removeFromSuperview()
+    }
 
     let color = mapColor(buttonColor)
     let label = mapLabel(buttonLabel)
@@ -71,14 +70,9 @@ class PaypalButtonView: UIView {
     ])
   }
 
-  private func scheduleRebuild() {
-    guard !needsRebuild else { return }
-    needsRebuild = true
-    DispatchQueue.main.async { [weak self] in
-      guard let self = self, self.needsRebuild else { return }
-      self.needsRebuild = false
-      self.setupButton()
-    }
+  private func updateButton() {
+    setupButton()
+    setNeedsLayout()
   }
 
   private func mapColor(_ value: String) -> PayPalButton.Color {
@@ -115,5 +109,10 @@ class PaypalButtonView: UIView {
 
   override var intrinsicContentSize: CGSize {
     return CGSize(width: UIView.noIntrinsicMetric, height: 48)
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    payPalButton?.layoutSubviews()
   }
 }
