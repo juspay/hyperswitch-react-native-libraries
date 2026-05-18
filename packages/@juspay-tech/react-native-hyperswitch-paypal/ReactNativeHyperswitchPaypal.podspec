@@ -23,5 +23,7 @@ else
   s.dependency "React-Core"
 end
 
-  s.dependency "PayPal", "~> 2.0"
+  s.dependency "PayPal/CardPayments", "~> 2.0"
+  s.dependency "PayPal/PaymentButtons", "~> 2.0"
+  s.dependency "PayPal/PayPalWebPayments", "~> 2.0"
 end
