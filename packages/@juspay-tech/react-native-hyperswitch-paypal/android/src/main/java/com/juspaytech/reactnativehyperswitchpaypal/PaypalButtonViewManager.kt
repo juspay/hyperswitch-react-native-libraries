@@ -26,11 +26,11 @@ class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
   @ReactProp(name = "buttonColor")
   fun setButtonColor(view: PaypalButtonView, value: String?) {
     view.buttonColor = when (value) {
-      "gold" -> PayPalButtonColor.GOLD
-      "blue" -> PayPalButtonColor.BLUE
-      "silver" -> PayPalButtonColor.SILVER
-      "white" -> PayPalButtonColor.WHITE
-      "black" -> PayPalButtonColor.BLACK
+      "GOLD" -> PayPalButtonColor.GOLD
+      "BLUE" -> PayPalButtonColor.BLUE
+      "SILVER" -> PayPalButtonColor.SILVER
+      "WHITE" -> PayPalButtonColor.WHITE
+      "BLACK" -> PayPalButtonColor.BLACK
       else -> PayPalButtonColor.GOLD
     }
   }
@@ -38,9 +38,9 @@ class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
   @ReactProp(name = "buttonLabel")
   fun setButtonLabel(view: PaypalButtonView, value: String?) {
     view.buttonLabel = when (value) {
-      "checkout" -> PayPalButtonLabel.CHECKOUT
-      "buynow" -> PayPalButtonLabel.BUY_NOW
-      "pay" -> PayPalButtonLabel.PAY
+      "CHECKOUT" -> PayPalButtonLabel.CHECKOUT
+      "BUY_NOW" -> PayPalButtonLabel.BUY_NOW
+      "PAY" -> PayPalButtonLabel.PAY
       else -> PayPalButtonLabel.PAYPAL
     }
   }
