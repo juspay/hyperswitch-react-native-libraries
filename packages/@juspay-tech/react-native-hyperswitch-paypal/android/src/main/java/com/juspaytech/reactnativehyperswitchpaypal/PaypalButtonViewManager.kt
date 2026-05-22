@@ -6,6 +6,7 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.paypal.android.paymentbuttons.PayPalButtonColor
 import com.paypal.android.paymentbuttons.PayPalButtonLabel
+import com.paypal.android.paymentbuttons.PaymentButtonSize
 
 @ReactModule(name = PaypalButtonViewManager.NAME)
 class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
@@ -42,6 +43,15 @@ class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
       "BUY_NOW" -> PayPalButtonLabel.BUY_NOW
       "PAY" -> PayPalButtonLabel.PAY
       else -> PayPalButtonLabel.PAYPAL
+    }
+  }
+
+  @ReactProp(name = "buttonSize")
+  fun setButtonSize(view: PaypalButtonView, value: String?) {
+    view.buttonSize = when (value) {
+      "small" -> PaymentButtonSize.SMALL
+      "large" -> PaymentButtonSize.LARGE
+      else -> PaymentButtonSize.MEDIUM
     }
   }
 
