@@ -49,8 +49,8 @@ class PaypalButtonViewManager : SimpleViewManager<PaypalButtonView>() {
   @ReactProp(name = "buttonSize")
   fun setButtonSize(view: PaypalButtonView, value: String?) {
     view.buttonSize = when (value) {
-      "small" -> PaymentButtonSize.SMALL
-      "large" -> PaymentButtonSize.LARGE
+      "SMALL" -> PaymentButtonSize.SMALL
+      "LARGE" -> PaymentButtonSize.LARGE
       else -> PaymentButtonSize.MEDIUM
     }
   }
