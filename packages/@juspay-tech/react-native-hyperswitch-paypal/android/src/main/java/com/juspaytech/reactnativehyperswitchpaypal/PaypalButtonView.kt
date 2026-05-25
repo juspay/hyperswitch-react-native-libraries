@@ -8,12 +8,14 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.paypal.android.paymentbuttons.PayPalButton
 import com.paypal.android.paymentbuttons.PayPalButtonColor
 import com.paypal.android.paymentbuttons.PayPalButtonLabel
+import com.paypal.android.paymentbuttons.PaymentButtonSize
 
 @SuppressLint("ViewConstructor")
 class PaypalButtonView(private val context: ThemedReactContext) : FrameLayout(context) {
 
   var buttonColor: PayPalButtonColor = PayPalButtonColor.GOLD
   var buttonLabel: PayPalButtonLabel = PayPalButtonLabel.PAYPAL
+  var buttonSize: PaymentButtonSize = PaymentButtonSize.MEDIUM
   var customCornerRadius: Float = 10.0F
   private var button: PayPalButton? = null
 
@@ -31,6 +33,7 @@ class PaypalButtonView(private val context: ThemedReactContext) : FrameLayout(co
 
     payPalButton.color = buttonColor
     payPalButton.label = buttonLabel
+    payPalButton.size = buttonSize
     payPalButton.customCornerRadius = customCornerRadius
     payPalButton.setOnClickListener {
       (this.parent as? View)?.performClick() ?: run {
