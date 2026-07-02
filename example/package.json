@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@sentry/react-native": "^6.20.0",
+    "@vgs/collect-react-native": "^1.1.5",
     "react": "19.0.0",
     "react-native": "0.79.2",
     "react-native-inappbrowser-reborn": "^3.7.0",
@@ -36,5 +37,6 @@
     "react-native-builder-bob": "^0.40.8",
     "react-native-dotenv": "^3.4.11",
     "react-native-monorepo-config": "^0.1.9"
-  }
+  },
+  "homepage": "https://hyperswitch.io"
 }

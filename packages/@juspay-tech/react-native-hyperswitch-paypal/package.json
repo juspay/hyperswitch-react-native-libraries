@@ -32,7 +32,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace @juspay-tech/react-native-hyperswitch-paypal-example",
+    "example": "yarn workspace react-native-hyperswitch-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -47,14 +47,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juspay/react-native-hyperswitch.git"
+    "url": "https://github.com/juspay/react-native-hyperswitch"
   },
   "author": "Hyperswitch <chirag.kv@juspay.in> (https://github.com/ChiragKV-Juspay)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/juspay/react-native-hyperswitch/issues"
   },
-  "homepage": "https://github.com/juspay/react-native-hyperswitch#readme",
+  "homepage": "https://hyperswitch.io",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
@@ -87,7 +87,7 @@
     "react-native": "*"
   },
   "workspaces": [
-    "example"
+    "../../../example"
   ],
   "packageManager": "yarn@3.6.1",
   "jest": {

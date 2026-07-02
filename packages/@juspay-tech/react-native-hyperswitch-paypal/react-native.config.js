@@ -3,7 +3,8 @@ module.exports = {
     platforms: {
       android: {
         sourceDir: './android',
-        packageImportPath: 'import com.juspaytech.reactnativehyperswitchpaypal.ReactNativeHyperswitchPaypalPackage;',
+        packageImportPath:
+          'import com.juspaytech.reactnativehyperswitchpaypal.ReactNativeHyperswitchPaypalPackage;',
         packageInstance: 'new ReactNativeHyperswitchPaypalPackage()',
       },
     },

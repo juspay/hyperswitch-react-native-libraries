@@ -205,7 +205,7 @@ export const ClickToPayProvider: React.FC<ClickToPayProviderProps> = ({
       expiryYear: card.panExpirationYear ?? card.digitalCardData?.expiryYear,
       digitalCardId: card.srcDigitalCardId ?? card.digitalCardId,
       paymentCardDescriptor: card.paymentCardDescriptor,
-      digitalCardData: {descriptorName: card.digitalCardData?.descriptorName},
+      digitalCardData: { descriptorName: card.digitalCardData?.descriptorName },
     }));
   }, []);
 
@@ -534,7 +534,9 @@ export const ClickToPayProvider: React.FC<ClickToPayProviderProps> = ({
         } catch (error) {
           setIsLoading(false);
           throw new Error(
-            `Card encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Card encryption failed: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`
           );
         }
       }
@@ -556,14 +558,17 @@ export const ClickToPayProvider: React.FC<ClickToPayProviderProps> = ({
             },
             countryCode: 'IN',
             emailAddress: userIdentity?.value,
-            ...(params.cardData?.cardHolderName && { fullName: params.cardData.cardHolderName }),
-            locale: 'en',
-            ...(params.mobileNumber && params.mobileCountryCode && {
-              mobileNumber: {
-                phoneNumber: params.mobileNumber,
-                countryCode: params.mobileCountryCode,
-              },
+            ...(params.cardData?.cardHolderName && {
+              fullName: params.cardData.cardHolderName,
             }),
+            locale: 'en',
+            ...(params.mobileNumber &&
+              params.mobileCountryCode && {
+                mobileNumber: {
+                  phoneNumber: params.mobileNumber,
+                  countryCode: params.mobileCountryCode,
+                },
+              }),
           },
           payloadTypeIndicatorCheckout: 'FULL',
         };

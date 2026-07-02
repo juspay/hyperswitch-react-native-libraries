@@ -14,7 +14,7 @@ export default function App() {
   const profileId = process.env.PROFILE_ID;
 
   const hyperPromise =
-    publishableKey && profileId ? HyperInit(publishableKey, profileId) : null;
+    publishableKey && profileId ? HyperInit(publishableKey, profileId, {}) : null;
 
   if (!publishableKey || !profileId) {
     return (

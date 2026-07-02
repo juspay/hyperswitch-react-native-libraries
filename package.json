@@ -8,7 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lerna": "lerna",
     "release": "release-it",
-    "example": "yarn workspace react-native-hyperswitch-example"
+    "example": "yarn workspace react-native-hyperswitch-example",
+    "typecheck": "tsc",
+    "lint": "eslint \"**/*.{js,ts,tsx}\""
   },
   "workspaces": [
     "packages/@juspay-tech/*",
@@ -16,12 +18,13 @@
   ],
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
-    "@react-native-community/eslint-config": "^3.0.2",
+    "@react-native/eslint-config": "^0.79.1",
     "@release-it/conventional-changelog": "^10.0.1",
     "commitlint": "^17.0.2",
-    "eslint": "^8.4.1",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.0.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-ft-flow": "^3.0.11",
+    "eslint-plugin-prettier": "^5.5.6",
     "lerna": "^8.2.2",
     "prettier": "^2.0.5",
     "release-it": "^19.0.5"
@@ -30,12 +33,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/juspay/react-native-hyperswitch-libraries.git"
+    "url": "https://github.com/juspay/react-native-hyperswitch"
   },
   "bugs": {
-    "url": "https://github.com/juspay/react-native-hyperswitch-libraries/issues"
+    "url": "https://github.com/juspay/react-native-hyperswitch/issues"
   },
-  "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries#readme",
+  "homepage": "https://hyperswitch.io",
   "publishConfig": {
     "access": "public"
   },
@@ -60,36 +63,6 @@
         "preset": "angular"
       }
     }
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@react-native-community",
-      "prettier"
-    ],
-    "rules": {
-      "prettier/prettier": [
-        "error",
-        {
-          "quoteProps": "consistent",
-          "singleQuote": true,
-          "tabWidth": 2,
-          "trailingComma": "es5",
-          "useTabs": false
-        }
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "node_modules/",
-    "lib/"
-  ],
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
   },
   "packageManager": "yarn@3.6.1"
 }

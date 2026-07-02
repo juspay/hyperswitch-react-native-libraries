@@ -23,9 +23,11 @@ export function launchPayPal(
   requestObj: string,
   callback: (result: PayPalResult) => void
 ): void {
-
   if (!HyperswitchPaypal) {
-    callback({ status: 'failed', error_message: 'PayPal module not available' });
+    callback({
+      status: 'failed',
+      error_message: 'PayPal module not available',
+    });
     return;
   }
   return HyperswitchPaypal.launchPayPal(requestObj, callback);

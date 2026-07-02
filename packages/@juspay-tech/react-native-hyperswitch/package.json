@@ -50,7 +50,7 @@
     "re:format": "rescript format -all",
     "re:build": "rescript",
     "re:clean": "rescript clean",
-    "example": "yarn workspace @juspay-tech/react-native-hyperswitch-example",
+    "example": "yarn workspace react-native-hyperswitch-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{tsx,res}\"",
@@ -65,20 +65,20 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juspay/hyperswitch-react-native-libraries.git",
+    "url": "https://github.com/juspay/react-native-hyperswitch",
     "directory": "packages/react-native-hyperswitch"
   },
   "author": "Hyperswitch",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/juspay/hyperswitch-react-native-libraries/issues"
+    "url": "https://github.com/juspay/react-native-hyperswitch/issues"
   },
-  "homepage": "https://github.com/juspay/hyperswitch-react-native-libraries/tree/main/packages/react-native-hyperswitch#readme",
+  "homepage": "https://hyperswitch.io",
   "publishConfig": {
     "access": "public"
   },
   "workspaces": [
-    "../example"
+    "../../../example"
   ],
   "dependencies": {
     "@rescript/std": "11.1.4"

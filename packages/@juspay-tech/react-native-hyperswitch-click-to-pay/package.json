@@ -32,7 +32,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-hyperswitch-click-to-pay-example",
+    "example": "yarn workspace react-native-hyperswitch-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -47,15 +47,18 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/juspay/react-native-hyperswitch-libraries.git",
+    "url": "https://github.com/juspay/react-native-hyperswitch",
     "directory": "packages/@juspay-tech/react-native-hyperswitch-click-to-pay"
   },
+  "workspaces": [
+    "../../../example"
+  ],
   "author": "Hyperswitch",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/juspay/react-native-hyperswitch-libraries/issues"
+    "url": "https://github.com/juspay/react-native-hyperswitch/issues"
   },
-  "homepage": "https://github.com/juspay/react-native-hyperswitch-libraries/tree/main/packages/react-native-hyperswitch-scancard#readme",
+  "homepage": "https://hyperswitch.io",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
