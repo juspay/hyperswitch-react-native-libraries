@@ -133,6 +133,9 @@ class HyperHeadlessModule internal constructor(private val rct: ReactApplication
                 requiresCvv = readableMap.getBoolean("requires_cvv"),
                 lastUsedAt = readableMap.getString("last_used_at") ?: "",
                 defaultPaymentMethodSet = readableMap.getBoolean("default_payment_method_set"),
+                billing = readableMap.getMap("billing")?.let { billingMap ->
+                    org.json.JSONObject(billingMap.toHashMap()).toString()
+                },
             ))
         } else {
             Result.failure(PMError(

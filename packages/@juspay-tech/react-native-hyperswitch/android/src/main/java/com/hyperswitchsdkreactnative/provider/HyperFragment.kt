@@ -218,7 +218,7 @@ class HyperFragment : ReactFragment() {
   }
 
 
-  fun confirmCvcPayment(callback: Callback, paymentToken: String, paymentMethodId: String) {
+  fun confirmCvcPayment(callback: Callback, paymentToken: String, billing: String?) {
     if (callbacks.containsKey(CallbackType.CONFIRM_CVC_ACTION)) {
       val json = JSONObject()
       json.put("status", "error")
@@ -234,7 +234,6 @@ class HyperFragment : ReactFragment() {
     }
 
     callbacks[CallbackType.CONFIRM_CVC_ACTION] = HyperCallback.Payment(callback)
-
     // Wire ExitHeadlessCallBackManager so that when CvcWidget JS calls exitHeadless(result),
     // the result flows back to our callback → promise.resolve in the wrapper module.
     ExitHeadlessCallBackManager.setCallback { result: HeadlessPaymentResult ->
@@ -273,7 +272,7 @@ class HyperFragment : ReactFragment() {
     map.putString("actionType", EventName.CONFIRM_CVC_PAYMENT.name)
     map.putInt("rootTag", rootTag)
     map.putString("paymentToken", paymentToken)
-    map.putString("paymentMethodId", paymentMethodId)
+    billing?.let { map.putString("billing", it) }
     reactNativeHost.reactInstanceManager.currentReactContext
       ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       ?.emit("triggerWidgetAction", map)

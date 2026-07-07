@@ -175,7 +175,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       defaultData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
+            confirmViaWidgetView(reactTag, pm.paymentToken, pm.billing, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
@@ -191,7 +191,6 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
         }
       )
     } else {
-      // No CvcWidget — confirm through HeadlessJsTask's callback (cvc will be null)
       handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
         promise?.resolve(paymentResultToString(result))
       }
@@ -214,7 +213,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       lastUsedData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
-            confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
+            confirmViaWidgetView(reactTag, pm.paymentToken, pm.billing, promise)
           } else {
             // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
@@ -261,7 +260,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   private fun confirmViaWidgetView(
     reactTag: Int,
     paymentToken: String,
-    paymentMethodId: String,
+    billing: String?,
     promise: Promise?
   ) {
     val uiManagerModule =
@@ -279,7 +278,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
               }
             },
             paymentToken,
-            paymentMethodId
+            billing,
           )
         } else {
           promise?.resolve(
