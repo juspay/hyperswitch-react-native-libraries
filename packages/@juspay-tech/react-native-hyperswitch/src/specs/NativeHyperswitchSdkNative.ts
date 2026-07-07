@@ -32,6 +32,8 @@ export interface Spec extends TurboModule {
 
   notifyWidgetPaymentResult(rootTag: number, result: string): void;
 
+  notifyCvcPaymentResult(rootTag: number, result: string): void;
+
   launchWidgetPaymentSheet(
     requestObj: string,
     callback: (result: Object) => void

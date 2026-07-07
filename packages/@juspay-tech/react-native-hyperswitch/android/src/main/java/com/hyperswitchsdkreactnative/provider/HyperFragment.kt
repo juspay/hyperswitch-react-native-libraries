@@ -19,8 +19,6 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
-import com.hyperswitchsdkreactnative.headless.ExitHeadlessCallBackManager
-import com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult
 import com.hyperswitchsdkreactnative.modules.EventName
 import com.proyecto26.inappbrowser.ChromeTabsDismissedEvent
 import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
@@ -198,6 +196,12 @@ class HyperFragment : ReactFragment() {
           )
         }
 
+        CallbackType.CONFIRM_CVC_ACTION -> {
+          (callbacks.remove(CallbackType.CONFIRM_CVC_ACTION) as? HyperCallback.Payment)?.fn?.invoke(
+            parsed.toWritableMap()
+          )
+        }
+
         else -> Log.i("HyperFragment", "notifyResult: unhandled type $type")
       }
     } catch (e: Exception) {
@@ -234,39 +238,6 @@ class HyperFragment : ReactFragment() {
     }
 
     callbacks[CallbackType.CONFIRM_CVC_ACTION] = HyperCallback.Payment(callback)
-
-    // Wire ExitHeadlessCallBackManager so that when CvcWidget JS calls exitHeadless(result),
-    // the result flows back to our callback → promise.resolve in the wrapper module.
-    ExitHeadlessCallBackManager.setCallback { result: HeadlessPaymentResult ->
-      callbacks.remove(CallbackType.CONFIRM_CVC_ACTION)
-      val json = JSONObject()
-      when (result) {
-        is HeadlessPaymentResult.Completed -> {
-          if (result.data == "requires_customer_action") {
-            json.put("status", "failed")
-            json.put("code", "requires_customer_action")
-            json.put("message", "Payment requires additional authentication")
-          } else {
-            json.put("status", "success")
-            json.put("message", "Payment confirmed successfully")
-            json.put("data", result.data)
-          }
-        }
-
-        is HeadlessPaymentResult.Failed -> {
-          json.put("status", "failed")
-          json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
-          json.put("message", result.throwable.message ?: "An error has occurred.")
-        }
-
-        is HeadlessPaymentResult.Canceled -> {
-          json.put("status", "cancelled")
-          json.put("message", "Payment confirmation cancelled")
-          json.put("data", result.data)
-        }
-      }
-      callback.invoke(json.toString())
-    }
 
 
     val map = Arguments.createMap()

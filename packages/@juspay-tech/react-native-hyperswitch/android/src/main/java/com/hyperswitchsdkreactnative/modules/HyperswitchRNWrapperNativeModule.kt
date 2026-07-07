@@ -256,7 +256,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
    * PaymentWidgetView from the reactTag via UIManagerModule and calling confirmCvcPayment.
    * The fragment emits "triggerWidgetAction" with CONFIRM_CVC_PAYMENT, and the
    * CvcWidget JS bundle handles CVC lookup + confirm API call.
-   * Result flows back through exitHeadless → ExitHeadlessCallBackManager → callback → promise.resolve.
+   * Result flows back through notifyCvcPaymentResult → HyperFragment.notifyResult(CONFIRM_CVC_ACTION) → callback → promise.resolve.
    */
   private fun confirmViaWidgetView(
     reactTag: Int,
@@ -273,7 +273,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
           view.confirmCvcPayment(
             Callback { args ->
               if (args.isNotEmpty()) {
-                promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
+                promise?.resolve(args[0])
               } else {
                 promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
               }

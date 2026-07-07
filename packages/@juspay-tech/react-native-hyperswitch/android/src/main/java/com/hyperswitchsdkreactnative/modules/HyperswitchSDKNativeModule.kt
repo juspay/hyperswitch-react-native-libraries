@@ -116,6 +116,15 @@ class HyperswitchSdkNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  override fun notifyCvcPaymentResult(rootTag: Int, result: String) {
+    try {
+      findFragmentWithRootTag(rootTag, {
+        it?.notifyResult(CallbackType.CONFIRM_CVC_ACTION, result)
+      })
+    } catch (_: Exception) {
+    }
+  }
+
   override fun onUpdateIntentEvent(rootTag: Int, type: String, result: String) {
     try {
       findFragmentWithRootTag(rootTag, {
