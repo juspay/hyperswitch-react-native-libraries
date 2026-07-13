@@ -40,6 +40,7 @@ internal class HyperHeadless: RCTEventEmitter {
 
     @objc
     private func getPaymentSession(
+        _ rootTag: NSNumber,
         _ rnMessage: NSDictionary,
         _ rnMessage2: NSDictionary,
         _ rnMessage3: NSArray,
@@ -55,13 +56,53 @@ internal class HyperHeadless: RCTEventEmitter {
 
     @objc
     private func exitHeadless(_ rootTag: NSNumber, _ rnMessage: String) {
-        //        PaymentSession.exitHeadless(rnMessage: rnMessage)
-        // TODO: Widget cleanup for iOS — deferred per IOS_CVCWIDGET_PLAN.md
-        WidgetResponseRegistry.shared.dispatch(
-            rootTag: rootTag,
-            action: .confirmCVCPayment,
-            response: ["data": rnMessage],
-            shouldRemoveView: false
-        )
+        PaymentSession.exitHeadless(rnMessage: rnMessage)
+    }
+
+    private func paymentResult(from rnMessage: String) -> PaymentResult {
+        guard let data = rnMessage.data(using: .utf8) else {
+            return .failed(
+                error: NSError(
+                    domain: "UNKNOWN_ERROR",
+                    code: 0,
+                    userInfo: ["message": "An error has occurred."]
+                )
+            )
+        }
+
+        do {
+            guard let jsonDictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: String] else {
+                return .failed(
+                    error: NSError(
+                        domain: "UNKNOWN_ERROR",
+                        code: 0,
+                        userInfo: ["message": "An error has occurred."]
+                    )
+                )
+            }
+
+            let status = jsonDictionary["status"]
+
+            if status == "failed" || status == "requires_payment_method" {
+                let error = NSError(
+                    domain: (jsonDictionary["code"] ?? "") != "" ? jsonDictionary["code"]! : "UNKNOWN_ERROR",
+                    code: 0,
+                    userInfo: ["message": jsonDictionary["message"] ?? "An error has occurred."]
+                )
+                return .failed(error: error)
+            } else if status == "cancelled" {
+                return .canceled(data: "cancelled")
+            } else {
+                return .completed(data: status ?? "failed")
+            }
+        } catch {
+            return .failed(
+                error: NSError(
+                    domain: "UNKNOWN_ERROR",
+                    code: 0,
+                    userInfo: ["message": "An error has occurred."]
+                )
+            )
+        }
     }
 }

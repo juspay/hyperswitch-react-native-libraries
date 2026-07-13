@@ -1,151 +1,107 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
-import HeadlessScreen from './HeadlessScreen';
-import PaymentScreenWithHook from './PaymentScreen';
-import CVCScreen from './CVCScreen';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Linking,
+  StyleSheet,
+} from 'react-native';
+import { loadHyper } from '@juspay-tech/react-native-hyperswitch';
+import type { HyperswitchSession } from '@juspay-tech/react-hyperswitch';
+import DemoPopup from './DemoPopup';
+import { profileId, publishableKey } from './utils';
 
-type TabType = 'ui' | 'cvc' | 'headless';
+let hyperSingleton: Promise<HyperswitchSession> | null = null;
+
+function getHyperSingleton(): Promise<HyperswitchSession> | null {
+  if (!publishableKey) return null;
+  if (!hyperSingleton) {
+    hyperSingleton = loadHyper({
+      publishableKey,
+      profileId,
+    }) as Promise<HyperswitchSession>;
+  }
+  return hyperSingleton;
+}
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('ui');
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
-  const publishableKey = process.env.HYPERSWITCH_PUBLISHABLE_KEY;
-  const profileId = process.env.PROFILE_ID;
+  useEffect(() => {
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        setStatus(new URL(url).searchParams.get('status'));
+      }
+    });
+  }, []);
 
-  const hyperPromise =
-    publishableKey && profileId ? HyperInit(publishableKey, profileId, {}) : null;
+  const hyperPromise = getHyperSingleton();
 
-  if (!publishableKey || !profileId) {
+  if (!publishableKey) {
     return (
-      <View style={styles.centerContainer}>
-        <Text>Configure env and restart Metro server</Text>
-      </View>
-    );
-  }
-
-  if (!hyperPromise) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Initializing...</Text>
+      <View style={styles.center}>
+        <Text>Set HYPERSWITCH_PUBLISHABLE_KEY to enable payments.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'ui' && styles.activeTab]}
-          onPress={() => setActiveTab('ui')}
-        >
-          <Text
-            style={[styles.tabText, activeTab === 'ui' && styles.activeTabText]}
-          >
-            UI Mode
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'cvc' && styles.activeTab]}
-          onPress={() => setActiveTab('cvc')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'cvc' && styles.activeTabText,
-            ]}
-          >
-            CVC Widget
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'headless' && styles.activeTab]}
-          onPress={() => setActiveTab('headless')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'headless' && styles.activeTabText,
-            ]}
-          >
-            Headless Mode
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {status && (
+        <View style={styles.statusBar}>
+          <Text style={styles.statusText}>Status: {status.toUpperCase()}</Text>
+        </View>
+      )}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => setOpen(true)}
+      >
+        <Text style={styles.buttonText}>Start Demo</Text>
+      </TouchableOpacity>
 
-      <View style={styles.content}>
-        {activeTab === 'ui' && (
-          <PaymentScreenWithHook hyperPromise={hyperPromise} />
-        )}
-        {activeTab === 'cvc' && <CVCScreen hyperPromise={hyperPromise} />}
-        {activeTab === 'headless' && (
-          <HeadlessScreen hyperPromise={hyperPromise} />
-        )}
-      </View>
+      {open && hyperPromise && (
+        <DemoPopup hyperPromise={hyperPromise} onClose={() => setOpen(false)} />
+      )}
     </View>
   );
 }
 
-// Midnight Glow Color Palette - Lumina Glass Design System
-// const MIDNIGHT_ABYSS = '#020C1B';
-// const DEEP_COBALT = '#0F3460';
-// const LUMINOUS_INDIGO = '#5E5CE6';
-// const CYBER_GLOW = '#5E5CE6';
-// const GLASS_SURFACE = 'rgba(255, 255, 255, 0.07)';
-// const TEXT_PRIMARY = '#FFFFFF';
-// const TEXT_SECONDARY = 'rgba(255, 255, 255, 0.7)';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: MIDNIGHT_ABYSS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fafafa',
+    padding: 24,
   },
-  centerContainer: {
+  center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    // backgroundColor: MIDNIGHT_ABYSS,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    // backgroundColor: GLASS_SURFACE,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    // borderBottomColor: DEEP_COBALT,
-    borderBottomColor: '#ddd',
+  statusBar: {
+    marginBottom: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 999,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  activeTab: {
-    // backgroundColor: DEEP_COBALT,
-    // borderBottomWidth: 2,
-    // borderBottomColor: LUMINOUS_INDIGO,
-    backgroundColor: '#fff',
-    borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
-  },
-  tabText: {
+  statusText: {
     fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-    // color: TEXT_SECONDARY,
-    // fontWeight: '500',
-    // fontFamily: 'Manrope',
+    color: '#111827',
   },
-  activeTabText: {
-    color: '#007AFF',
+  button: {
+    height: 48,
+    paddingHorizontal: 32,
+    borderRadius: 999,
+    backgroundColor: '#111827',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    // color: LUMINOUS_INDIGO,
-    // fontWeight: '600',
-    // fontFamily: 'Manrope',
-  },
-  content: {
-    flex: 1,
-    marginTop: 8,
-    // backgroundColor: MIDNIGHT_ABYSS,
   },
 });

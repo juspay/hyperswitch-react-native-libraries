@@ -20,5 +20,7 @@ RCT_EXPORT_VIEW_PROPERTY(onPaymentResult, RCTDirectEventBlock)
 RCT_EXTERN_METHOD(showWidget:(nonnull NSNumber *)reactTag)
 RCT_EXTERN_METHOD(removeWidget:(nonnull NSNumber *)reactTag)
 RCT_EXTERN_METHOD(confirmPayment:(nonnull NSNumber *)reactTag :(RCTResponseSenderBlock)responseCallback)
+RCT_EXTERN_METHOD(updateIntentInitForWidget:(nonnull NSNumber *)rootTag :(RCTResponseSenderBlock)responseCallback)
+RCT_EXTERN_METHOD(updateIntentCompleteForWidget:(nonnull NSNumber *)rootTag :(NSString)sdkAuthorization :(RCTResponseSenderBlock)responseCallback)
 RCT_EXTERN_METHOD(confirmPaymentCVC:(nonnull NSNumber *)reactTag :(NSString)paymentToken :(NSString)paymentMethodId :(RCTResponseSenderBlock)rnCallback)
 @end

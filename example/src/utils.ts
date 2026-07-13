@@ -1,59 +1,73 @@
 import { Platform } from 'react-native';
 import {
-  type PresentPaymentSheetParams,
-  type PaymentEventName,
-  type CvcAppearance,
-} from '@juspay-tech/react-native-hyperswitch';
+  CvcWidgetOptions,
+  PaymentElementOptions,
+} from '@juspay-tech/react-hyperswitch';
+import { LayoutType } from '@juspay-tech/react-hyperswitch';
 
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';
 
-export const getCustomisationOptions = (layout = 'tabs'): PresentPaymentSheetParams => ({
+export const publishableKey = process.env.HYPERSWITCH_PUBLISHABLE_KEY ?? '';
+export const profileId = process.env.PROFILE_ID ?? '';
+
+export const getCustomisationOptions = (
+  layout: LayoutType = 'tabs'
+): PaymentElementOptions => ({
+  displayDefaultSavedPaymentIcon: false,
+  paymentMethodLayout: {
+    type: layout,
+    radios: false,
+    maxAccordionItems: 2,
+    defaultCollapsed: true,
+    spacedAccordionItems: true,
+    cvcIcon: 'hidden',
+    cardBrandIcon: 'hideGeneric',
+    showCheckedIconForSelection: true,
+    savedMethodCustomization: {
+      cvcIcon: 'hidden',
+      hideCardExpiry: true,
+      defaultCollapsed: false,
+      groupingBehavior: { displayInSeparateScreen: false },
+      hiddenPaymentMethods: ['paypal', 'google_pay', 'apple_pay'],
+    },
+  },
   appearance: {
     theme: 'Light',
-    layout,
-    colors: {
-      dark: {
-        background: '#F9FAFB',
-        componentBackground: '#00000030',
-        componentText: 'white',
-        primary: '#2563EB',
-        primaryText: 'white',
+    shapes: {
+      borderRadius: 16.0,
+      borderWidth: 1.0,
+      inputHeight: 56.0,
+      gap: 24.0,
+      shadow: {
+        color: '#000000',
+        opacity: 0,
+        blurRadius: 0,
+        intensity: 0,
+        offset: { x: 0, y: 0 },
       },
     },
     primaryButton: {
-      primaryButtonColor: {
-        dark: {
-          background: '#1D4ED8',
-        },
-      },
-      shapes: {
-        borderRadius: 36,
-      },
+      height: 56.0,
     },
-    shapes: {
-      shadow: {
-        color: '#1D4ED8',
-        opacity: 1,
-        blurRadius: 10,
-        offset: {
-          x: 0,
-          y: 6,
+    logo: {
+      borderRadius: 50,
+      colors: {
+        light: {
+          backgroundColor: 'black',
+          unselected: 'white',
+        },
+        dark: {
+          backgroundColor: 'white',
+          unselected: 'black',
         },
       },
     },
   },
-  primaryButtonLabel: 'Complete Purchase',
-  subscribedEvents: [
-    'PAYMENT_METHOD_INFO_CARD',
-    'PAYMENT_METHOD_STATUS',
-    'FORM_STATUS',
-    'CVC_STATUS',
-  ] as PaymentEventName[],
-  hideConfirmButton: true,
+  splitCardFields: true,
 });
 
-export const getCvcInputOptions = (): { appearance: CvcAppearance } => ({
+export const getCvcInputOptions = (): CvcWidgetOptions => ({
   appearance: {
     colors: {
       light: {
@@ -74,13 +88,19 @@ export const getCvcInputOptions = (): { appearance: CvcAppearance } => ({
       },
     },
     shapes: {
-      borderRadius: 8.0,
-      borderWidth: 1.0,
-    },
-    font: {
-      family: 'serif',
+      borderRadius: 0,
+      borderWidth: 0,
+      shadow: {
+        color: '#000000',
+        opacity: 0,
+        blurRadius: 0,
+        intensity: 0,
+        offset: { x: 0, y: 0 },
+      },
     },
   },
+  placeholder: '123',
+  cvcIcon: 'hidden',
 });
 
 export const getStatus = (paymentStatus: string | undefined): string => {

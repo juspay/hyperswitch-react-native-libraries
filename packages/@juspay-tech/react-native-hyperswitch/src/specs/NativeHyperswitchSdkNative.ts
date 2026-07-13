@@ -32,6 +32,8 @@ export interface Spec extends TurboModule {
 
   notifyWidgetPaymentResult(rootTag: number, result: string): void;
 
+  onUpdateIntentEvent(rootTag: number, type: string, result: string): void;
+
   launchWidgetPaymentSheet(
     requestObj: string,
     callback: (result: Object) => void

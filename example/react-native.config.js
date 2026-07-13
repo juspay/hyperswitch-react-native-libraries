@@ -7,6 +7,9 @@ module.exports = {
     },
   },
   dependencies: {
+    '@juspay-tech/react-hyperswitch': {
+      root: path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-hyperswitch'),
+    },
     '@juspay-tech/react-native-hyperswitch': {
       root: path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch'),
     },

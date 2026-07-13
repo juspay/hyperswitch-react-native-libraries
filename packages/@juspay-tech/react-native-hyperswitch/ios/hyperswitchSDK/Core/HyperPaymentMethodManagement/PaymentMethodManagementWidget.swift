@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 import WebKit
 
-/// PaymentSheetResult is an enum that represents the possible outcomes of a payment sheet operation.
+/// PaymentResult is an enum that represents the possible outcomes of a payment sheet operation.
 @frozen public enum PaymentMethodManagementResult {
     case closed(data: String)
     case failed(error: Error)
@@ -42,14 +42,15 @@ internal class PaymentMethodManagementWidget: UIControl {
     }
 
     private func commonInit() {
-        let hyperParams = HyperParams.getHyperParams()
+        let hyperParams = SDKParams.getSDKParams()
 
         // Prepare the props to send to the React Native module.
         let props: [String: Any] = [
             "type": "paymentMethodsManagement",
             "hyperParams": hyperParams,
-            "ephemeralKey": PaymentSession.ephemeralKey ?? "",
+            //            "ephemeralKey": PaymentSession.ephemeralKey ?? "",  // TODO: use paymentSession.ephemeralKey
             "publishableKey": APIClient.shared.publishableKey as Any,
+            "profileId": APIClient.shared.profileId as Any,
             "customBackendUrl": APIClient.shared.customBackendUrl as Any,
             "customLogUrl": APIClient.shared.customLogUrl as Any,
             "customParams": APIClient.shared.customParams as Any,
