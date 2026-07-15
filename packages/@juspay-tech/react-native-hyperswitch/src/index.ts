@@ -9,8 +9,8 @@ import type {
   HyperswitchSession,
   PaymentSession,
   PaymentSessionConfiguration,
-} from './definitions';
-export type * from './definitions';
+} from './types/definitions';
+export type * from './types/definitions';
 
 import {
   createElementsNativeActions,

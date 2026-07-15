@@ -81,6 +81,10 @@ public class PaymentWidget: UIControl {
         let sdkParams = SDKParams.getSDKParams()
 
         var nativeConfig = try? configuration?.toDictionary()
+        if self.subscribedEventNames == nil {
+            self.subscribedEventNames = configurationDict?["subscribedEvents"] as? [String]
+                ?? nativeConfig?["subscribedEvents"] as? [String]
+        }
         nativeConfig?["hideConfirmButton"] = true
         nativeConfig?["subscribedEvents"] = subscribedEventNames
         configurationDict?["hideConfirmButton"] = true
@@ -158,6 +162,10 @@ public class PaymentWidget: UIControl {
             args: ["triggerWidgetAction", payload],
             completion: nil
         )
+    }
+
+    internal func setPaymentEventListener(_ listener: PaymentEventListener?) {
+        self.paymentEventListener = listener
     }
 
     internal func handleShouldProceedWithPayment(payload: String, callback: @escaping (Bool) -> Void) {

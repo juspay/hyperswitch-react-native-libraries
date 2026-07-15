@@ -1,7 +1,7 @@
 import { removeListenerFunction } from './PaymentElementTypes';
 import { ColorType, Font, Shapes } from './AppearanceTypes';
 import { PaymentEventData } from './PaymentTypes';
-import { Theme } from './PaymentSheetTypes';
+import { SubscriptionEvent, Theme } from './PaymentSheetTypes';
 import type { ComponentType } from 'react';
 
 export interface CvcAppearance {
@@ -15,6 +15,7 @@ export interface CvcWidgetOptions {
   appearance?: CvcAppearance;
   placeholder?: string;
   cvcIcon?: 'hidden' | 'shown';
+  subscribedEvents?: SubscriptionEvent[];
 }
 
 export interface CvcWidget {

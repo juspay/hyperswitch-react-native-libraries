@@ -149,18 +149,8 @@ internal class NativePaymentWidgetView: UIView {
         )
     }
 
-    private func subscribeToPaymentEvents(_ builder: PaymentEventSubscriptionBuilder) {
-        guard let subscribedEvents = options?["subscribedEvents"] as? [String] else { return }
-
-        for eventName in subscribedEvents {
-            guard let eventType = PaymentEventType(rawValue: eventName) else { continue }
-            builder.on(eventType) { [weak self] event in
-                self?.onPaymentEvent?([
-                    "eventName": event.type,
-                    "payload": event.payload,
-                ])
-            }
-        }
+    private func subscribedEvents() -> [String] {
+        return options?["subscribedEvents"] as? [String] ?? []
     }
 
     private func clearWidget() {
@@ -242,6 +232,14 @@ internal class NativePaymentWidgetView: UIView {
         if widgetType != "cvcWidget" {
             configuration["hideConfirmButton"] = true
         }
+        configuration["subscribedEvents"] = subscribedEvents()
+
+        let listener = PaymentEventListener { [weak self] event in
+            self?.onPaymentEvent?([
+                "eventName": event.type,
+                "payload": event.payload,
+            ])
+        }
 
         let widget: UIView?
         if widgetType == "cvcWidget" {
@@ -249,8 +247,9 @@ internal class NativePaymentWidgetView: UIView {
             let cvc = CVCWidget(
                 hyperswitch: hyperswitch,
                 configurationDict: configuration,
-                subscribe: subscribeToPaymentEvents
+                subscribe: nil
             )
+            cvc.setPaymentEventListener(listener)
             cvcWidget = cvc
             widget = cvc
         } else {
@@ -261,8 +260,9 @@ internal class NativePaymentWidgetView: UIView {
                 completion: { [weak self] result in
                     self?.handlePaymentResult(result)
                 },
-                subscribe: subscribeToPaymentEvents
+                subscribe: nil
             )
+            payment.setPaymentEventListener(listener)
             paymentWidget = payment
             widget = payment
         }

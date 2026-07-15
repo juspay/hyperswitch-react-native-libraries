@@ -3,7 +3,6 @@
 import NativeHyperswitchSdk from '../specs/NativeHyperswitchSdkReactNative';
 import {
   confirmPayment as widgetConfirm,
-  consoleLogAll,
   getWidget,
 } from '../context/WidgetRegistry';
 import type {
@@ -16,7 +15,7 @@ import type {
   PaymentSession,
   PaymentSessionConfiguration,
   PaymentSheetOptions,
-} from './definitions';
+} from '../types/definitions';
 
 // ------------------------------------------------------------------
 // Instance cache
@@ -216,8 +215,6 @@ export function createElementsNativeActions(): ElementsNativeActions {
       _confirmOptions?: { confirmParams?: Record<string, any> }
     ): Promise<PaymentResult> {
       if (typeof paymentElementRef === 'string') {
-        
-        consoleLogAll();
         const result = await widgetConfirm(paymentElementRef);
         return {
           type: mapStatus(result.status),

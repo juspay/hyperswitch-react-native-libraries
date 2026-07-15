@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from 'react';
+import React, { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, type CSSProperties } from 'react';
 import { useHyperElementsContext } from './HyperElements';
 import { isWeb, PlatformCVCElementView } from './PlatformView';
 import type {
@@ -28,6 +28,7 @@ interface CvcStatusPayload {
     isCvcFocused?: boolean;
     isCvcBlur?: boolean;
     isCvcEmpty?: boolean;
+    isCvcComplete?: boolean;
   };
 }
 
@@ -64,7 +65,7 @@ const CvcWidget = forwardRef<CvcWidgetHandle, CvcWidgetProps>(function CvcWidget
   const domId = id ? id : `hs-cvc-widget-${reactId.replace(/:/g, '')}`;
 
   const instanceRef = useRef<CvcWidgetType | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
+  const isFocusedRef = useRef(false);
 
   const cvcWidget = useMemo(() => {
     if (!elements) return null;
@@ -117,17 +118,13 @@ const CvcWidget = forwardRef<CvcWidgetHandle, CvcWidgetProps>(function CvcWidget
     const focused = !!cvcStatus.isCvcFocused;
     const blurred = !!cvcStatus.isCvcBlur;
 
-    if (focused) {
-      setIsFocused((prev) => {
-        if (!prev) onFocusRef.current?.();
-        return true;
-      });
+    if (focused && !isFocusedRef.current) {
+      isFocusedRef.current = true;
+      onFocusRef.current?.();
     }
-    if (blurred) {
-      setIsFocused((prev) => {
-        if (prev) onBlurRef.current?.();
-        return false;
-      });
+    if (blurred && isFocusedRef.current) {
+      isFocusedRef.current = false;
+      onBlurRef.current?.();
     }
   }, []);
 
@@ -182,8 +179,6 @@ const CvcWidget = forwardRef<CvcWidgetHandle, CvcWidgetProps>(function CvcWidget
       style={{ minHeight: 'inherit', width: '100%', ...style }}
       options={nativeOptions}
       onChange={handleChange}
-      onFocus={onFocus}
-      onBlur={onBlur}
     />
   );
 });

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   TextInput,
   StyleSheet,
   Alert,
-} from 'react-native';
+} from "react-native";
 import type {
   CustomerLastUsedPaymentMethod,
   CustomerSavedPaymentMethodsSession,
-} from './HyperContent';
-import type { ElementsActions } from '@juspay-tech/react-hyperswitch';
+} from "./HyperContent";
+import type { ElementsActions } from "@juspay-tech/react-hyperswitch";
 
 export const AMOUNTS = [5, 10, 25, 50];
 
@@ -33,14 +33,14 @@ export type FormLayoutProps = {
 };
 
 function formatCardLabel(method: CustomerLastUsedPaymentMethod | null): string {
-  if (!method) return 'Add payment method';
+  if (!method) return "Add payment method";
   const card = method.card;
   if (card) {
-    const brand = card.scheme ?? card.card_network ?? 'Card';
-    const last4 = card.last4_digits ?? '••••';
+    const brand = card.scheme ?? card.card_network ?? "Card";
+    const last4 = card.last4_digits ?? "••••";
     return `${brand} •••• ${last4}`;
   }
-  return method.payment_method_type ?? method.payment_method ?? 'Saved method';
+  return method.payment_method_type ?? method.payment_method ?? "Saved method";
 }
 
 export function FormLayout({
@@ -58,12 +58,12 @@ export function FormLayout({
   updateAmount,
   widgets,
 }: FormLayoutProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [amountVal, setAmountVal] = useState(amount);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDeposit = async () => {
-    setMessage('');
+    setMessage("");
     setIsLoading(true);
 
     if (isAmountScreen && !lastUsed) {
@@ -75,31 +75,37 @@ export function FormLayout({
       if (!methodsSession) return;
       const { type, message } =
         await methodsSession.confirmWithCustomerLastUsedPaymentMethod({
-          id: 'card-cvc-element',
+          id: "card-cvc-element",
         });
-      if (type === 'failed') setMessage(message ?? 'Payment error');
-      if (type !== 'failed') setMessage(`Payment status: ${type}`);
       setIsLoading(false);
+      if (type === "failed") setMessage(message ?? "Payment error");
+      if (type !== "failed") setMessage(`Payment status: ${type}`);
+      if (type === "completed") {
+        setTimeout(() => {
+          onClose();
+          Alert.alert(`Type: ${type}\nMessage: ${message ?? ""}`);
+        }, 0);
+      }
       return;
     }
 
     if (!widgets) return;
-    const result = await widgets.confirmPayment('payment-element-id');
+    const result = await widgets.confirmPayment("payment-element-id");
     setIsLoading(false);
-    const msg = result.message ?? '';
+    const msg = result.message ?? "";
     if (
       msg !==
-      'Payment form has validation errors. Please correct them and try again.'
+      "Payment form has validation errors. Please correct them and try again."
     ) {
       onClose();
       setTimeout(() => {
         Alert.alert(`Type: ${result.type}\nMessage: ${msg}`);
       }, 0);
     } else {
-      setMessage('Please fill the form');
+      setMessage("Please fill the form");
     }
   };
-  
+
   useEffect(() => {
     if (amountVal !== amount) {
       setAmountVal(amount);
@@ -119,7 +125,7 @@ export function FormLayout({
           </TouchableOpacity>
         )}
         <Text style={styles.title}>
-          {isAmountScreen ? 'Deposit Amount' : ''}
+          {isAmountScreen ? "Deposit Amount" : ""}
         </Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
@@ -184,10 +190,7 @@ export function FormLayout({
                 <TouchableOpacity
                   key={value}
                   onPress={() => setAmount(value)}
-                  style={[
-                    styles.chip,
-                    selected && styles.chipSelected,
-                  ]}
+                  style={[styles.chip, selected && styles.chipSelected]}
                 >
                   <Text
                     style={[
@@ -215,7 +218,7 @@ export function FormLayout({
           ]}
         >
           <Text style={styles.depositButtonText}>
-            {isLoading ? 'Processing…' : `Deposit $${amount}`}
+            {isLoading ? "Processing…" : `Deposit $${amount}`}
           </Text>
         </TouchableOpacity>
         {isAmountScreen ? (
@@ -223,7 +226,9 @@ export function FormLayout({
             <Text style={styles.cancel}>Cancel</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.secure}>🔒 Your payment is secure & encrypted</Text>
+          <Text style={styles.secure}>
+            🔒 Your payment is secure & encrypted
+          </Text>
         )}
       </View>
     </View>
@@ -238,41 +243,41 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     top: 24,
     padding: 8,
   },
   backText: {
     fontSize: 22,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 16,
     top: 24,
     padding: 8,
   },
   closeText: {
     fontSize: 20,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   balance: {
     marginTop: 4,
     fontSize: 14,
-    color: '#4b5563',
+    color: "#4b5563",
   },
   balanceBold: {
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
   savedSection: {
     paddingHorizontal: 20,
@@ -281,22 +286,22 @@ const styles = StyleSheet.create({
   skeleton: {
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
   },
   savedRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   savedMethod: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -304,19 +309,19 @@ const styles = StyleSheet.create({
   },
   savedMethodText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
+    fontWeight: "500",
+    color: "#111827",
   },
   chevron: {
     fontSize: 20,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   cvcBox: {
     width: 96,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    shadowColor: '#000',
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -326,37 +331,37 @@ const styles = StyleSheet.create({
     minHeight: 500,
   },
   amountSection: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 24,
     paddingHorizontal: 20,
   },
   amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   currency: {
     fontSize: 24,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
   amountInput: {
     minWidth: 120,
     fontSize: 56,
-    fontWeight: '600',
-    color: '#111827',
-    textAlign: 'center',
-    backgroundColor: '#fff',
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "center",
+    backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 12,
   },
   hint: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   chipRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -366,24 +371,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    shadowColor: '#000',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   chipSelected: {
-    backgroundColor: '#059669',
+    backgroundColor: "#059669",
   },
   chipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
   chipTextSelected: {
-    color: '#fff',
+    color: "#fff",
   },
   footer: {
     paddingHorizontal: 20,
@@ -391,17 +396,17 @@ const styles = StyleSheet.create({
   },
   error: {
     marginBottom: 12,
-    textAlign: 'center',
-    color: '#dc2626',
+    textAlign: "center",
+    color: "#dc2626",
     fontSize: 14,
   },
   depositButton: {
     height: 56,
     borderRadius: 999,
-    backgroundColor: '#059669',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    backgroundColor: "#059669",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -411,20 +416,20 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   depositButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cancel: {
     marginTop: 12,
-    textAlign: 'center',
-    color: '#6b7280',
+    textAlign: "center",
+    color: "#6b7280",
     fontSize: 14,
   },
   secure: {
     marginTop: 12,
-    textAlign: 'center',
-    color: '#6b7280',
+    textAlign: "center",
+    color: "#6b7280",
     fontSize: 12,
   },
 });

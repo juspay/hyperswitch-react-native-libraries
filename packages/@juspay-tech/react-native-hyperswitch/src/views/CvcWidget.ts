@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { CVCElementView } from './CVCElementView';
-import type { CvcWidget } from '../definitions';
+import type { CvcWidget } from '../types/definitions';
 
 let cvcWidgetId = 0;
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { PaymentElementView } from './PaymentElementView';
-import type { PaymentElement, PaymentResult } from '../definitions';
+import type { PaymentElement, PaymentResult } from '../types/definitions';
 import { confirmPayment } from '../context/WidgetRegistry';
 
 let paymentElementId = 0;

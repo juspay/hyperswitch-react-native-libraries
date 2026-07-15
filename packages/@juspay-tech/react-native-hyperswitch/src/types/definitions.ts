@@ -1,14 +1,34 @@
-// Shared type definitions for the universal HyperswitchSession contract.
-// These mirror the shape consumed by @juspay-tech/react-hyperswitch so this
-// package can remain dependency-free of the React Native SDK.
+export interface OverrideEndpontConfiguration {
+  customBackendEndpoint?: string;
+  customLoggingEndpoint?: string;
+  customAssetEndpoint?: string;
+  customSDKConfigEndpoint?: string;
+  customAirborneEndpoint?: string;
+}
 
-import type {
-  HyperswitchConfiguration,
-  PaymentSessionConfiguration,
-} from '../types/HyperswitchSessionTypes';
+export interface CommonEndpoint {
+  commonEndpoint: string;
+}
+
+export interface OverrideEndpoints {
+  overrideEndpoints: OverrideEndpontConfiguration;
+}
+
+export type HyperswitchEnvironment = 'sandbox' | 'production';
+
+export interface HyperswitchConfiguration {
+  publishableKey: string;
+  profileId?: string;
+  environment?: HyperswitchEnvironment;
+  customEndpoints?: CommonEndpoint | OverrideEndpoints;
+}
+
+export interface PaymentSessionConfiguration {
+  sdkAuthorization: string;
+}
+
 import type { ComponentType } from 'react';
 
-export type { HyperswitchConfiguration, PaymentSessionConfiguration };
 
 export interface PaymentResult {
   type: 'completed' | 'canceled' | 'failed';

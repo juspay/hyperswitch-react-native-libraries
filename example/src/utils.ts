@@ -3,7 +3,7 @@ import {
   CvcWidgetOptions,
   PaymentElementOptions,
 } from '@juspay-tech/react-hyperswitch';
-import { LayoutType } from '@juspay-tech/react-hyperswitch';
+import { LayoutType, SubscriptionEvent } from '@juspay-tech/react-hyperswitch';
 
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';
@@ -14,6 +14,11 @@ export const profileId = process.env.PROFILE_ID ?? '';
 export const getCustomisationOptions = (
   layout: LayoutType = 'tabs'
 ): PaymentElementOptions => ({
+  subscribedEvents: [
+    'PAYMENT_METHOD_INFO_CARD',
+    'PAYMENT_METHOD_STATUS',
+    'FORM_STATUS',
+  ] as SubscriptionEvent[],
   displayDefaultSavedPaymentIcon: false,
   paymentMethodLayout: {
     type: layout,
@@ -68,6 +73,7 @@ export const getCustomisationOptions = (
 });
 
 export const getCvcInputOptions = (): CvcWidgetOptions => ({
+  subscribedEvents: ['CVC_STATUS'],
   appearance: {
     colors: {
       light: {
@@ -101,6 +107,7 @@ export const getCvcInputOptions = (): CvcWidgetOptions => ({
   },
   placeholder: '123',
   cvcIcon: 'hidden',
+  
 });
 
 export const getStatus = (paymentStatus: string | undefined): string => {

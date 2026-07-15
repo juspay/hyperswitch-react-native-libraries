@@ -68,6 +68,10 @@ public class CVCWidget: UIControl {
         let sdkParams = SDKParams.getSDKParams()
 
         var nativeConfig = try? configuration?.toDictionary()
+        if self.subscribedEventNames == nil {
+            self.subscribedEventNames = configurationDict?["subscribedEvents"] as? [String]
+                ?? nativeConfig?["subscribedEvents"] as? [String]
+        }
         nativeConfig?["subscribedEvents"] = self.subscribedEventNames
         configurationDict?["subscribedEvents"] = self.subscribedEventNames
 
@@ -124,5 +128,9 @@ public class CVCWidget: UIControl {
         } else {
             DispatchQueue.main.async { listener.onPaymentEvent(event) }
         }
+    }
+
+    internal func setPaymentEventListener(_ listener: PaymentEventListener?) {
+        self.paymentEventListener = listener
     }
 }

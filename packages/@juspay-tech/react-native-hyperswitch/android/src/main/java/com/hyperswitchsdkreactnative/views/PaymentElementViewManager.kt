@@ -2,6 +2,7 @@ package com.hyperswitchsdkreactnative.views
 
 import android.app.Activity
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
@@ -15,6 +16,9 @@ import com.facebook.react.viewmanagers.NativePaymentWidgetManagerInterface
 import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule
 import io.hyperswitch.model.HyperswitchConfiguration
 import io.hyperswitch.model.PaymentSessionConfiguration
+import com.facebook.react.uimanager.events.RCTEventEmitter
+import io.hyperswitch.PaymentEvent
+import io.hyperswitch.PaymentEventListener
 import io.hyperswitch.sdk.Elements
 import io.hyperswitch.sdk.Hyperswitch
 import io.hyperswitch.sdk.HyperswitchBoundElement
@@ -133,6 +137,14 @@ class PaymentElementViewManager : SimpleViewManager<HyperswitchElement>(),
         return@elements
       }
       state.elements = elements
+
+      container.setSubscribedEvents(subscribedEvents(props.optionsMap))
+      container.setOnEventCallback(object : PaymentEventListener {
+        override fun onPaymentEvent(event: PaymentEvent) {
+          emitOnPaymentEvent(container, event)
+        }
+      })
+
       state.widgetBound = elements.bind(container, props.optionsMap ?: emptyMap())
       container.type = PAYMENT_ELEMENT_TYPE
     }
@@ -153,6 +165,31 @@ class PaymentElementViewManager : SimpleViewManager<HyperswitchElement>(),
 
   private fun stateFor(container: HyperswitchElement): WidgetState =
     viewStates.getOrPut(container) { WidgetState() }
+
+  private fun subscribedEvents(optionsMap: Map<String, Any?>?): List<String> {
+    val events = optionsMap?.get("subscribedEvents") as? List<*> ?: return emptyList()
+    return events.mapNotNull { it as? String }
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun emitOnPaymentEvent(container: HyperswitchElement, event: PaymentEvent) {
+    val payloadMap = Arguments.makeNativeMap(event.payload as Map<String, Object>)
+    val eventData = Arguments.createMap().apply {
+      putString("eventName", event.type)
+      putMap("payload", payloadMap)
+    }
+    context?.runOnUiQueueThread {
+      context?.getJSModule(RCTEventEmitter::class.java)
+        ?.receiveEvent(container.id, "topOnPaymentEvent", eventData)
+    }
+  }
+
+  override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any>? {
+    return com.facebook.react.common.MapBuilder.of(
+      "topOnPaymentEvent",
+      com.facebook.react.common.MapBuilder.of("registrationName", "onPaymentEvent")
+    )
+  }
 
   private fun ReadableMap.getStringOrNull(key: String): String? =
     if (hasKey(key) && !isNull(key)) getString(key) else null

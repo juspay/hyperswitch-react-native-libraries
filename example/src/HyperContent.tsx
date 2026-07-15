@@ -95,23 +95,28 @@ export function HyperContent(props: SharedProps) {
             options={getCvcInputOptions()}
             onReady={() => console.log('[Example] CvcWidget ready')}
             style={{ minHeight: 50 }}
+            onFocus={() => console.log('[Example] CvcWidget focused')}
+            onBlur={() => console.log('[Example] CvcWidget blurred')}
           />
         ) : null
       }
       paymentSlot={
-        <PaymentElement
-          id="payment-element-id"
-          onPaymentResult={(data) => {
-            onClose();
-            setTimeout(() => {
-              Alert.alert(`Type: ${data?.type}`, `Message: ${data?.message}`);
-            }, 0);
-          }}
-          options={getCustomisationOptions('tabs')}
-          ref={paymentRef}
-          onReady={() => console.log('[Example] PaymentElement ready')}
-          style={{ width: '100%', height: '100%' }}
-        />
+          <PaymentElement
+            id="payment-element-id"
+            onPaymentResult={(data) => {
+              onClose();
+              setTimeout(() => {
+                Alert.alert(`Type: ${data?.type}`, `Message: ${data?.message}`);
+              }, 0);
+            }}
+            options={getCustomisationOptions('tabs')}
+            ref={paymentRef}
+            onReady={() => console.log('[Example] PaymentElement ready')}
+            onChange={(data) =>
+              console.log('[Example] PaymentElement paymentEvent:', data)
+            }
+            style={{ width: '100%', height: '100%' }}
+          />
       }
       lastUsed={lastUsed}
       methodsSession={methodsSession}
