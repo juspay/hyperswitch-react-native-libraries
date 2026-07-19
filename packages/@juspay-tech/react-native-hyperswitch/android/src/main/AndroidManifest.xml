@@ -2,5 +2,14 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
   <application android:enableOnBackInvokedCallback="true"
     tools:targetApi="33">
+    <meta-data
+      android:name="io.hyperswitch.hermes_enabled"
+      android:value="${hermesEnabled}" />
+    <meta-data
+      android:name="io.hyperswitch.new_architecture_enabled"
+      android:value="@string/hs_new_architecture_enabled" />
+    <meta-data
+      android:name="io.hyperswitch.load_so_files"
+      android:value="true" />
   </application>
 </manifest>

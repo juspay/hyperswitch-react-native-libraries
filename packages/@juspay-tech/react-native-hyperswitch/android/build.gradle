@@ -77,6 +77,11 @@ android {
     buildConfigField "String", "VERSION_NAME", "\"${version}\""
     buildConfigField "boolean", "IS_HERMES_ENABLED", hermesEnabled
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled
+    resValue "string", "hs_new_architecture_enabled", newArchEnabled.toString()
+    manifestPlaceholders = [
+      hermesEnabled: hermesEnabled,
+      newArchEnabled: newArchEnabled
+    ]
   }
   buildFeatures {
     buildConfig true
@@ -145,6 +150,6 @@ dependencies {
   implementation 'androidx.activity:activity-ktx:1.10.1'
   implementation 'org.greenrobot:eventbus:3.1.0'
   implementation "io.hyperswitch:hyperswitch-sdk-android-airborne:1.0.0"
-  implementation "io.hyperswitch:hyperswitch-sdk-android-common:1.0.0"
+  implementation "io.hyperswitch:hyperswitch-sdk-android-react-native:${safeExtGet("hyperswitchSdkVersion", "1.0.0")}"
   implementation "io.hyperswitch:hyperswitch-sdk-android-logger:1.0.0"
 }

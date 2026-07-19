@@ -37,11 +37,11 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
 
   @ReactMethod
   @DoNotStrip
-  public abstract void initialise(String publishableKey, @Nullable String customBackendUrl, @Nullable String customLogUrl, @Nullable ReadableMap customParams, Promise promise);
+  public abstract void initialise(ReadableMap config, Promise promise);
 
   @ReactMethod
   @DoNotStrip
-  public abstract void initPaymentSession(String sdkAuthorization, Promise promise);
+  public abstract void initPaymentSession(String instanceHandle, String sdkAuthorization, Promise promise);
 
   @ReactMethod
   @DoNotStrip
@@ -49,7 +49,7 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
 
   @ReactMethod
   @DoNotStrip
-  public abstract void getCustomerSavedPaymentMethods(Promise promise);
+  public abstract void getCustomerSavedPaymentMethods(@Nullable ReadableMap options, Promise promise);
 
   @ReactMethod
   @DoNotStrip
@@ -61,13 +61,17 @@ public abstract class NativeHyperswitchSdkReactNativeSpec extends ReactContextBa
 
   @ReactMethod
   @DoNotStrip
-  public abstract void confirmWithCustomerDefaultPaymentMethod(int reactTag, Promise promise);
+  public abstract void confirmWithCustomerDefaultPaymentMethod(@Nullable String cvcWidgetReactTag, Promise promise);
 
   @ReactMethod
   @DoNotStrip
-  public abstract void confirmWithCustomerLastUsedPaymentMethod(int reactTag, Promise promise);
+  public abstract void confirmWithCustomerLastUsedPaymentMethod(@Nullable String cvcWidgetReactTag, Promise promise);
 
   @ReactMethod
   @DoNotStrip
   public abstract void confirmWithCustomerPaymentToken(String paymentToken, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void updateIntent(String sdkAuthorization, Promise promise);
 }

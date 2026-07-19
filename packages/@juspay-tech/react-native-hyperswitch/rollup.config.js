@@ -14,7 +14,7 @@ const external = [
 
 export default [
   {
-    input: 'src/index.tsx',
+    input: 'src/index.ts',
     output: {
       file: 'lib/commonjs/index.bundle.js',
       format: 'cjs',
@@ -38,7 +38,7 @@ export default [
     ],
   },
   {
-    input: 'src/index.tsx',
+    input: 'src/index.ts',
     output: {
       file: 'lib/module/index.bundle.js',
       format: 'esm',

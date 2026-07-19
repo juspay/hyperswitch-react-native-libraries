@@ -12,52 +12,113 @@ import React
 public class HyperswitchModule: NSObject {
 
     @objc public static let shared: HyperswitchModule = HyperswitchModule()
-    private var paymentSession: PaymentSession?
-    private var paymentSessionHandler: PaymentSessionHandler?
+
+    // Instance handle -> Hyperswitch created with publishable key only.
+    private var instances = [String: Hyperswitch]()
+
+    private var activeHyperswitch: Hyperswitch?
+    private var activePublishableKey: String?
+    private var activeProfileId: String?
+    private var activePaymentSession: PaymentSession?
+    private var activePaymentSessionHandler: PaymentSessionHandler?
     @objc internal static var isCvcWidgetActive: Bool = false
+
+    /// View-registry reference injected by HyperswitchSdkReactNative.mm so this singleton
+    /// can resolve native widget views by reactTag.
+    @objc public var viewRegistry_DEPRECATED: RCTViewRegistry?
 
     @objc(initialiseWithPublishableKey:customBackendUrl:customLogUrl:customParams:resolve:reject:)
     public func initialise(
         publishableKey: String,
         customBackendUrl: String?,
         customLogUrl: String?,
-        customParams: [String: Any],
+        customParams: [String: Any]?,
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
+        activePublishableKey = publishableKey
+        activeProfileId = customParams?["profileId"] as? String
 
-        self.paymentSession = PaymentSession(
-            publishableKey: publishableKey,
-            customBackendUrl: customBackendUrl,
-            customParams: customParams,
-            customLogUrl: customLogUrl
+        let customEndpoints = CustomEndpointConfiguration.overrideEndpoints(
+            OverrideEndpointConfiguration(
+                customBackendEndpoint: customBackendUrl,
+                customLoggingEndpoint: customLogUrl
+            )
         )
-        resolve(NSNull())
+        let hyperswitch = Hyperswitch(
+            configuration: HyperswitchConfiguration(
+                publishableKey: publishableKey,
+                profileId: activeProfileId,
+                customEndpoints: customEndpoints
+            )
+        )
+
+        let handle = UUID().uuidString
+        instances[handle] = hyperswitch
+
+        resolve(handle)
     }
 
-    @objc(initPaymentSessionWithSdkAuthorization:resolve:reject:)
+    @objc(initPaymentSession:sdkAuthorization:resolve:reject:)
     public func initPaymentSession(
+        instanceHandle: String,
         sdkAuthorization: String,
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
+        guard let hyperswitch = instances[instanceHandle] else {
+            reject("INIT_ERROR", "Hyperswitch instance not found for handle: \(instanceHandle)", NSError(domain: "HyperswitchModule", code: 0))
+            return
+        }
 
-        self.paymentSession?.initPaymentSession(sdkAuthorization: sdkAuthorization)
-        resolve(NSNull())
+        activeHyperswitch = nil
+        activePaymentSession = nil
+        activePaymentSessionHandler = nil
+
+        let session = hyperswitch.initPaymentSession(
+            configuration: PaymentSessionConfiguration(sdkAuthorization: sdkAuthorization)
+        )
+
+        activeHyperswitch = hyperswitch
+        activePaymentSession = session
+        activePaymentSessionHandler = nil
+
+        resolve("active")
     }
 
-    @objc(presentPaymentSheetWithConfiguration:resolver:rejecter:)
+    internal static func getActiveHyperswitch() -> Hyperswitch? {
+        return shared.activeHyperswitch
+    }
+
+    internal static func getActivePaymentSession() -> PaymentSession? {
+        return shared.activePaymentSession
+    }
+
+    internal static func getActivePublishableKey() -> String? {
+        return shared.activePublishableKey
+    }
+
+    internal static func getActiveProfileId() -> String? {
+        return shared.activeProfileId
+    }
+
+    @objc(presentPaymentSheet:resolve:reject:)
     public func presentPaymentSheet(
         configuration: [String: Any],
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
+        guard let session = activePaymentSession else {
+            reject("PRESENT_ERROR", "Payment session not initialized. Call initPaymentSession first.", NSError(domain: "HyperswitchModule", code: 0))
+            return
+        }
+
         DispatchQueue.main.async {
             guard let vc = RCTPresentedViewController() else {
                 reject("error", "Could not find presented view controller", NSError())
                 return
             }
-            self.paymentSession?.presentPaymentSheetWithParams(
+            session.presentPaymentSheetWithParams(
                 viewController: vc,
                 params: configuration,
                 completion: { result in
@@ -78,25 +139,33 @@ public class HyperswitchModule: NSObject {
 
     // MARK: - Headless Payment Methods
 
-    private func initSavedPaymentMethodSessionCallback(handler: PaymentSessionHandler) {
-        self.paymentSessionHandler = handler
-    }
-
-    @objc
+    @objc(getCustomerSavedPaymentMethods:resolve:reject:)
     public func getCustomerSavedPaymentMethods(
-        withResolve resolve: @escaping RCTPromiseResolveBlock,
+        options: [String: Any]?,
+        resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
-        self.paymentSession?.getCustomerSavedPaymentMethods(initSavedPaymentMethodSessionCallback)
-        resolve(["status": "success", "message": "Payment methods initialized"])
+        guard let session = activePaymentSession else {
+            resolve([
+                "status": "error",
+                "code": "NO_SESSION",
+                "message": "Payment session not initialized. Call initPaymentSession first.",
+            ])
+            return
+        }
+
+        session.getCustomerSavedPaymentMethods { [weak self] handler in
+            self?.activePaymentSessionHandler = handler
+            resolve(["status": "success", "message": "Payment methods initialized"])
+        }
     }
 
-    @objc
+    @objc(getCustomerDefaultSavedPaymentMethodDataWithResolve:reject:)
     public func getCustomerDefaultSavedPaymentMethodData(
-        withResolve resolve: @escaping RCTPromiseResolveBlock,
+        resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
-        guard let handler = self.paymentSessionHandler else {
+        guard let handler = activePaymentSessionHandler else {
             resolve([
                 "status": "error",
                 "message": "Payment session handler not initialized.",
@@ -131,12 +200,12 @@ public class HyperswitchModule: NSObject {
         }
     }
 
-    @objc
+    @objc(getCustomerLastUsedPaymentMethodDataWithResolve:reject:)
     public func getCustomerLastUsedPaymentMethodData(
-        withResolve resolve: @escaping RCTPromiseResolveBlock,
+        resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
-        guard let handler = self.paymentSessionHandler else {
+        guard let handler = activePaymentSessionHandler else {
             resolve([
                 "status": "error",
                 "message": "Payment session handler not initialized.",
@@ -171,13 +240,13 @@ public class HyperswitchModule: NSObject {
         }
     }
 
-    @objc(confirmWithCustomerDefaultPaymentMethodWithReactTag:withResolve:reject:)
+    @objc(confirmWithCustomerDefaultPaymentMethod:resolve:reject:)
     public func confirmWithCustomerDefaultPaymentMethod(
-        reactTag: Int,
-        withResolve resolve: @escaping RCTPromiseResolveBlock,
+        cvcWidgetReactTag: String?,
+        resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
-        guard let handler = self.paymentSessionHandler else {
+        guard let handler = activePaymentSessionHandler else {
             resolve([
                 "status": "error",
                 "message": "Payment session handler not initialized.",
@@ -185,17 +254,31 @@ public class HyperswitchModule: NSObject {
             return
         }
 
+        let reactTag = Int(cvcWidgetReactTag ?? "") ?? 0
+
         if reactTag > 0 {
-            // CvcWidget reactTag provided — route through widget bridge
+            // CvcWidget reactTag provided — route through the native widget view
+            // so we can use the inner RCTRootView tag (widgetReactTag).
             let result = handler.getCustomerDefaultSavedPaymentMethodData()
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
-                    HyperswitchModule.confirmViaWidget(
-                        reactTag: reactTag,
-                        paymentToken: paymentMethod.paymentToken,
-                        paymentMethodId: paymentMethod.paymentMethodId,
-                        resolve: resolve
+                    self.withNativePaymentWidgetView(
+                        NSNumber(value: reactTag),
+                        onFound: { view in
+                            view.confirmCVCPayment(
+                                paymentToken: paymentMethod.paymentToken,
+                                paymentMethodId: paymentMethod.paymentMethodId,
+                                resolve: resolve
+                            )
+                        },
+                        onMissing: {
+                            resolve([
+                                "status": "failed",
+                                "code": "WIDGET_NOT_FOUND",
+                                "message": "CVC widget view not found for reactTag \(reactTag)",
+                            ])
+                        }
                     )
                 } else {
                     // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
@@ -218,30 +301,13 @@ public class HyperswitchModule: NSObject {
         }
     }
 
-    //  @objc(confirmPaymentWithWidgetId:resolve:reject:)
-    //  public func confirmPayment(
-    //    rootTag: String,
-    //    resolve: @escaping RCTPromiseResolveBlock,
-    //    reject: @escaping RCTPromiseRejectBlock
-    //  ) -> Void {
-    //    guard let hyperModule = HyperModule.shared else {
-    //      resolve([
-    //          "status": "error",
-    //          "code": "NOT_INITIALIZED",
-    //          "message": "HyperModule is not initialized."
-    //      ])
-    //      return
-    //    }
-    ////    hyperModule.confirmPayment(widgetId, resolve: resolve, reject: reject)
-    //  }
-
-    @objc(confirmWithCustomerLastUsedPaymentMethodWithReactTag:withResolve:reject:)
+    @objc(confirmWithCustomerLastUsedPaymentMethod:resolve:reject:)
     public func confirmWithCustomerLastUsedPaymentMethod(
-        reactTag: Int,
-        withResolve resolve: @escaping RCTPromiseResolveBlock,
+        cvcWidgetReactTag: String?,
+        resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
-        guard let handler = self.paymentSessionHandler else {
+        guard let handler = activePaymentSessionHandler else {
             resolve([
                 "status": "error",
                 "message": "Payment session handler not initialized.",
@@ -249,23 +315,45 @@ public class HyperswitchModule: NSObject {
             return
         }
 
+        let reactTag = Int(cvcWidgetReactTag ?? "") ?? 0
+
         if reactTag > 0 {
-            // CvcWidget reactTag provided — route through widget bridge
+            // CvcWidget reactTag provided — route through the native widget view
+            // so we can use the inner RCTRootView tag (widgetReactTag).
             let result = handler.getCustomerLastUsedPaymentMethodData()
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
-                    HyperswitchModule.confirmViaWidget(
-                        reactTag: reactTag,
-                        paymentToken: paymentMethod.paymentToken,
-                        paymentMethodId: paymentMethod.paymentMethodId,
-                        resolve: resolve
+                    self.withNativePaymentWidgetView(
+                        NSNumber(value: reactTag),
+                        onFound: { view in
+                            guard let cvcWidget = view.cvcWidgetRef else {
+                                resolve([
+                                    "status": "failed",
+                                    "code": "WIDGET_NOT_READY",
+                                    "message": "CVC widget is not ready",
+                                ])
+                                return
+                            }
+                            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { result in
+                                resolve(HyperswitchModule.paymentResultToDict(result))
+                            }
+                        },
+                        onMissing: {
+                            resolve([
+                                "status": "failed",
+                                "code": "WIDGET_NOT_FOUND",
+                                "message": "CVC widget view not found for reactTag \(reactTag)",
+                            ])
+                        }
                     )
                 } else {
                     // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
-                    handler.confirmWithCustomerLastUsedPaymentMethod { result in
-                        resolve(HyperswitchModule.paymentResultToDict(result))
-                    }
+                    resolve([
+                        "status": "failed",
+                        "code": "CVC_WIDGET_REQUIRED",
+                        "message": "CVC widget is required to confirm the last used card payment method",
+                    ])
                 }
             case .failure(let error):
                 resolve([
@@ -275,48 +363,85 @@ public class HyperswitchModule: NSObject {
                 ])
             }
         } else {
-            // No CvcWidget — confirm through HeadlessTask callback (cvc will be nil)
-            handler.confirmWithCustomerLastUsedPaymentMethod { result in
-                resolve(HyperswitchModule.paymentResultToDict(result))
-            }
+            resolve([
+                "status": "failed",
+                "code": "CVC_WIDGET_REQUIRED",
+                "message": "CVC widget is required to confirm the last used payment method",
+            ])
         }
     }
 
-    // MARK: - CvcWidget Confirm Routing
-
-    /// Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge so CvcWidget.res
-    /// handles the confirm. The reactTag is passed directly — no view lookup needed since
-    /// iOS can't resolve views across bridges (two-bridge problem). The reactTag from JS is
-    /// the rootTag of the CvcWidget's React root, matching nativeProp.rootTag in the inner bundle.
-    private static func confirmViaWidget(
-        reactTag: Int,
+    @objc(confirmWithCustomerPaymentToken:resolve:reject:)
+    public func confirmWithCustomerPaymentToken(
         paymentToken: String,
-        paymentMethodId: String,
-        resolve: @escaping RCTPromiseResolveBlock
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
     ) {
-        // Set PaymentSession.completion so exitHeadless routes back to this resolve
-        PaymentSession.setConfirmCompletion { result in
-            resolve(paymentResultToDict(result))
+        guard let handler = activePaymentSessionHandler else {
+            resolve([
+                "status": "error",
+                "message": "Payment session handler not initialized.",
+            ])
+            return
         }
 
-        // Emit "triggerWidgetAction" with CONFIRM_CVC_PAYMENT on the widget bridge
-        let payload: [String: Any] = [
-            "actionType": "CONFIRM_CVC_PAYMENT",
-            "rootTag": reactTag,
-            "paymentToken": paymentToken,
-            "paymentMethodId": paymentMethodId,
-        ]
-        DispatchQueue.main.async {
-            if let hyperModule = RNViewManager.sharedInstance.bridge.module(for: HyperModule.self) as? HyperModule {
-                hyperModule.sendEvent(withName: "triggerWidgetAction", body: payload)
-            } else {
-                resolve([
-                    "status": "failed",
-                    "code": "NO_WIDGET_BRIDGE",
-                    "message": "Widget bridge not available for CvcWidget confirm",
-                ])
-            }
+      handler.confirmWithCustomerPaymentToken(paymentToken: paymentToken) { result in
+            resolve(HyperswitchModule.paymentResultToDict(result))
         }
+    }
+
+    @objc(updateIntent:resolve:reject:)
+    public func updateIntent(
+        sdkAuthorization: String,
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let session = activePaymentSession else {
+            reject("UPDATE_INTENT_ERROR", "Payment session not initialized. Call initPaymentSession first.", NSError(domain: "HyperswitchModule", code: 0))
+            return
+        }
+
+        session.updateIntent(
+            authorizationProvider: { completion in
+                completion(sdkAuthorization)
+            },
+            completion: { result in
+                switch result {
+                case .success:
+                    resolve(["status": "success", "message": "Payment intent updated"])
+                case .cancelled:
+                    resolve(["status": "cancelled", "message": "Payment intent update cancelled"])
+                case .failure(let error as NSError):
+                    reject(error.domain, error.userInfo[NSLocalizedDescriptionKey] as? String ?? "Payment intent update failed", error)
+                }
+            }
+        )
+    }
+
+    // MARK: - CvcWidget View Lookup
+
+    /// Looks up the NativePaymentWidgetView for the supplied React tag by walking up the view
+    /// hierarchy, mirroring the approach used in HyperModule. Calls `onFound` when the widget
+    /// wrapper is located, otherwise `onMissing`.
+    private func withNativePaymentWidgetView(
+        _ reactTag: NSNumber,
+        onFound: @escaping (NativePaymentWidgetView) -> Void,
+        onMissing: @escaping () -> Void
+    ) {
+        guard let viewRegistry = self.viewRegistry_DEPRECATED else {
+            onMissing()
+            return
+        }
+        let view = viewRegistry.view(forReactTag: reactTag)
+        var current: UIView? = view
+        while let v = current {
+            if let nativeWidget = v as? NativePaymentWidgetView {
+                onFound(nativeWidget)
+                return
+            }
+            current = v.superview
+        }
+        onMissing()
     }
 
     /// Convert a PaymentResult to a dictionary suitable for RCTPromiseResolveBlock.

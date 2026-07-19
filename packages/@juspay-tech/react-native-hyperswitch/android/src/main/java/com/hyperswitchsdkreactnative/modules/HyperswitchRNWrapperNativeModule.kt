@@ -2,28 +2,40 @@ package com.hyperswitchsdkreactnative.modules
 
 import android.util.Log
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.uimanager.IllegalViewOperationException
 import com.facebook.react.uimanager.UIManagerModule
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkReactNativeSpec
-import com.hyperswitchsdkreactnative.headless.HeadlessFlowController
-import com.hyperswitchsdkreactnative.headless.PMError
-import com.hyperswitchsdkreactnative.headless.PaymentMethodType
-import com.hyperswitchsdkreactnative.headless.HeadlessPaymentResult
-import com.hyperswitchsdkreactnative.headless.PaymentSessionHandler
-import com.hyperswitchsdkreactnative.provider.HyperProvider
-import com.hyperswitchsdkreactnative.views.PaymentWidgetView
+import io.hyperswitch.model.CustomEndpointConfiguration
+import io.hyperswitch.model.HyperswitchConfiguration
+import io.hyperswitch.model.HyperswitchEnvironment
+import io.hyperswitch.model.OverrideEndpoints
+import io.hyperswitch.model.PaymentSessionConfiguration
+import io.hyperswitch.paymentsession.PMError
+import io.hyperswitch.paymentsession.PaymentMethod
+import io.hyperswitch.paymentsession.PaymentMethodType
+import io.hyperswitch.paymentsession.PaymentSessionHandler
+import io.hyperswitch.paymentsession.SavedPaymentMethodsConfiguration
+import io.hyperswitch.paymentsheet.PaymentResult
+import io.hyperswitch.sdk.Hyperswitch
+import io.hyperswitch.sdk.HyperswitchInstance
+import io.hyperswitch.sdk.PaymentSession
+import io.hyperswitch.view.HyperswitchElement
 import org.json.JSONObject
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 
 class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
   NativeHyperswitchSdkReactNativeSpec(reactContext) {
 
-  private var hyperProvider: HyperProvider? = null
+  private val instances = ConcurrentHashMap<String, HyperswitchInstance>()
+  private var activePaymentSession: PaymentSession? = null
+  private var activePaymentSessionHandler: PaymentSessionHandler? = null
 
   init {
     currentInstance = this
@@ -34,84 +46,125 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-  override fun initialise(
-    publishableKey: String,
-    customBackendUrl: String?,
-    customLogUrl: String?,
-    customParams: ReadableMap?,
-    promise: Promise?
-  ) {
+  override fun initialise(config: ReadableMap?, promise: Promise?) {
     try {
-      currentActivity?.let { activity ->
-        hyperProvider = HyperProvider(activity)
-        hyperProvider!!.initialise(publishableKey, customBackendUrl, customLogUrl, customParams)
-        promise?.resolve(null)
-      } ?: run {
+      val activity = currentActivity
+      if (activity == null) {
         promise?.reject("INITIALIZATION_ERROR", "Current activity is null")
+        return
       }
+
+      val publishableKey = config?.getString("publishableKey")
+      if (publishableKey.isNullOrBlank()) {
+        promise?.reject("INITIALIZATION_ERROR", "publishableKey is required")
+        return
+      }
+
+      val profileId = config.getString("profileId")
+      val environment = parseEnvironment(config.getString("environment"))
+      val customEndpoints = config.getMap("customEndpoints")
+      activePublishableKey = publishableKey
+      activeProfileId = profileId
+
+      val hsConfig = buildHyperswitchConfiguration(
+        publishableKey = publishableKey,
+        profileId = profileId,
+        customEndpoints = customEndpoints,
+        environment = environment
+      )
+
+      val instance = Hyperswitch.init(activity, hsConfig)
+      val handle = UUID.randomUUID().toString()
+      instances[handle] = instance
+
+      promise?.resolve(handle)
     } catch (e: Exception) {
       promise?.reject("INITIALIZATION_ERROR", "Failed to initialize Hyperswitch SDK: ${e.message}")
     }
   }
 
-  override fun initPaymentSession(sdkAuthorization: String?, promise: Promise?) {
-    try {
-      hyperProvider?.let { provider ->
-        // Clean up stale state from any previous payment session.
-        HeadlessFlowController.reset()
-        paymentSessionHandler = null
-
-        sdkAuthorization?.let {
-          HyperswitchRNWrapperNativeModule.sdkAuthorization = sdkAuthorization
-          provider.initPaymentSession(sdkAuthorization = sdkAuthorization)
-        }
-        promise?.resolve(null)
-      } ?: run {
-        promise?.reject("INIT_ERROR", "HyperProvider not initialized")
-      }
-    } catch (e: Exception) {
-      promise?.reject("INIT_ERROR", "Failed to initialize payment sheet: ${e.message}")
+  override fun initPaymentSession(
+    instanceHandle: String?,
+    sdkAuthorization: String?,
+    promise: Promise?
+  ) {
+    val instanceHandleNonNull = instanceHandle ?: run {
+      promise?.reject("INIT_ERROR", "instanceHandle is required")
+      return
     }
-  }
-
-  override fun presentPaymentSheet(readableMap: ReadableMap, promise: Promise?) {
-    try {
-      hyperProvider?.let { provider ->
-        sheetPromise = promise
-        provider.presentPaymentSheet(readableMap)
-      }
-    } catch (e: Exception) {
-      promise?.reject("PRESENT_ERROR", "Failed to present payment sheet: ${e.message}")
+    val sdkAuthorizationNonNull = sdkAuthorization ?: run {
+      promise?.reject("INIT_ERROR", "sdkAuthorization is required")
+      return
     }
-  }
 
-  override fun getCustomerSavedPaymentMethods(promise: Promise?) {
-    val auth = sdkAuthorization
-    if (auth == null) {
-      promise?.resolve(
-        serializeResult("error", "NO_SESSION", "Payment session not initialized. Call initPaymentSession first.")
+    val instance = instances[instanceHandleNonNull]
+    if (instance == null) {
+      promise?.reject(
+        "INIT_ERROR",
+        "Hyperswitch instance not found for handle: $instanceHandleNonNull"
       )
       return
     }
 
-    val application = currentActivity?.application
-    if (application == null) {
-      promise?.resolve(
-        serializeResult("error", "NO_ACTIVITY", "Current activity is null. Cannot start headless flow.")
+    activePaymentSession = null
+    activePaymentSessionHandler = null
+    activeSdkAuthorization = null
+
+    instance.initPaymentSession(PaymentSessionConfiguration(sdkAuthorizationNonNull)) { session ->
+      activePaymentSession = session
+      activePaymentSessionHandler = null
+      activeSdkAuthorization = sdkAuthorizationNonNull
+      promise?.resolve("active")
+    }
+  }
+
+  override fun presentPaymentSheet(
+    configuration: ReadableMap,
+    promise: Promise?
+  ) {
+    val session = activePaymentSession
+    if (session == null) {
+      promise?.reject(
+        "PRESENT_ERROR",
+        "Payment session not initialized. Call initPaymentSession first."
       )
       return
     }
 
-    HeadlessFlowController.getCustomerSavedPaymentMethods(auth, application, callback = { handler ->
-      paymentSessionHandler = handler
+    val configMap = readableMapToMap(configuration)
+    session.presentPaymentSheet(configMap, null) { result ->
+      promise?.resolve(paymentResultToString(result))
+    }
+  }
+
+  override fun getCustomerSavedPaymentMethods(
+    options: ReadableMap?,
+    promise: Promise?
+  ) {
+    val session = activePaymentSession
+    if (session == null) {
       promise?.resolve(
-        serializeResult("success", null, "Payment methods initialized")
+        serializeResult(
+          "error",
+          "NO_SESSION",
+          "Payment session not initialized. Call initPaymentSession first."
+        )
       )
-    })
+      return
+    }
+    val hiddenPaymentMethods = options?.getArray("hiddenPaymentMethods")?.toArrayList()
+      ?.filterIsInstance<String>()
+      ?: emptyList()
+
+    session.getCustomerSavedPaymentMethods(SavedPaymentMethodsConfiguration(hiddenPaymentMethods)) { handler ->
+      activePaymentSessionHandler = handler
+      Log.d(NAME, "getCustomerSavedPaymentMethods: handler received")
+      promise?.resolve(serializeResult("success", null, "Payment methods initialized"))
+    }
   }
 
   override fun getCustomerDefaultSavedPaymentMethodData(promise: Promise?) {
-    val handler = paymentSessionHandler
+    val handler = activePaymentSessionHandler
     if (handler == null) {
       promise?.resolve(
         serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
@@ -123,20 +176,29 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     result.fold(
       onSuccess = { pm ->
         promise?.resolve(
-          serializeResult("success", null, "Default payment method retrieved", paymentMethodToJson(pm))
+          serializeResult(
+            "success",
+            null,
+            "Default payment method retrieved",
+            paymentMethodToJson(pm)
+          )
         )
       },
       onFailure = { error ->
         val pmError = error as? PMError
         promise?.resolve(
-          serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+          serializeResult(
+            "failed",
+            pmError?.code ?: "UNKNOWN",
+            pmError?.message ?: error.message ?: "Unknown error"
+          )
         )
       }
     )
   }
 
   override fun getCustomerLastUsedPaymentMethodData(promise: Promise?) {
-    val handler = paymentSessionHandler
+    val handler = activePaymentSessionHandler
     if (handler == null) {
       promise?.resolve(
         serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
@@ -148,20 +210,32 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     result.fold(
       onSuccess = { pm ->
         promise?.resolve(
-          serializeResult("success", null, "Last used payment method retrieved", paymentMethodToJson(pm))
+          serializeResult(
+            "success",
+            null,
+            "Last used payment method retrieved",
+            paymentMethodToJson(pm)
+          )
         )
       },
       onFailure = { error ->
         val pmError = error as? PMError
         promise?.resolve(
-          serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+          serializeResult(
+            "failed",
+            pmError?.code ?: "UNKNOWN",
+            pmError?.message ?: error.message ?: "Unknown error"
+          )
         )
       }
     )
   }
 
-  override fun confirmWithCustomerDefaultPaymentMethod(reactTag: Int, promise: Promise?) {
-    val handler = paymentSessionHandler
+  override fun confirmWithCustomerDefaultPaymentMethod(
+    cvcWidgetReactTag: String?,
+    promise: Promise?
+  ) {
+    val handler = activePaymentSessionHandler
     if (handler == null) {
       promise?.resolve(
         serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
@@ -169,15 +243,15 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return
     }
 
+    val reactTag = cvcWidgetReactTag?.toIntOrNull() ?: 0
+
     if (reactTag > 0) {
-      // CvcWidget reactTag provided — route card confirm through CvcWidget's JS context
       val defaultData = handler.getCustomerDefaultSavedPaymentMethodData()
       defaultData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
             confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
-            // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
               promise?.resolve(paymentResultToString(result))
             }
@@ -186,37 +260,42 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
         onFailure = { error ->
           val pmError = error as? PMError
           promise?.resolve(
-            serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+            serializeResult(
+              "failed",
+              pmError?.code ?: "UNKNOWN",
+              pmError?.message ?: error.message ?: "Unknown error"
+            )
           )
         }
       )
     } else {
-      // No CvcWidget — confirm through HeadlessJsTask's callback (cvc will be null)
       handler.confirmWithCustomerDefaultPaymentMethod(null) { result ->
         promise?.resolve(paymentResultToString(result))
       }
     }
   }
 
-  override fun confirmWithCustomerLastUsedPaymentMethod(reactTag: Int, promise: Promise?) {
-    val handler = paymentSessionHandler
+  override fun confirmWithCustomerLastUsedPaymentMethod(
+    cvcWidgetReactTag: String?,
+    promise: Promise?
+  ) {
+    val handler = activePaymentSessionHandler
     if (handler == null) {
       promise?.resolve(
-        serializeResult("error", "NO_HANDLER", "Payment session handler not initialized.")
+        serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
       )
       return
     }
 
-    if (reactTag > 0) {
-      // CvcWidget reactTag provided — route card confirm through CvcWidget's JS context
-      val lastUsedData = handler.getCustomerLastUsedPaymentMethodData()
+    val reactTag = cvcWidgetReactTag?.toIntOrNull() ?: 0
 
+    if (reactTag > 0) {
+      val lastUsedData = handler.getCustomerLastUsedPaymentMethodData()
       lastUsedData.fold(
         onSuccess = { pm ->
           if (pm.requiresCvv && pm.paymentMethod == PaymentMethodType.CARD) {
             confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
-            // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = null
             handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
               promise?.resolve(paymentResultToString(result))
             }
@@ -225,20 +304,26 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
         onFailure = { error ->
           val pmError = error as? PMError
           promise?.resolve(
-            serializeResult("failed", pmError?.code ?: "UNKNOWN", pmError?.message ?: error.message ?: "Unknown error")
+            serializeResult(
+              "failed",
+              pmError?.code ?: "UNKNOWN",
+              pmError?.message ?: error.message ?: "Unknown error"
+            )
           )
         }
       )
     } else {
-      // No CvcWidget — confirm through HeadlessJsTask's callback (cvc will be null)
       handler.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
         promise?.resolve(paymentResultToString(result))
       }
     }
   }
 
-  override fun confirmWithCustomerPaymentToken(paymentToken: String, promise: Promise?) {
-    val handler = paymentSessionHandler
+  override fun confirmWithCustomerPaymentToken(
+    paymentToken: String,
+    promise: Promise?
+  ) {
+    val handler = activePaymentSessionHandler
     if (handler == null) {
       promise?.resolve(
         serializeResult("error", "UNKNOWN", "Payment session handler not initialized.")
@@ -251,74 +336,92 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  /**
-   * Routes a card confirm through CvcWidget's view/fragment by resolving the
-   * PaymentWidgetView from the reactTag via UIManagerModule and calling confirmCvcPayment.
-   * The fragment emits "triggerWidgetAction" with CONFIRM_CVC_PAYMENT, and the
-   * CvcWidget JS bundle handles CVC lookup + confirm API call.
-   * Result flows back through exitHeadless → ExitHeadlessCallBackManager → callback → promise.resolve.
-   */
+  override fun updateIntent(sdkAuthorization: String?, promise: Promise?) {
+    val sdkAuthorizationNonNull = sdkAuthorization ?: run {
+      promise?.reject("UPDATE_INTENT_ERROR", "sdkAuthorization is required")
+      return
+    }
+
+    val session = activePaymentSession
+    if (session == null) {
+      promise?.reject(
+        "UPDATE_INTENT_ERROR",
+        "Payment session not initialized. Call initPaymentSession first."
+      )
+      return
+    }
+
+    session.updateSdkAuthorization(sdkAuthorizationNonNull)
+    activeSdkAuthorization = sdkAuthorizationNonNull
+
+    promise?.resolve(serializeResult("success", null, "Payment intent updated"))
+  }
+
   private fun confirmViaWidgetView(
     reactTag: Int,
     paymentToken: String,
     paymentMethodId: String,
     promise: Promise?
   ) {
+    val sdkAuthorization = getActiveSdkAuthorization()
+    if (sdkAuthorization.isNullOrEmpty()) {
+      promise?.resolve(
+        serializeResult("failed", "NO_SESSION", "No active SDK authorization for CVC confirm")
+      )
+      return
+    }
+
     val uiManagerModule =
       reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
     uiManagerModule?.addUIBlock { nvhm ->
       try {
         val view = nvhm.resolveView(reactTag)
-        if (view is PaymentWidgetView) {
-          view.confirmCvcPayment(
-            Callback { args ->
-              if (args.isNotEmpty()) {
-                promise?.resolve(args[0] as? String ?: serializeResult("failed", "UNKNOWN", "Unexpected response"))
-              } else {
-                promise?.resolve(serializeResult("failed", "UNKNOWN", "Empty response from widget"))
-              }
-            },
-            paymentToken,
-            paymentMethodId
-          )
+        if (view is HyperswitchElement) {
+          view.confirmCVCWidget(sdkAuthorization, paymentToken, paymentMethodId) { result ->
+            promise?.resolve(paymentResultToString(result))
+          }
         } else {
           promise?.resolve(
-            serializeResult("failed", "INVALID_VIEW", "View at reactTag $reactTag is not a CvcWidget")
+            serializeResult(
+              "failed",
+              "INVALID_VIEW",
+              "View at reactTag $reactTag is not a CvcWidget"
+            )
           )
         }
       } catch (e: IllegalViewOperationException) {
         promise?.resolve(
-          serializeResult("failed", "NO_WIDGET", "CvcWidget not found at reactTag $reactTag: ${e.message}")
+          serializeResult(
+            "failed",
+            "NO_WIDGET",
+            "CvcWidget not found at reactTag $reactTag: ${e.message}"
+          )
         )
       }
     }
   }
 
   fun resetView() {
-    hyperProvider?.removeSheetView(true)
+    // PaymentSession manages its own sheet UI; no global provider reset is needed.
   }
 
   companion object {
     const val NAME = "HyperswitchSdkReactNative"
-    private var sheetPromise: Promise? = null
     private var currentInstance: HyperswitchRNWrapperNativeModule? = null
     private var hostReactContext: ReactApplicationContext? = null
-    private var sdkAuthorization: String? = null
-    @Volatile
-    private var paymentSessionHandler: PaymentSessionHandler? = null
-    @Volatile
-    var isCvcWidgetActive: Boolean = false
+    private var activeSdkAuthorization: String? = null
+    private var activePublishableKey: String? = null
+    private var activeProfileId: String? = null
 
-    fun resolvePromise(data: Any?) {
-      try {
-        sheetPromise?.resolve(data)
-      } catch (e: Exception) {
-      }
-    }
 
-    fun resetView() {
-      currentInstance?.resetView()
-    }
+    fun getActivePaymentSessionHandler(): PaymentSessionHandler? =
+      currentInstance?.activePaymentSessionHandler
+
+    fun getActiveSdkAuthorization(): String? = activeSdkAuthorization
+
+    fun getActivePublishableKey(): String? = activePublishableKey
+
+    fun getActiveProfileId(): String? = activeProfileId
 
     fun emitPaymentSheetEvent(eventType: String, payload: ReadableMap) {
       try {
@@ -332,24 +435,22 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       }
     }
 
-    /**
-     * Convert HeadlessPaymentResult (Throwable-based Failed) to JSON string.
-     * Old pattern: code in throwable.cause.message, message in throwable.message
-     */
-    private fun paymentResultToString(result: HeadlessPaymentResult): String {
+    private fun paymentResultToString(result: PaymentResult): String {
       val json = JSONObject()
       when (result) {
-        is HeadlessPaymentResult.Completed -> {
+        is PaymentResult.Completed -> {
           json.put("status", "success")
           json.put("message", "Payment confirmed successfully")
           json.put("data", result.data)
         }
-        is HeadlessPaymentResult.Failed -> {
+
+        is PaymentResult.Failed -> {
           json.put("status", "failed")
           json.put("code", result.throwable.cause?.message ?: "UNKNOWN_ERROR")
           json.put("message", result.throwable.message ?: "An error has occurred.")
         }
-        is HeadlessPaymentResult.Canceled -> {
+
+        is PaymentResult.Canceled -> {
           json.put("status", "cancelled")
           json.put("message", "Payment confirmation cancelled")
           json.put("data", result.data)
@@ -358,11 +459,7 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return json.toString()
     }
 
-    /**
-     * Convert PaymentMethod (common lib type with toMap()) to JSON string for the data field.
-     * Uses JSONObject recursively to handle nested maps (e.g., card).
-     */
-    private fun paymentMethodToJson(pm: com.hyperswitchsdkreactnative.headless.PaymentMethod): String {
+    private fun paymentMethodToJson(pm: PaymentMethod): String {
       return mapToJsonObject(pm.toMap()).toString()
     }
 
@@ -379,7 +476,12 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
       return json
     }
 
-    private fun serializeResult(status: String, code: String?, message: String, data: String? = null): String {
+    private fun serializeResult(
+      status: String,
+      code: String?,
+      message: String,
+      data: String? = null
+    ): String {
       val json = JSONObject().apply {
         put("status", status)
         if (code != null) put("code", code)
@@ -387,6 +489,72 @@ class HyperswitchRNWrapperNativeModule(reactContext: ReactApplicationContext) :
         if (data != null) put("data", JSONObject(data))
       }
       return json.toString()
+    }
+
+    private fun parseEnvironment(value: String?): HyperswitchEnvironment {
+      return when (value?.lowercase()) {
+        "production" -> HyperswitchEnvironment.PROD
+        "prod" -> HyperswitchEnvironment.PROD
+        else -> HyperswitchEnvironment.SANDBOX
+      }
+    }
+
+    private fun buildHyperswitchConfiguration(
+      publishableKey: String,
+      profileId: String?,
+      customEndpoints: ReadableMap?,
+      environment: HyperswitchEnvironment
+    ): HyperswitchConfiguration {
+      val overrideEndpointsMap = customEndpoints?.getMap("overrideEndpoints")
+      val overrideEndpoints = if (overrideEndpointsMap != null) {
+        OverrideEndpoints(
+          overrideEndpointsMap.getString("customBackendEndpoint"),
+          overrideEndpointsMap.getString("customLoggingEndpoint"),
+          overrideEndpointsMap.getString("customAssetEndpoint"),
+          overrideEndpointsMap.getString("customSDKConfigEndpoint"),
+          null,
+          overrideEndpointsMap.getString("customAirborneEndpoint")
+        )
+      } else {
+        OverrideEndpoints()
+      }
+
+      val customConfig = CustomEndpointConfiguration(
+        overrideEndpoints,
+        customEndpoints?.getString("commonEndpoint")
+      )
+
+      return HyperswitchConfiguration(
+        publishableKey,
+        profileId ?: "",
+        customConfig,
+        environment
+      )
+    }
+
+    private fun readableMapToMap(map: ReadableMap): Map<String, Any?> {
+      val iterator = map.entryIterator
+      val result = mutableMapOf<String, Any?>()
+      while (iterator.hasNext()) {
+        val entry = iterator.next()
+        result[entry.key] = when (entry.value) {
+          is ReadableMap -> readableMapToMap(entry.value as ReadableMap)
+          else -> entry.value
+        }
+      }
+      return result
+    }
+
+    private fun bundleToMap(bundle: android.os.Bundle): Map<String, Any?> {
+      val result = mutableMapOf<String, Any?>()
+      for (key in bundle.keySet()) {
+        result[key] = when (val value = bundle.get(key)) {
+          is android.os.Bundle -> bundleToMap(value)
+          is ArrayList<*> -> value
+          else -> value
+        }
+      }
+      return result
     }
   }
 }

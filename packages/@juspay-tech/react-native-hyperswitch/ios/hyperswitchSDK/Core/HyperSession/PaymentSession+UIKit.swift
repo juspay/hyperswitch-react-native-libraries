@@ -13,6 +13,7 @@ extension PaymentSession {
     private static var hasResponded: Bool = false
     internal static var headlessCompletion: ((PaymentSessionHandler) -> Void)?
     private static var completion: ((PaymentResult) -> Void)?
+    internal static weak var activeSession: PaymentSession?  // NEW
 
     private static func safeResolve(
         _ callback: @escaping RCTResponseSenderBlock,
@@ -28,48 +29,75 @@ extension PaymentSession {
         callback(result)
     }
 
-    public func presentPaymentSheet(viewController: UIViewController, completion: @escaping (PaymentSheetResult) -> Void) {
-        presentPaymentSheet(viewController: viewController, configuration: PaymentSheet.Configuration(), completion: completion)
-    }
-
     public func presentPaymentSheet(
         viewController: UIViewController,
-        configuration: PaymentSheet.Configuration,
-        completion: @escaping (PaymentSheetResult) -> Void
+        configuration: PaymentSheet.Configuration? = nil,
+        subscribe: ((PaymentEventSubscriptionBuilder) -> Void)? = nil,
+        completion: @escaping (PaymentResult) -> Void
     ) {
-        PaymentSession.isPresented = true
-        let paymentSheet = PaymentSheet(sdkAuthorization: PaymentSession.sdkAuthorization ?? "", configuration: configuration)
+        let paymentSheet = PaymentSheet(
+            paymentSessionConfiguration: paymentSessionConfiguration,
+            hyperswitchConfiguration: hyperswitchConfiguration ?? nil,
+            configuration: configuration
+        )
+
+        if let subscribe {
+            let builder = PaymentEventSubscriptionBuilder()
+            subscribe(builder)
+            let (subscription, builtListener) = builder.build()
+            paymentSheet.subscribedEvents = subscription.subscribedEventStrings()
+            paymentSheet.paymentEventListener = builtListener
+        }
         paymentSheet.present(from: viewController, completion: completion)
     }
 
-    // for external frameworks
+    // MARK: for external frameworks
     public func presentPaymentSheetWithParams(
         viewController: UIViewController,
         params: [String: Any],
-        completion: @escaping (PaymentSheetResult) -> Void
+        subscribe: ((PaymentEventSubscriptionBuilder) -> Void)? = nil,
+        completion: @escaping (PaymentResult) -> Void
     ) {
-        PaymentSession.isPresented = true
         let paymentSheet = PaymentSheet(
-            sdkAuthorization: PaymentSession.sdkAuthorization ?? "",
-            configuration: PaymentSheet.Configuration()
+            paymentSessionConfiguration: paymentSessionConfiguration,
+            hyperswitchConfiguration: hyperswitchConfiguration ?? nil
         )
+
+        if let subscribe {
+            let builder = PaymentEventSubscriptionBuilder()
+            subscribe(builder)
+            let (subscription, builtListener) = builder.build()
+            paymentSheet.subscribedEvents = subscription.subscribedEventStrings()
+            paymentSheet.paymentEventListener = builtListener
+        }
         paymentSheet.presentWithParams(from: viewController, props: params, completion: completion)
     }
 
-    public func getCustomerSavedPaymentMethods(_ func_: @escaping (PaymentSessionHandler) -> Void) {
+    public func getCustomerSavedPaymentMethods(
+        _ func_: @escaping (PaymentSessionHandler) -> Void,
+        configuration: SavedPaymentMethodsConfiguration? = nil
+    ) {
         PaymentSession.hasResponded = false
-        PaymentSession.isPresented = false
         PaymentSession.headlessCompletion = func_
+        PaymentSession.activeSession = self
         RNHeadlessManager.sharedInstance.reinvalidateBridge()
-        let hyperParams = HyperParams.getHyperParams()
-        let props: [String: Any] = [
-            "sdkAuthorization": PaymentSession.sdkAuthorization as Any,
-            "publishableKey": APIClient.shared.publishableKey as Any,
-            "hyperParams": hyperParams,
-            "customBackendUrl": APIClient.shared.customBackendUrl as Any,
-            "customLogUrl": APIClient.shared.customLogUrl as Any,
-            "customParams": APIClient.shared.customParams as Any,
+        let hyperswitchConfiguration = try? hyperswitchConfiguration?.toDictionary()
+        let paymentSessionConfiguration = try? paymentSessionConfiguration.toDictionary()
+        let sdkParams = SDKParams.getSDKParams()
+        let configurationDict = try? configuration.toDictionary()
+
+        var props: [String: Any] = [
+            "hyperswitchConfig": hyperswitchConfiguration as Any,
+            "paymentSessionConfig": paymentSessionConfiguration as Any,
+            "sdkParams": sdkParams,
         ]
+
+        props["configuration"] = [
+            "paymentMethodLayout": [
+                "savedMethodCustomization": configurationDict
+            ]
+        ]
+
         let _ = RNHeadlessManager.sharedInstance.viewForModule("HyperHeadless", initialProperties: ["props": props])
     }
 
@@ -122,11 +150,15 @@ extension PaymentSession {
                 },
                 confirmWithCustomerLastUsedPaymentMethod: { cvc, resultHandler in
                     if let paymentToken = getPaymentMethodData2["payment_token"] as? String {
+                        cvc.confirm(
+                            sdkAuthorization: PaymentSession.activeSession?.paymentSessionConfiguration.sdkAuthorization ?? "",
+                            paymentToken: paymentToken
+                        )
                         self.completion = resultHandler
-                        var map = [String: Any]()
-                        map["paymentToken"] = paymentToken
-                        map["cvc"] = cvc
-                        self.safeResolve(callback, [map], resultHandler)
+                        //                        var map = [String: Any]()
+                        //                        map["paymentToken"] = paymentToken
+                        //                        map["cvc"] = cvc
+                        //                        self.safeResolve(callback, [map], resultHandler)
                     }
                 },
                 confirmWithCustomerPaymentToken: { paymentToken, cvc, resultHandler in
@@ -150,7 +182,6 @@ extension PaymentSession {
                             completion?(
                                 .failed(error: NSError(domain: "UNKNOWN_ERROR", code: 0, userInfo: ["message": "An error has occurred."]))
                             )
-                            completion = nil
                             return
                         }
                         switch status {
@@ -177,17 +208,7 @@ extension PaymentSession {
                     self.completion?(.failed(error: NSError(domain: domain, code: 0, userInfo: userInfo)))
                 }
             }
-            // Reset after delivering the result so the next confirm cycle starts fresh
-            completion = nil
-            hasResponded = false
         }
-    }
-
-    /// Set the completion handler for CvcWidget confirm flow.
-    /// Called by HyperswitchModule.confirmViaWidget before emitting "confirmPayment" on the widget bridge.
-    internal static func setConfirmCompletion(_ handler: @escaping (PaymentResult) -> Void) {
-        hasResponded = false
-        completion = handler
     }
 
     private static func decodePaymentMethodData(_ readableMap: NSDictionary) -> Result<PaymentMethod, PMError> {

@@ -13,9 +13,22 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/juspay/@juspay-tech/react-native-hyperswitch.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-  s.private_header_files = "ios/**/*.h"
-  s.resources = ["ios/hyperswitchSDK/Core/Resources/*"]
+  s.source_files = [
+    "ios/Modules/**/*.{h,m,mm,cpp,swift}",
+    "ios/Views/**/*.{h,m,mm,cpp,swift}",
+    "ios/hyperswitchSDK/Core/**/*.{h,m,mm,cpp,swift}",
+    "ios/hyperswitchSDK/Shared/**/*.{h,m,mm,cpp,swift}",
+  ]
+  s.private_header_files = [
+    "ios/Modules/**/*.h",
+    "ios/Views/**/*.h",
+    "ios/hyperswitchSDK/Core/**/*.h",
+    "ios/hyperswitchSDK/Shared/**/*.h",
+  ]
+  s.resources = [
+    "ios/hyperswitchSDK/Core/Resources/HyperOTA.plist",
+    "ios/hyperswitchSDK/Core/Resources/hyperswitch.bundle",
+  ]
   
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
