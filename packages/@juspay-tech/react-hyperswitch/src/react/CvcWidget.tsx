@@ -43,7 +43,7 @@ const CvcWidget = forwardRef<CvcWidgetHandle, CvcWidgetProps>(function CvcWidget
   { id, options, onChange, onFocus, onBlur, onReady, style, className },
   ref,
 ) {
-  const { elements, sessionHandle, publishableKey, sdkAuthorization } = useHyperElementsContext();
+  const { elements, publishableKey, sdkAuthorization } = useHyperElementsContext();
 
   const nativeOptions = useMemo(
     () => ({
@@ -174,7 +174,6 @@ const CvcWidget = forwardRef<CvcWidgetHandle, CvcWidgetProps>(function CvcWidget
     <PlatformCVCElementView
       id={domId}
       Component={cvcWidget?.Component}
-      sessionHandle={sessionHandle ?? undefined}
       className={className}
       style={{ minHeight: 'inherit', width: '100%', ...style }}
       options={nativeOptions}

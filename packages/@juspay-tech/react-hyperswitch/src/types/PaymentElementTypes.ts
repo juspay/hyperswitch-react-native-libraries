@@ -34,7 +34,6 @@ export interface PaymentElementHandle {
 
 export interface PaymentElementProps {
   id?: string;
-  sessionHandle?: string;
   options?: PaymentElementOptions;
   onReady?: () => void;
   onChange?: (data?: PaymentEventData) => void;

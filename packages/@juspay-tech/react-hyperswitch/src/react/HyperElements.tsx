@@ -4,7 +4,6 @@ import type { PaymentSession, Elements, HyperswitchSession } from '../definition
 interface HyperElementsContext {
   paymentSession: PaymentSession | null;
   elements: Elements | null;
-  sessionHandle: string | null;
   publishableKey: string | null;
   sdkAuthorization: string | null;
   loading: boolean;
@@ -24,7 +23,6 @@ export interface HyperElementsProps {
 export function HyperElements({ hyper, options, children }: HyperElementsProps) {
   const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
   const [elements, setElements] = useState<Elements | null>(null);
-  const [sessionHandle, setSessionHandle] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
   const [sdkAuthorization, setSdkAuthorization] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +45,6 @@ export function HyperElements({ hyper, options, children }: HyperElementsProps) 
             ...els,
           } as PaymentSession);
           setElements(els);
-          setSessionHandle(els.sessionHandle ?? null);
           setPublishableKey(session.publishableKey ?? null);
           setSdkAuthorization(options.sdkAuthorization ?? null);
           setLoading(false);
@@ -67,7 +64,7 @@ export function HyperElements({ hyper, options, children }: HyperElementsProps) 
 
   return (
     <HyperElementsContext.Provider
-      value={{ paymentSession, elements, sessionHandle, publishableKey, sdkAuthorization, loading, error }}
+      value={{ paymentSession, elements, publishableKey, sdkAuthorization, loading, error }}
     >
       {children}
     </HyperElementsContext.Provider>

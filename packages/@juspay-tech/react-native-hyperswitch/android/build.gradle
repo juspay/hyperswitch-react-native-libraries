@@ -77,6 +77,7 @@ android {
     buildConfigField "String", "VERSION_NAME", "\"${version}\""
     buildConfigField "boolean", "IS_HERMES_ENABLED", hermesEnabled
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled
+    resValue "string", "hs_new_architecture_enabled", newArchEnabled.toString()
     manifestPlaceholders = [
       hermesEnabled: hermesEnabled,
       newArchEnabled: newArchEnabled

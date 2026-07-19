@@ -4,7 +4,6 @@ import { PaymentSheetOptions, SavedPaymentMethodsConfiguration } from './Payment
 import { PaymentResult } from './PaymentTypes';
 
 export interface PaymentSession {
-  sessionHandle?: string;
   presentPaymentSheet(options?: PaymentSheetOptions): Promise<PaymentResult>;
   getCustomerSavedPaymentMethods(
     options?: SavedPaymentMethodsConfiguration,

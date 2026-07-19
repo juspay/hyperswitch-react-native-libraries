@@ -9,16 +9,14 @@ import type {
 } from '../definitions';
 
 const PaymentElement = forwardRef<PaymentElementHandle, PaymentElementProps>(function PaymentElement(
-  { id, sessionHandle, options, onReady, onChange, onPaymentResult, onPaymentConfirmButtonClick, className, style },
+  { id, options, onReady, onChange, onPaymentResult, onPaymentConfirmButtonClick, className, style },
   ref,
 ) {
   const {
     elements,
-    sessionHandle: contextSessionHandle,
     publishableKey: contextPublishableKey,
     sdkAuthorization: contextSdkAuthorization,
   } = useHyperElementsContext();
-  const resolvedSessionHandle = sessionHandle ?? contextSessionHandle;
 
   const nativeOptions = useMemo(
     () => ({
@@ -152,7 +150,6 @@ const PaymentElement = forwardRef<PaymentElementHandle, PaymentElementProps>(fun
     <PlatformPaymentElementView
       id={domId}
       Component={paymentElement?.Component}
-      sessionHandle={resolvedSessionHandle ?? undefined}
       className={className}
       style={{ minHeight: 'inherit', width: '100%', flex: 1, ...style }}
       onPaymentResult={onPaymentResult}

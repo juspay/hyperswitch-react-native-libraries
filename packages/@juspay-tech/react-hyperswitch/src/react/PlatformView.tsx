@@ -6,7 +6,6 @@ import { useHyperElementsContext } from './HyperElements';
 
 export interface PlatformViewProps {
   id?: string;
-  sessionHandle?: string;
   className?: string;
   style?: CSSProperties | Record<string, unknown>;
   children?: ReactNode;
@@ -55,7 +54,6 @@ function normalizeNativeStyle(
  */
 export function PlatformPaymentElementView({
   id,
-  sessionHandle,
   className,
   style,
   onPaymentResult,
@@ -71,7 +69,6 @@ export function PlatformPaymentElementView({
       return (
         <Component
           widgetId={id ?? ''}
-          sessionHandle={sessionHandle}
           sdkAuthorization={sdkAuthorization ? sdkAuthorization : undefined}
           onPaymentResult={onPaymentResult ?? (() => {})}
           onPaymentEvent={onPaymentEvent}
@@ -96,7 +93,6 @@ export function PlatformPaymentElementView({
 
 export function PlatformCVCElementView({
   id,
-  sessionHandle,
   className,
   style,
   options,
@@ -113,7 +109,6 @@ export function PlatformCVCElementView({
       return (
         <Component
           id={id}
-          sessionHandle={sessionHandle}
           options={(options ?? {}) as any}
           onChange={onChange}
           sdkAuthorization={sdkAuthorization ? sdkAuthorization : undefined}
