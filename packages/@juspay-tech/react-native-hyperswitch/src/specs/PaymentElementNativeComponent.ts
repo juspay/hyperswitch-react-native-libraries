@@ -1,8 +1,9 @@
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 import type { ViewProps } from 'react-native';
 import { DirectEventHandler } from 'react-native/Libraries/Types/CodegenTypes';
+import { UnsafeMixed, UnsafeObject } from './utils';
 import type { options } from '../types/PaymentSheetConfiguration';
-import { UnsafeMixed } from './utils';
+
 
 export interface NativeProps extends ViewProps {
   widgetType?: string;
@@ -17,4 +18,4 @@ export interface NativeProps extends ViewProps {
   }>;
 }
 
-export default codegenNativeComponent<NativeProps>('NativePaymentWidget');
+export default codegenNativeComponent<NativeProps>('RCTNativePaymentElement');

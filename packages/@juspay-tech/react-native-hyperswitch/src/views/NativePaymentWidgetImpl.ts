@@ -5,16 +5,12 @@ import type { nativePaymentWidgetType } from '../types/NativeModuleTypes';
 type NativePaymentWidgetComponent =
   React.ComponentType<nativePaymentWidgetType>;
 
-let NativePaymentWidgetImpl: NativePaymentWidgetComponent;
-
-if (isFabricEnabled()) {
-  const turboPaymentWidget = require('../specs/PaymentWidgetNativeComponent')
-    .default as NativePaymentWidgetComponent;
-  NativePaymentWidgetImpl = turboPaymentWidget;
-} else {
-  NativePaymentWidgetImpl = requireNativeComponent(
-    'NativePaymentWidget'
-  ) as NativePaymentWidgetComponent;
-}
+const NativePaymentWidgetImpl: NativePaymentWidgetComponent =
+  isFabricEnabled()
+    ? (require('../specs/PaymentElementNativeComponent')
+        .default as NativePaymentWidgetComponent)
+    : (requireNativeComponent(
+        'NativePaymentWidget'
+      ) as NativePaymentWidgetComponent);
 
 export default NativePaymentWidgetImpl;

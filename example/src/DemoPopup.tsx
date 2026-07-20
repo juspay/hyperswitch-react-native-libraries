@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { HyperContent, type SharedProps } from './HyperContent';
 import {
   View,
   Text,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import {
-  HyperElements,
-  type HyperswitchSession,
-} from '@juspay-tech/react-hyperswitch';
 import { initialBaseUrl } from './utils';
 import { FormLayout } from './FormLayout';
-import { HyperContent, type SharedProps } from './HyperContent';
+import { HyperElements, type HyperswitchSession } from '@juspay-tech/react-hyperswitch';
 
 type DemoPopupProps = {
   hyperPromise: Promise<HyperswitchSession>;
@@ -70,6 +67,7 @@ export default function DemoPopup({ hyperPromise, onClose }: DemoPopupProps) {
 
   return (
     <View style={styles.overlay}>
+
       <View style={styles.sheet}>
         {isTransitioning && (
           <View style={styles.spinnerOverlay}>

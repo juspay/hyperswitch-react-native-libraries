@@ -52,7 +52,7 @@ export function HyperContent(props: SharedProps) {
         if (cancelled) return;
         setMethodsSession(session);
         const data = await session.getCustomerLastUsedPaymentMethodData();
-        console.log(data);
+        console.log("manideep", data);
         setLastUsed(data);
         setLoadingSaved(false);
       } catch (ex) {
@@ -94,7 +94,7 @@ export function HyperContent(props: SharedProps) {
             id="card-cvc-element"
             options={getCvcInputOptions()}
             onReady={() => console.log('[Example] CvcWidget ready')}
-            style={{ minHeight: 50 }}
+            style={{ minHeight: 50, }}
             onFocus={() => console.log('[Example] CvcWidget focused')}
             onBlur={() => console.log('[Example] CvcWidget blurred')}
           />

@@ -1,8 +1,5 @@
 import { NativeModules } from 'react-native';
-import nativeHyperswitchSdk from '../specs/NativeHyperswitchSdkReactNative';
 import type { options as PaymentSheetConfigurationOptions } from '../types/PaymentSheetConfiguration';
-
-export { nativeHyperswitchSdk };
 
 export type initPaymentSessionParams = { sdkAuthorization?: string };
 

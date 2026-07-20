@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { PaymentElementView } from './PaymentElementView';
-import type { PaymentElement, PaymentResult } from '../types/definitions';
+import type { HyperswitchConfiguration, PaymentElement, PaymentSessionConfiguration } from '../types/definitions';
 import { confirmPayment } from '../context/WidgetRegistry';
-
+import type { PaymentResult } from '../types/paymentresult';
 let paymentElementId = 0;
 
 function mapStatus(status: string): PaymentResult['type'] {
@@ -26,6 +26,8 @@ function mapStatus(status: string): PaymentResult['type'] {
 export function createPaymentElement(opts?: {
   id?: string;
   options?: any;
+  hyperswitchConfig: HyperswitchConfiguration;
+  paymentSessionConfig: PaymentSessionConfiguration;
 }): PaymentElement {
   const widgetId = opts?.id ?? `rn-payment-element-${++paymentElementId}`;
 
@@ -46,6 +48,8 @@ export function createPaymentElement(opts?: {
         ...(opts?.options ?? {}),
         ...(props.options ?? {}),
       },
+      hyperswitchConfig: opts?.hyperswitchConfig,
+      paymentSessionConfig: opts?.paymentSessionConfig,
       onPaymentResult: props.onPaymentResult ?? noop,
     });
 

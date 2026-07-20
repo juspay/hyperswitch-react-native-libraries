@@ -6,8 +6,8 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.model.ReactModuleInfo
 import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
-import com.hyperswitchsdkreactnative.modules.HyperswitchRNWrapperNativeModule
-import com.hyperswitchsdkreactnative.modules.NativePaymentWidgetNativeModule
+import com.hyperswitchsdkreactnative.modules.NativePaymentWidgetModule
+import com.hyperswitchsdkreactnative.modules.ReactNativeHyperswitchModule
 import com.hyperswitchsdkreactnative.views.PaymentElementViewManager
 import io.hyperswitch.react.GooglePayButtonManager
 import io.hyperswitch.react.HyperHeadlessModule
@@ -17,10 +17,10 @@ import java.util.ArrayList
 class HyperswitchSdkReactNativePackage : BaseReactPackage() {
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return when (name) {
-      HyperswitchRNWrapperNativeModule.NAME -> HyperswitchRNWrapperNativeModule(reactContext)
       HyperModule.NAME -> HyperModule(reactContext)
       HyperHeadlessModule.NAME -> HyperHeadlessModule(reactContext)
-      NativePaymentWidgetNativeModule.NAME -> NativePaymentWidgetNativeModule(reactContext)
+      ReactNativeHyperswitchModule.NAME -> ReactNativeHyperswitchModule(reactContext)
+//      NativePaymentWidgetNativeModule.NAME -> NativePaymentWidgetNativeModule(reactContext)
       else -> null
     }
   }
@@ -35,12 +35,12 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       arrayOf(
-        HyperswitchRNWrapperNativeModule.NAME,
         HyperModule.NAME,
         HyperHeadlessModule.NAME,
-        NativePaymentWidgetNativeModule.NAME,
+        ReactNativeHyperswitchModule.NAME,
+        NativePaymentWidgetModule.NAME,
       ).associateWith {
-        ReactModuleInfo(it, it, false, false, false, true)
+        ReactModuleInfo(it, it, false, false, false, BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
       }.toMutableMap()
     }
   }

@@ -1,5 +1,9 @@
 import type { ViewStyle } from 'react-native';
-import type { options as PaymentSheetConfigurationOptions } from './PaymentSheetConfiguration';
+import type { PaymentSheetConfiguration } from './PaymentSheetConfiguration';
+import {
+  HyperswitchConfiguration,
+  PaymentSessionConfiguration,
+} from './definitions';
 
 export type paymentResult = {
   status?: string;
@@ -58,7 +62,11 @@ export type nativePaymentWidgetType = {
   ref?: React.Ref<unknown>;
   widgetType?: string;
   sdkAuthorization?: string;
-  options?: PaymentSheetConfigurationOptions;
+  options?: {
+    hyperswitchConfig?: HyperswitchConfiguration;
+    paymentSessionConfig?: PaymentSessionConfiguration;
+    configuration?: PaymentSheetConfiguration;
+  };
   onPaymentResult?: (event: nativeEvent) => void;
   style?: ViewStyle;
   onPaymentEvent?: (event: paymentEventNative) => void;

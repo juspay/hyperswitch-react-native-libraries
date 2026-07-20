@@ -1,4 +1,6 @@
-export interface OverrideEndpontConfiguration {
+import type { PaymentResult } from './paymentresult';
+
+export interface OverrideEndpointConfiguration {
   customBackendEndpoint?: string;
   customLoggingEndpoint?: string;
   customAssetEndpoint?: string;
@@ -11,13 +13,17 @@ export interface CommonEndpoint {
 }
 
 export interface OverrideEndpoints {
-  overrideEndpoints: OverrideEndpontConfiguration;
+  overrideEndpoints: OverrideEndpointConfiguration;
 }
 
-export type HyperswitchEnvironment = 'sandbox' | 'production';
+export type HyperswitchEnvironment = 'PROD' | 'SANDBOX' | 'INTEG';
+
+export type ElementType = 'paymentElement' | 'cvcWidget';
+
 
 export interface HyperswitchConfiguration {
   publishableKey: string;
+  platformPublishableKey?: string;
   profileId?: string;
   environment?: HyperswitchEnvironment;
   customEndpoints?: CommonEndpoint | OverrideEndpoints;
@@ -27,51 +33,27 @@ export interface PaymentSessionConfiguration {
   sdkAuthorization: string;
 }
 
+/**
+ * Full payload sent to the native SDK. It is assembled internally from the
+ * merchant-supplied configuration plus the SDK/payment-session metadata.
+ */
+export interface NativePaymentSheetPayload {
+  hyperswitchConfig: Record<string, unknown>;
+  paymentSessionConfig: { sdkAuthorization: string };
+  configuration: Record<string, unknown>;
+}
+
 import type { ComponentType } from 'react';
+import { CustomerSavedPaymentMethodsSession } from './savedPaymentMethods';
 
 
-export interface PaymentResult {
-  type: 'completed' | 'canceled' | 'failed';
-  message?: string;
-}
 
-export interface PaymentSheetOptions {
-  [key: string]: any;
-}
 
-export interface CustomerLastUsedPaymentMethodCard {
-  card_network?: string;
-  card_brand?: string;
-  scheme?: string;
-  last4_digits?: string;
-  last4?: string;
-  last4Digits?: string;
-  card_exp_month?: string;
-  card_exp_year?: string;
-  [key: string]: any;
-}
-
-export interface CustomerLastUsedPaymentMethod {
-  payment_method?: string;
-  payment_method_type?: string;
-  card?: CustomerLastUsedPaymentMethodCard;
-  error?: any;
-  [key: string]: any;
-}
-
-export interface CustomerSavedPaymentMethodsSession {
-  getCustomerLastUsedPaymentMethodData(): Promise<CustomerLastUsedPaymentMethod | null>;
-  getCustomerDefaultSavedPaymentMethodData(): Promise<CustomerLastUsedPaymentMethod | null>;
-  confirmWithCustomerLastUsedPaymentMethod(args?: {
-    id?: string;
-  }): Promise<PaymentResult>;
-  confirmWithCustomerDefaultPaymentMethod?(args?: {
-    id?: string;
-  }): Promise<PaymentResult>;
-}
 
 export interface PaymentSession {
-  presentPaymentSheet(options?: PaymentSheetOptions): Promise<PaymentResult>;
+  presentPaymentSheet(
+    configuration?: Record<string, unknown>
+  ): Promise<PaymentResult>;
   getCustomerSavedPaymentMethods(
     options?: any
   ): Promise<CustomerSavedPaymentMethodsSession>;
@@ -116,41 +98,3 @@ export interface CvcWidget {
   ): { remove: () => void } | null;
 }
 
-export interface Elements {
-  confirmPayment(
-    paymentElementRef: { current: PaymentElementHandle | null } | string,
-    options?: { confirmParams?: Record<string, any> }
-  ): Promise<PaymentResult>;
-  presentPaymentSheet(options?: PaymentSheetOptions): Promise<PaymentResult>;
-  create(options: {
-    type: 'paymentElement';
-    id?: string;
-    options?: any;
-  }): PaymentElement;
-  create(options: { type: 'cvcWidget'; id?: string; options?: any }): CvcWidget;
-  updateIntent(
-    intentResolver: () => Promise<PaymentSessionConfiguration>
-  ): Promise<void>;
-  getCustomerSavedPaymentMethods(
-    options?: any
-  ): Promise<CustomerSavedPaymentMethodsSession>;
-}
-
-export interface ElementsActions {
-  confirmPayment: (
-    paymentElementRef: { current: PaymentElementHandle | null } | string,
-    options?: { confirmParams?: Record<string, any> }
-  ) => Promise<PaymentResult>;
-  updateIntent: (
-    intentResolver: () => Promise<PaymentSessionConfiguration>
-  ) => Promise<void>;
-  getCustomerSavedPaymentMethods(): Promise<CustomerSavedPaymentMethodsSession>;
-}
-
-export interface HyperswitchSession {
-  publishableKey: string;
-  elements(options: PaymentSessionConfiguration): Promise<Elements>;
-  initPaymentSession(
-    options: PaymentSessionConfiguration
-  ): Promise<PaymentSession>;
-}

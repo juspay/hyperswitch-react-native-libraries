@@ -19,5 +19,20 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
+allprojects {
+    buildscript {
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            google()
+        }
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+}
 
 apply plugin: "com.facebook.react.rootproject"

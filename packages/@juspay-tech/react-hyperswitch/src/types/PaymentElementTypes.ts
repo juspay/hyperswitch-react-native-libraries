@@ -18,9 +18,9 @@ export interface PaymentElement {
   confirmPayment(options?: { confirmParams?: Record<string, Object> }): Promise<PaymentResult>;
 }
 
-import { PaymentSheetOptions as PaymentElementOptions } from './PaymentSheetTypes';
+import { PaymentSheetConfiguration } from './PaymentSheetTypes';
 
-export type { PaymentElementOptions };
+export type PaymentElementOptions = Partial<PaymentSheetConfiguration>;
 
 export interface PaymentElementHandle {
   confirmPayment(options?: { confirmParams?: Record<string, Object> }): Promise<PaymentResult>;

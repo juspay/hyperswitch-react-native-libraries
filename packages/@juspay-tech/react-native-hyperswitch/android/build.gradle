@@ -63,7 +63,9 @@ file("$reactNativeRootDir/ReactAndroid/gradle.properties").withInputStream { rea
 
 def REACT_NATIVE_VERSION = reactNativeProperties.getProperty("VERSION_NAME")
 def REACT_NATIVE_MINOR_VERSION = REACT_NATIVE_VERSION.startsWith("0.0.0-") ? 1000 : REACT_NATIVE_VERSION.split("\\.")[1].toInteger()
+def REACT_NATIVE_VERSION_NAME = "rn${REACT_NATIVE_MINOR_VERSION}"
 
+print("${REACT_NATIVE_VERSION_NAME}")
 android {
   namespace "com.hyperswitchsdkreactnative"
 
@@ -77,10 +79,9 @@ android {
     buildConfigField "String", "VERSION_NAME", "\"${version}\""
     buildConfigField "boolean", "IS_HERMES_ENABLED", hermesEnabled
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled
-    resValue "string", "hs_new_architecture_enabled", newArchEnabled.toString()
     manifestPlaceholders = [
       hermesEnabled: hermesEnabled,
-      newArchEnabled: newArchEnabled
+      newArchEnabled : newArchEnabled
     ]
   }
   buildFeatures {
@@ -125,7 +126,11 @@ android {
         ]
       }
 
-      if (REACT_NATIVE_MINOR_VERSION >= 75) {} else {}
+      if (REACT_NATIVE_MINOR_VERSION >= 75) {
+
+      } else {
+
+      }
     }
   }
 
@@ -150,6 +155,6 @@ dependencies {
   implementation 'androidx.activity:activity-ktx:1.10.1'
   implementation 'org.greenrobot:eventbus:3.1.0'
   implementation "io.hyperswitch:hyperswitch-sdk-android-airborne:1.0.0"
-  implementation "io.hyperswitch:hyperswitch-sdk-android-react-native:${safeExtGet("hyperswitchSdkVersion", "1.0.0")}"
+  implementation "io.hyperswitch:hyperswitch-sdk-android-common:1.0.3"
   implementation "io.hyperswitch:hyperswitch-sdk-android-logger:1.0.0"
 }

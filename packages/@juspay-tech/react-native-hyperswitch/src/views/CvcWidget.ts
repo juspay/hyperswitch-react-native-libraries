@@ -2,13 +2,19 @@
 
 import * as React from 'react';
 import { CVCElementView } from './CVCElementView';
-import type { CvcWidget } from '../types/definitions';
+import type {
+  CvcWidget,
+  HyperswitchConfiguration,
+  PaymentSessionConfiguration,
+} from '../types/definitions';
 
 let cvcWidgetId = 0;
 
 export function createCvcWidget(opts?: {
   id?: string;
   options?: any;
+  hyperswitchConfig: HyperswitchConfiguration;
+  paymentSessionConfig: PaymentSessionConfiguration;
 }): CvcWidget {
   const widgetId = opts?.id ?? `rn-cvc-widget-${++cvcWidgetId}`;
   const noop = () => {};
@@ -18,6 +24,8 @@ export function createCvcWidget(opts?: {
     React.createElement(CVCElementView as React.ComponentType<any>, {
       ...props,
       id: widgetId,
+      hyperswitchConfig: opts?.hyperswitchConfig,
+      paymentSessionConfig: opts?.paymentSessionConfig,
       options: {
         ...(opts?.options ?? {}),
         ...(props.options ?? {}),

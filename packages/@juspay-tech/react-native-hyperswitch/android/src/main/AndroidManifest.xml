@@ -7,7 +7,7 @@
       android:value="${hermesEnabled}" />
     <meta-data
       android:name="io.hyperswitch.new_architecture_enabled"
-      android:value="@string/hs_new_architecture_enabled" />
+      android:value="${newArchEnabled}" />
     <meta-data
       android:name="io.hyperswitch.load_so_files"
       android:value="true" />

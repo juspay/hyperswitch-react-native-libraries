@@ -1,69 +1,6 @@
-export type localeTypes =
-  | 'En'
-  | 'He'
-  | 'Fr'
-  | 'En_GB'
-  | 'Ar'
-  | 'Ja'
-  | 'De'
-  | 'Fr_BE'
-  | 'Es'
-  | 'Ca'
-  | 'Pt'
-  | 'It'
-  | 'Pl'
-  | 'Nl'
-  | 'NI_BE'
-  | 'Sv'
-  | 'Ru'
-  | 'Lt'
-  | 'Cs'
-  | 'Sk'
-  | 'Ls'
-  | 'Cy'
-  | 'El'
-  | 'Et'
-  | 'Fi'
-  | 'Nb'
-  | 'Bs'
-  | 'Da'
-  | 'Ms'
-  | 'Tr_CY';
+import { HyperswitchConfiguration } from "./definitions";
 
-export type placeholder = {
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-};
-
-export type address = {
-  first_name?: string;
-  last_name?: string;
-  city?: string;
-  country?: string;
-  line1?: string;
-  line2?: string;
-  zip?: string;
-  state?: string;
-};
-
-export type phone = {
-  number?: string;
-  country_code?: string;
-};
-
-export type addressDetails = {
-  address?: address;
-  email?: string;
-  phone?: phone;
-};
-
-export type customerConfiguration = {
-  id?: string;
-  ephemeralKeySecret?: string;
-};
-
-export type colors = {
+export interface Colors {
   primary?: string;
   background?: string;
   componentBackground?: string;
@@ -77,54 +14,132 @@ export type colors = {
   error?: string;
   loaderBackground?: string;
   loaderForeground?: string;
-};
+  overlay?: string;
+  selectedComponentBackground?: string;
+  selectedComponentBorder?: string;
+  selectedComponentBorderWidth?: number;
+  selectedComponentDivider?: string;
+  selectedComponentText?: string;
+}
 
-export type colorType = {
-  light?: colors;
-  dark?: colors;
-};
+export interface ColorType {
+  light?: Colors;
+  dark?: Colors;
+}
 
-export type offsetType = {
+export interface OffsetType {
   x?: number;
   y?: number;
-};
+}
 
-export type shadowConfig = {
+export interface ShadowConfig {
   color?: string;
   opacity?: number;
   blurRadius?: number;
-  offset?: offsetType;
+  offset?: OffsetType;
   intensity?: number;
-};
+}
 
-export type shapes = {
+export interface Shapes {
   borderRadius?: number;
   borderWidth?: number;
-  shadow?: shadowConfig;
-};
+  shadow?: ShadowConfig;
+  inputHeight?: number;
+  gap?: number;
+}
 
-export type font = {
+export interface Font {
   family?: string;
   scale?: number;
-};
+  headingTextSizeAdjust?: number;
+  subHeadingTextSizeAdjust?: number;
+  placeholderTextSizeAdjust?: number;
+  buttonTextSizeAdjust?: number;
+  errorTextSizeAdjust?: number;
+  linkTextSizeAdjust?: number;
+  modalTextSizeAdjust?: number;
+  cardTextSizeAdjust?: number;
+}
 
-export type primaryButtonColor = {
+
+export type SubscriptionEvent =
+  | 'PAYMENT_METHOD_INFO_CARD'
+  | 'PAYMENT_METHOD_STATUS'
+  | 'FORM_STATUS'
+  | 'PAYMENT_METHOD_INFO_BILLING_ADDRESS'
+  | 'CVC_STATUS';
+
+export type Theme =
+  | 'Default'
+  | 'Light'
+  | 'Dark'
+  | 'Minimal'
+  | 'FlatMinimal'
+  | 'Brutal'
+  | 'Glass'
+  | 'Skeu'
+  | 'Clay'
+  | 'Charcoal'
+  | 'Soft';
+
+export type LayoutType = 'tabs' | 'accordion' | 'spacedAccordion';
+export type PaymentMethodsArrangement = 'default' | 'grid';
+export type RedirectionInfo = 'hidden' | 'shown';
+export type CvcIconDisplay = 'shown' | 'hidden';
+
+export interface GroupingBehavior {
+  displayInSeparateScreen?: boolean;
+  displayInSeparateSection?: boolean;
+  groupByPaymentMethods?: boolean;
+}
+
+export interface SavedPaymentMethodsConfiguration {
+  hiddenPaymentMethods?: string[];
+}
+
+export interface SavedMethodCustomization {
+  defaultCollapsed?: boolean;
+  hideCardExpiry?: boolean;
+  hideCVCError?: boolean;
+  cvcIcon?: CvcIconDisplay;
+  groupingBehavior?: GroupingBehavior;
+  hiddenPaymentMethods?: string[];
+}
+
+export type CardBrandIconDisplay = 'hidden' | 'animated' | 'standard' | 'hideGeneric';
+
+export interface PaymentMethodLayout {
+  type?: LayoutType;
+  showOneClickWalletsOnTop?: boolean;
+  paymentMethodsArrangementForTabs?: PaymentMethodsArrangement;
+  defaultCollapsed?: boolean;
+  radios?: boolean;
+  spacedAccordionItems?: boolean;
+  maxAccordionItems?: number;
+  cvcIcon?: CvcIconDisplay;
+  cardBrandIcon?: CardBrandIconDisplay;
+  showCheckedIconForSelection?: boolean;
+  savedMethodCustomization?: SavedMethodCustomization;
+}
+
+export interface PrimaryButtonColors {
   background?: string;
   text?: string;
   border?: string;
-};
+}
 
-export type primaryButtonColorType = {
-  light?: primaryButtonColor;
-  dark?: primaryButtonColor;
-};
+export interface PrimaryButtonColorType {
+  light?: PrimaryButtonColors;
+  dark?: PrimaryButtonColors;
+}
 
-export type primaryButton = {
-  shapes?: shapes;
-  primaryButtonColor?: primaryButtonColorType;
-};
+export interface PrimaryButton {
+  shapes?: Shapes;
+  colors?: PrimaryButtonColorType;
+  height?: number;
+}
 
-export type googlePayButtonType =
+export type GooglePayButtonType =
   | 'BUY'
   | 'BOOK'
   | 'CHECKOUT'
@@ -134,19 +149,20 @@ export type googlePayButtonType =
   | 'SUBSCRIBE'
   | 'PLAIN';
 
-export type googlePayButtonStyle = 'light' | 'dark';
+export type GooglePayButtonStyle = 'light' | 'dark';
 
-export type googlePayThemeBaseStyle = {
-  light?: googlePayButtonStyle;
-  dark?: googlePayButtonStyle;
-};
+export interface GooglePayThemeBaseStyle {
+  light?: GooglePayButtonStyle;
+  dark?: GooglePayButtonStyle;
+}
 
-export type googlePayConfiguration = {
-  buttonType?: googlePayButtonType;
-  buttonStyle?: googlePayThemeBaseStyle;
-};
+export interface GooglePayConfiguration {
+  visibility?: 'hidden' | 'shown';
+  buttonType?: GooglePayButtonType;
+  buttonStyle?: GooglePayThemeBaseStyle;
+}
 
-export type applePayButtonType =
+export type ApplePayButtonType =
   | 'buy'
   | 'setUp'
   | 'inStore'
@@ -156,81 +172,189 @@ export type applePayButtonType =
   | 'subscribe'
   | 'plain';
 
-export type applePayButtonStyle = 'white' | 'whiteOutline' | 'black';
+export type ApplePayButtonStyle = 'white' | 'whiteOutline' | 'black';
 
-export type applePayThemeBaseStyle = {
-  light?: applePayButtonStyle;
-  dark?: applePayButtonStyle;
-};
+export interface ApplePayThemeBaseStyle {
+  light?: ApplePayButtonStyle;
+  dark?: ApplePayButtonStyle;
+}
 
-export type applePayConfiguration = {
-  buttonType?: applePayButtonType;
-  buttonStyle?: applePayThemeBaseStyle;
-};
+export interface ApplePayConfiguration {
+  visibility?: 'hidden' | 'shown';
+  buttonType?: ApplePayButtonType;
+  buttonStyle?: ApplePayThemeBaseStyle;
+}
 
-export type themeType =
-  | 'Default'
-  | 'Light'
-  | 'Dark'
-  | 'Minimal'
-  | 'FlatMinimal';
+export type PayPalButtonType = 'paypal' | 'checkout' | 'buynow' | 'pay';
+export type PayPalButtonStyle = 'gold' | 'blue' | 'white' | 'black' | 'silver';
+export type PayPalButtonSize = 'small' | 'medium' | 'large';
 
-export type layoutType = 'tabs' | 'accordion' | 'spacedAccordion';
+export interface PayPalThemeBaseStyle {
+  light?: PayPalButtonStyle;
+  dark?: PayPalButtonStyle;
+}
 
-export type appearance = {
-  locale?: localeTypes;
-  colors?: colorType;
-  shapes?: shapes;
-  font?: font;
-  primaryButton?: primaryButton;
-  googlePay?: googlePayConfiguration;
-  applePay?: applePayConfiguration;
-  theme?: themeType;
-  layout?: layoutType;
-};
+export interface PayPalConfiguration {
+  visibility?: 'hidden' | 'shown';
+  buttonType?: PayPalButtonType;
+  buttonSize?: PayPalButtonSize;
+  buttonStyle?: PayPalThemeBaseStyle;
+}
 
-export type subscriptionEvent =
-  | 'PAYMENT_METHOD_INFO_CARD'
-  | 'PAYMENT_METHOD_STATUS'
-  | 'FORM_STATUS'
-  | 'PAYMENT_METHOD_INFO_ADDRESS'
-  | 'CVC_STATUS';
+export interface WalletButtonsConfiguration {
+  googlePay?: GooglePayConfiguration;
+  applePay?: ApplePayConfiguration;
+  payPal?: PayPalConfiguration;
+}
 
-export type cvcAppearance = {
-  colors?: colorType;
-  shapes?: shapes;
-  font?: font;
-};
+export interface LogoColors {
+  backgroundColor?: string;
+  selected?: string;
+  unselected?: string;
+}
 
-export type cvcWidgetOptions = {
-  sdkAuthorization?: string;
-  appearance?: cvcAppearance;
-  placeholder?: string;
-};
+export interface LogoColorType {
+  light?: LogoColors;
+  dark?: LogoColors;
+}
 
-export type options = {
-  sdkAuthorization: string;
+export interface CheckedIconColors {
+  color?: string;
+  stroke?: string;
+}
+
+export interface CheckedIconColorType {
+  light?: CheckedIconColors;
+  dark?: CheckedIconColors;
+}
+
+export interface CheckedIconForSelection {
+  colors?: CheckedIconColorType;
+  size?: number;
+  bottom?: number;
+  right?: number;
+}
+
+export interface LogoCustomization {
+  borderRadius?: number;
+  colors?: LogoColorType;
+  checkedIconForSelection?: CheckedIconForSelection;
+}
+
+export interface Appearance {
+  theme?: Theme;
+  colors?: ColorType;
+  shapes?: Shapes;
+  font?: Font;
+  primaryButton?: PrimaryButton;
+  logo?: LogoCustomization;
+}
+
+export interface Placeholder {
+  cardNumber?: string;
+  expiryDate?: string;
+  cvv?: string;
+}
+
+export interface Address {
+  first_name?: string;
+  last_name?: string;
+  city?: string;
+  country?: string;
+  line1?: string;
+  line2?: string;
+  line3?: string;
+  postalCode?: string;
+  state?: string;
+}
+
+export interface Phone {
+  number?: string;
+  code?: string;
+}
+
+export interface AddressDetails {
+  address?: Address;
+  email?: string;
+  phone?: Phone;
+}
+
+export interface CustomerConfiguration {
+  id?: string;
+  ephemeralKeySecret?: string;
+}
+
+export interface PaymentMethodConfig {
+  paymentMethod: string;
+  message?: string;
+}
+
+export type Locale =
+  | 'en'
+  | 'he'
+  | 'fr'
+  | 'en-GB'
+  | 'ar'
+  | 'ja'
+  | 'de'
+  | 'fr-BE'
+  | 'es'
+  | 'ca'
+  | 'pt'
+  | 'it'
+  | 'pl'
+  | 'nl'
+  | 'nI-BE'
+  | 'sv'
+  | 'ru'
+  | 'lt'
+  | 'cs'
+  | 'sk'
+  | 'ls'
+  | 'cy'
+  | 'el'
+  | 'et'
+  | 'fi'
+  | 'nb'
+  | 'bs'
+  | 'da'
+  | 'ms'
+  | 'tr-CY';
+
+export interface PaymentSheetConfiguration {
+  appearance?: Appearance;
+  merchantDisplayName: string;
   allowsDelayedPaymentMethods?: boolean;
-  appearance?: appearance;
-  shippingDetails?: addressDetails;
-  primaryButtonLabel?: string;
-  paymentSheetHeaderText?: string;
-  savedPaymentScreenHeaderText?: string;
-  merchantDisplayName?: string;
-  defaultBillingDetails?: addressDetails;
-  primaryButtonColor?: string;
   allowsPaymentMethodsRequiringShippingAddress?: boolean;
   displaySavedPaymentMethodsCheckbox?: boolean;
   displaySavedPaymentMethods?: boolean;
-  placeholder?: placeholder;
-  defaultView?: boolean;
-  disableBranding?: boolean;
-  netceteraSDKApiKey?: string;
   displayDefaultSavedPaymentIcon?: boolean;
-  enablePartialLoading?: boolean;
-  customer?: customerConfiguration;
+  displayPayButton?: boolean;
+  stickyPayButton?: boolean;
+  disableBranding?: boolean;
+  preloadCardElement?: boolean;
+  primaryButtonLabel?: string;
   paymentSheetHeaderLabel?: string;
   savedPaymentSheetHeaderLabel?: string;
-  subscribedEvents?: subscriptionEvent[];
-  hideConfirmButton?: boolean;
-};
+  netceteraSDKApiKey?: string;
+  locale?: Locale;
+  subscribedEvents?: SubscriptionEvent[];
+  customer?: CustomerConfiguration;
+  placeholder?: Placeholder;
+  billingDetails?: AddressDetails;
+  shippingDetails?: AddressDetails;
+  walletButtonsConfiguration?: WalletButtonsConfiguration;
+  redirectionInfo?: RedirectionInfo;
+  alwaysSendCustomerAcceptance?: boolean;
+  paymentMethodsConfig?: PaymentMethodConfig[];
+  opensCardScannerAutomatically?: boolean;
+  paymentMethodOrder?: string[];
+  paymentMethodLayout?: PaymentMethodLayout;
+  splitCardFields?: boolean;
+}
+
+export interface options {
+  hyperswitchConfig?: HyperswitchConfiguration;
+  paymentSessionConfig?: { sdkAuthorization: string };
+  configuration?: PaymentSheetConfiguration;
+}

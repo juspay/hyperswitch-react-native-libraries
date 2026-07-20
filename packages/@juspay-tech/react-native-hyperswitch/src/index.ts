@@ -2,67 +2,17 @@
 // into the universal HyperswitchSession shape consumed by
 // @juspay-tech/react-hyperswitch.
 
-import NativeHyperswitchSdk from './specs/NativeHyperswitchSdkReactNative';
 import type {
-  Elements,
   HyperswitchConfiguration,
-  HyperswitchSession,
   PaymentSession,
   PaymentSessionConfiguration,
 } from './types/definitions';
 export type * from './types/definitions';
 
-import {
-  createElementsNativeActions,
-  createPaymentSession,
-  getInstanceHandle,
-} from './native';
-
-import { createPaymentElement } from './views/PaymentElement';
-import { createCvcWidget } from './views/CvcWidget';
-
-type ElementType = 'paymentElement' | 'cvcWidget';
-
-const SUPPORTED_ELEMENT_TYPES: readonly ElementType[] = [
-  'paymentElement',
-  'cvcWidget',
-];
-
-function isElementType(type: string): type is ElementType {
-  return SUPPORTED_ELEMENT_TYPES.includes(type as ElementType);
-}
-
-// ------------------------------------------------------------------
-// Elements factory
-// ------------------------------------------------------------------
-
-function createElements(): Elements {
-  return {
-    create(opts: { type: string; id?: string; options?: any }): any {
-      if (!isElementType(opts.type)) {
-        throw new Error(
-          `[react-native-hyperswitch] elements.create('${opts.type}') is not supported. ` +
-            `Supported types are 'paymentElement' and 'cvcWidget'.`
-        );
-      }
-
-      switch (opts.type) {
-        case 'paymentElement':
-          return createPaymentElement({
-            id: opts.id,
-            options: opts.options,
-          });
-        case 'cvcWidget':
-          return createCvcWidget({
-            id: opts.id,
-            options: opts.options,
-          });
-      }
-    },
-
-    ...createElementsNativeActions(),
-  };
-}
+import NativeHyperswitchModule from './specs/NativeHyperswitchModule';
+import { createPaymentSession } from './context/PaymentSession';
+import { createElements } from './context/Elements';
+import { Elements } from './types/elements';
 
 /**
  * Initialise the Hyperswitch SDK and return a session handle that exposes the
@@ -72,32 +22,37 @@ function createElements(): Elements {
  */
 export function loadHyper(
   config: HyperswitchConfiguration
-): Promise<HyperswitchSession> {
-  const instanceHandlePromise = getInstanceHandle(config);
+): Promise<any> {
+  return NativeHyperswitchModule.initialise(
+    config.publishableKey,
+    config.platformPublishableKey ?? '',
+    config.profileId ?? '',
+    config.environment ?? 'PROD',
+    config.customEndpoints ?? {}
+  ).then(() => {
+    return {
+      publishableKey: config.publishableKey,
+      async initPaymentSession(
+        options: PaymentSessionConfiguration
+      ): Promise<PaymentSession> {
+        // const instanceHandle = await instanceHandlePromise;
+        // await NativeHyperswitchModule.initPaymentSession(
+        //   instanceHandle,
+        //   options.sdkAuthorization
+        // );
+        return createPaymentSession(config, options);
+      },
+      async elements(options: PaymentSessionConfiguration): Promise<Elements> {
+        // await NativeHyperswitchModule.initPaymentSession(
+        //   instanceHandle,
+        //   options.sdkAuthorization
+        // );
+        return createElements(config, options);
+      },
+    }
+  }).catch((error) => {
+    console.error('Error initializing Hyperswitch SDK:', error);
+    throw error;
+  });
 
-  const session: HyperswitchSession = {
-    publishableKey: config.publishableKey,
-
-    async initPaymentSession(
-      options: PaymentSessionConfiguration
-    ): Promise<PaymentSession> {
-      const instanceHandle = await instanceHandlePromise;
-      await NativeHyperswitchSdk.initPaymentSession(
-        instanceHandle,
-        options.sdkAuthorization
-      );
-      return createPaymentSession();
-    },
-
-    async elements(options: PaymentSessionConfiguration): Promise<Elements> {
-      const instanceHandle = await instanceHandlePromise;
-      await NativeHyperswitchSdk.initPaymentSession(
-        instanceHandle,
-        options.sdkAuthorization
-      );
-      return createElements();
-    },
-  };
-
-  return Promise.resolve(session);
 }

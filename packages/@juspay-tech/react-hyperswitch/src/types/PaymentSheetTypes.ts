@@ -19,8 +19,9 @@ export type Theme =
   | 'Clay'
   | 'Charcoal'
   | 'Soft';
-export type LayoutType = 'tabs' | 'accordion';
-export type PaymentMethodsArrangement = 'grid' | 'auto';
+
+export type LayoutType = 'tabs' | 'accordion' | 'spacedAccordion';
+export type PaymentMethodsArrangement = 'default' | 'grid';
 export type RedirectionInfo = 'hidden' | 'shown';
 export type CvcIconDisplay = 'shown' | 'hidden';
 
@@ -76,7 +77,16 @@ export interface PrimaryButton {
   height?: number;
 }
 
-export type GooglePayButtonType = 'BUY' | 'BOOK' | 'CHECKOUT' | 'DONATE' | 'ORDER' | 'PAY' | 'SUBSCRIBE' | 'PLAIN';
+export type GooglePayButtonType =
+  | 'BUY'
+  | 'BOOK'
+  | 'CHECKOUT'
+  | 'DONATE'
+  | 'ORDER'
+  | 'PAY'
+  | 'SUBSCRIBE'
+  | 'PLAIN';
+
 export type GooglePayButtonStyle = 'light' | 'dark';
 
 export interface GooglePayThemeBaseStyle {
@@ -90,7 +100,16 @@ export interface GooglePayConfiguration {
   buttonStyle?: GooglePayThemeBaseStyle;
 }
 
-export type ApplePayButtonType = 'buy' | 'setUp' | 'inStore' | 'donate' | 'checkout' | 'book' | 'subscribe' | 'plain';
+export type ApplePayButtonType =
+  | 'buy'
+  | 'setUp'
+  | 'inStore'
+  | 'donate'
+  | 'checkout'
+  | 'book'
+  | 'subscribe'
+  | 'plain';
+
 export type ApplePayButtonStyle = 'white' | 'whiteOutline' | 'black';
 
 export interface ApplePayThemeBaseStyle {
@@ -106,6 +125,7 @@ export interface ApplePayConfiguration {
 
 export type PayPalButtonType = 'paypal' | 'checkout' | 'buynow' | 'pay';
 export type PayPalButtonStyle = 'gold' | 'blue' | 'white' | 'black' | 'silver';
+export type PayPalButtonSize = 'small' | 'medium' | 'large';
 
 export interface PayPalThemeBaseStyle {
   light?: PayPalButtonStyle;
@@ -115,6 +135,7 @@ export interface PayPalThemeBaseStyle {
 export interface PayPalConfiguration {
   visibility?: 'hidden' | 'shown';
   buttonType?: PayPalButtonType;
+  buttonSize?: PayPalButtonSize;
   buttonStyle?: PayPalThemeBaseStyle;
 }
 
@@ -206,7 +227,7 @@ export interface PaymentMethodConfig {
   message?: string;
 }
 
-type locale =
+export type Locale =
   | 'en'
   | 'he'
   | 'fr'
@@ -238,42 +259,37 @@ type locale =
   | 'ms'
   | 'tr-CY';
 
-export interface PaymentSheetOptions {
-  publishableKey?: string;
-  sdkAuthorization?: string;
-  allowsDelayedPaymentMethods?: boolean;
+export interface PaymentSheetConfiguration {
   appearance?: Appearance;
-  shippingDetails?: AddressDetails;
-  primaryButtonLabel?: string;
-  paymentSheetHeaderText?: string;
-  savedPaymentScreenHeaderText?: string;
-  merchantDisplayName?: string;
-  billingDetails?: AddressDetails;
-  primaryButtonColor?: string;
+  merchantDisplayName: string;
+  allowsDelayedPaymentMethods?: boolean;
   allowsPaymentMethodsRequiringShippingAddress?: boolean;
   displaySavedPaymentMethodsCheckbox?: boolean;
   displaySavedPaymentMethods?: boolean;
-  displayPayButton?: boolean;
-  placeholder?: Placeholder;
-  defaultView?: boolean;
-  disableBranding?: boolean;
-  netceteraSDKApiKey?: string;
   displayDefaultSavedPaymentIcon?: boolean;
-  enablePartialLoading?: boolean;
-  customer?: CustomerConfiguration;
+  displayPayButton?: boolean;
+  stickyPayButton?: boolean;
+  disableBranding?: boolean;
+  preloadCardElement?: boolean;
+  primaryButtonLabel?: string;
   paymentSheetHeaderLabel?: string;
   savedPaymentSheetHeaderLabel?: string;
+  netceteraSDKApiKey?: string;
+  locale?: Locale;
   subscribedEvents?: SubscriptionEvent[];
-  hideConfirmButton?: boolean;
-  locale?: locale;
-  redirectionInfo?: RedirectionInfo;
-  stickyPayButton?: boolean;
-  paymentMethodLayout?: PaymentMethodLayout;
+  customer?: CustomerConfiguration;
+  placeholder?: Placeholder;
+  billingDetails?: AddressDetails;
+  shippingDetails?: AddressDetails;
   walletButtonsConfiguration?: WalletButtonsConfiguration;
-  paymentMethodsConfig?: PaymentMethodConfig[];
-  paymentMethodOrder?: string[];
-  preloadCardElement?: boolean;
+  redirectionInfo?: RedirectionInfo;
   alwaysSendCustomerAcceptance?: boolean;
+  paymentMethodsConfig?: PaymentMethodConfig[];
   opensCardScannerAutomatically?: boolean;
+  paymentMethodOrder?: string[];
+  paymentMethodLayout?: PaymentMethodLayout;
   splitCardFields?: boolean;
 }
+
+/** @deprecated Use {@link PaymentSheetConfiguration} instead. */
+export type PaymentSheetOptions = PaymentSheetConfiguration;
