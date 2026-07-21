@@ -25,6 +25,11 @@ internal extension PaymentSheet {
         paymentSheetViewController.modalPresentationStyle = .overFullScreen
         paymentSheetViewController.view = rootView
 
+        // Register the sheet and VC directly with HyperModuleImpl so that
+        // exitPaymentsheet can call the completion without relying on
+        // bridge.uiManager.addUIBlock (which doesn't find Fabric-rendered views).
+        HyperModuleImpl.shared.registerPaymentSheet(self, vc: paymentSheetViewController)
+
         presentingViewController.present(paymentSheetViewController, animated: false)
     }
 
