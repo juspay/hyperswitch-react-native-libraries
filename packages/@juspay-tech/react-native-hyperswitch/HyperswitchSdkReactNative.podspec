@@ -17,7 +17,11 @@ Pod::Spec.new do |s|
     "ios/Modules/**/*.{h,m,mm,cpp,swift}",
     "ios/Views/**/*.{h,m,mm,cpp,swift}",
     "ios/hyperswitchSDK/Core/**/*.{h,m,mm,cpp,swift}",
+    "ios/hyperswitchSDK/Public/**/*.{h,m,mm,cpp,swift}",
     "ios/hyperswitchSDK/Shared/**/*.{h,m,mm,cpp,swift}",
+  ]
+  s.public_header_files = [
+    "ios/hyperswitchSDK/Public/**/*.h",
   ]
   s.private_header_files = [
     "ios/Modules/**/*.h",

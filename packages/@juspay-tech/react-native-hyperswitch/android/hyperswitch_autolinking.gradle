@@ -253,7 +253,7 @@ class HyperswitchAutolinking {
               }
             }
         } else {
-          if(nameCleansed != "juspay-tech_react-native-hyperswitch") {
+          if(nameCleansed != "react-native-hyperswitch-dev-sdk") {
             if (dependencyConfiguration != null) {
               add("${dependencyConfiguration}", project.project(":${nameCleansed}"))
             } else {

@@ -1,6 +1,6 @@
 {
-  "name": "@juspay-tech/react-native-hyperswitch",
-  "version": "1.0.0-alpha.1",
+  "name": "react-native-hyperswitch-dev-sdk",
+  "version": "0.4.3",
   "description": "Hyperswitch SDK for React Native",
   "main": "lib/commonjs/index.bundle.js",
   "module": "lib/module/index.bundle.js",
@@ -49,7 +49,7 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{tsx,res}\"",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "bob build && rollup -c",
+    "prepare": "rollup -c",
     "release": "release-it --only-version"
   },
   "keywords": [
@@ -59,13 +59,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/juspay/react-native-hyperswitch",
+    "url": "https://github.com/manideepk90/react-native-hyperswitch-sdk",
     "directory": "packages/react-native-hyperswitch"
   },
   "author": "Hyperswitch",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/juspay/react-native-hyperswitch/issues"
+    "url": "https://github.com/manideepk90/react-native-hyperswitch-sdk"
   },
   "homepage": "https://hyperswitch.io",
   "publishConfig": {
@@ -170,6 +170,9 @@
       "javaPackageName": "com.hyperswitchsdkreactnative"
     },
     "ios": {
+      "modulesProvider": {
+        "NativeHyperswitchModule": "NativeHyperswitchModule"
+      },
       "componentProvider": {
         "ApplePayView": "ApplePayView",
         "RCTNativePaymentElement": "NativePaymentElementView"

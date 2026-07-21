@@ -73,6 +73,22 @@ using namespace facebook::react;
 
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
 {
+    const auto &newViewProps = *std::static_pointer_cast<ApplePayViewProps const>(props);
+    const auto &oldViewProps = *std::static_pointer_cast<ApplePayViewProps const>(oldProps);
+
+    if (newViewProps.buttonType != oldViewProps.buttonType ||
+        newViewProps.buttonStyle != oldViewProps.buttonStyle ||
+        newViewProps.cornerRadius != oldViewProps.cornerRadius) {
+
+        NSString *typeStr = [NSString stringWithUTF8String:newViewProps.buttonType.c_str()];
+        NSString *styleStr = [NSString stringWithUTF8String:newViewProps.buttonStyle.c_str()];
+        PKPaymentButtonType type = [self paymentButtonTypeFromString:typeStr];
+        PKPaymentButtonStyle style = [self paymentButtonStyleFromString:styleStr];
+        CGFloat cornerRadius = newViewProps.cornerRadius > 0 ? (CGFloat)newViewProps.cornerRadius : 4.0;
+
+        [self setupButtonWithType:type style:style cornerRadius:cornerRadius];
+    }
+
     [super updateProps:props oldProps:oldProps];
 }
 

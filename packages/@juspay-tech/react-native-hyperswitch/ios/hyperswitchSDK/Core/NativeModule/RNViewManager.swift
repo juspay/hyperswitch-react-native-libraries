@@ -14,13 +14,16 @@ internal class RNViewManager: NSObject {
     internal var rootView: RCTRootView?
 
     internal lazy var bridge: RCTBridge = {
-        RCTBridge.init(delegate: self, launchOptions: nil)
+        RNBridgeFactory.sharedInstance().bridge ?? RCTBridge(delegate: self, launchOptions: nil)
     }()
 
     internal static let sharedInstance = RNViewManager()
 
     internal func viewForModule(_ moduleName: String, initialProperties: [String: Any]?) -> RCTRootView {
-        let rootView: RCTRootView = RCTRootView(
+        let rootView = RNBridgeFactory.sharedInstance().hyperswitchView(
+            forModuleName: moduleName,
+            initialProperties: initialProperties
+        ) as? RCTRootView ?? RCTRootView(
             bridge: self.bridge,
             moduleName: moduleName,
             initialProperties: initialProperties
@@ -29,7 +32,10 @@ internal class RNViewManager: NSObject {
         return rootView
     }
     internal func widgetViewForModule(_ moduleName: String, initialProperties: [String: Any]?) -> RCTRootView {
-        return RCTRootView(
+        return RNBridgeFactory.sharedInstance().hyperswitchView(
+            forModuleName: moduleName,
+            initialProperties: initialProperties
+        ) as? RCTRootView ?? RCTRootView(
             bridge: self.bridge,
             moduleName: moduleName,
             initialProperties: initialProperties

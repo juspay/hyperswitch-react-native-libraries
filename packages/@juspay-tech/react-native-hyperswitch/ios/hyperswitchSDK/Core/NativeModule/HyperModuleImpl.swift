@@ -1,6 +1,29 @@
 //
-//  HyperModule.swift
+//  HyperModuleImpl.swift
+//  Pods
+//
+//  Created by Kuntimaddi Manideep on 22/07/26.
+//
+
+
+//
+//  HyperModuleImpl.swift
 //  Hyperswitch
+//
+//  Business logic for the "HyperModule" native module.
+//
+//  New Architecture note:
+//  ----------------------
+//  Under the New Architecture a native module that is looked up through
+//  `TurboModuleRegistry.get('HyperModule')` must be able to vend a C++
+//  `getTurboModule:` — which Swift cannot express. So the RN-facing module
+//  is the ObjC++ class `HyperModule` (see ios/Modules/ReactNative/HyperModule.{h,mm}),
+//  which is an `RCTEventEmitter` + `NativeHyperswitchSdkNativeSpec` TurboModule and
+//  forwards every call to this Swift singleton.
+//
+//  This singleton keeps a weak reference to that emitter (`eventEmitter`) so it can:
+//    • dispatch JS events  → `eventEmitter?.sendEvent(...)`
+//    • reach the bridge     → `eventEmitter?.bridge` (for `uiManager` view lookups)
 //
 //  Created by Harshit Srivastava on 07/03/24.
 //
@@ -8,68 +31,68 @@
 import Foundation
 import React
 
-@objc(HyperModule)
-internal class HyperModule: RCTEventEmitter {
+@objc(HyperModuleImpl)
+public class HyperModuleImpl: NSObject {
+
+    @objc public static let shared = HyperModuleImpl()
+
+    /// The RN-registered event emitter (the ObjC++ `HyperModule` TurboModule) through
+    /// which JS-facing events are dispatched and the bridge / uiManager is reached.
+    @objc public weak var eventEmitter: RCTEventEmitter?
 
     private let applePayPaymentHandler = ApplePayHandler()
     private let expressCheckoutHandler = ExpressCheckoutLauncher()
     private var presentCallback: RCTResponseSenderBlock? = nil
-    internal static var shared: HyperModule?
 
-    override init() {
+    private override init() {
         super.init()
-        HyperModule.shared = self
     }
 
-    @objc
-    internal override static func requiresMainQueueSetup() -> Bool {
-        return true
-    }
+    /// The bridge backing the RN-registered emitter (embedded runtime is bridge-based).
+    private var bridge: RCTBridge? { eventEmitter?.bridge }
 
-    @objc
-    internal override func supportedEvents() -> [String] {
-        return ["confirm", "confirmEC", "triggerWidgetAction", "updateIntentInit", "updateIntentComplete"]
-    }
+    // MARK: - Events
 
-    @objc
-    internal func confirm(data: [String: Any]) {
-        self.sendEvent(withName: "confirm", body: data)
+    @objc public func confirm(data: [String: Any]) {
+        eventEmitter?.sendEvent(withName: "confirm", body: data)
     }
     // MARK: WIP
-    //    @objc func confirmEC(data: [String: Any]) {
-    //        self.sendEvent(withName: "confirmEC", body: data)
+    //    @objc public func confirmEC(data: [String: Any]) {
+    //        eventEmitter?.sendEvent(withName: "confirmEC", body: data)
     //    }
 
-    @objc
-    private func sendMessageToNative(_ rnMessage: String) {}
+    // MARK: - Generic message passing
 
-    @objc
-    private func launchWidgetPaymentSheet(_ request: NSMutableDictionary, _ callback: @escaping RCTResponseSenderBlock) {
+    @objc public func sendMessageToNative(_ rnMessage: String) {}
+
+    // MARK: - Apple Pay
+
+    @objc public func launchApplePay(_ rnMessage: String, callback: @escaping RCTResponseSenderBlock) {
+        applePayPaymentHandler.startPayment(rnMessage: rnMessage, rnCallback: callback, presentCallback: self.presentCallback)
+    }
+
+    @objc public func startApplePay(_ rnMessage: String, callback: @escaping RCTResponseSenderBlock) {
+        callback([])
+    }
+
+    @objc public func presentApplePay(_ rnMessage: String, callback: @escaping RCTResponseSenderBlock) {
+        self.presentCallback = callback
+    }
+
+    // MARK: - Widget
+
+    @objc public func launchWidgetPaymentSheet(_ requestObj: String, callback: @escaping RCTResponseSenderBlock) {
+        let request = HyperModuleImpl.jsonObject(from: requestObj)
         expressCheckoutHandler.launchPaymentSheet(paymentResult: request, callBack: callback)
     }
 
-    @objc
-    private func onAddPaymentMethod(_ rnMessage: String) {
+    @objc public func onAddPaymentMethod(_ rnMessage: String) {
         PaymentMethodManagementWidget.onAddPaymentMethod?()
     }
 
-    @objc
-    private func launchApplePay(_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        applePayPaymentHandler.startPayment(rnMessage: rnMessage, rnCallback: rnCallback, presentCallback: self.presentCallback)
-    }
+    // MARK: - Payment sheet exits
 
-    @objc
-    private func startApplePay(_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        rnCallback([])
-    }
-
-    @objc
-    private func presentApplePay(_ rnMessage: String, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        self.presentCallback = rnCallback
-    }
-
-    @objc
-    private func exitPaymentsheet(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
+    @objc public func exitPaymentsheet(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
         let result = paymentResult(from: rnMessage)
         withPaymentSheet(reactTag) { vc, sheet in
             sheet?.completion?(result)
@@ -77,12 +100,85 @@ internal class HyperModule: RCTEventEmitter {
         }
     }
 
-    @objc
-    private func exitWidgetPaymentsheet(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
+    @objc public func exitWidgetPaymentsheet(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
         let result = paymentResult(from: rnMessage)
         withWidget(reactTag) { w in
             w.handleConfirmPaymentResponse(result)
         }
+    }
+
+    @objc public func exitPaymentMethodManagement(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
+        exitSheet(rnMessage)
+    }
+
+    @objc public func exitCardForm(_ rnMessage: String) {
+        exitCardFormInternal(rnMessage)
+    }
+
+    // MARK: - Payment result / events
+
+    @objc public func notifyWidgetPaymentResult(_ rootTag: NSNumber, result rnMessage: String) {
+        let result = paymentResult(from: rnMessage)
+        guard case .failed = result else { return }
+        withNativePaymentWidgetView(rootTag) { view in
+            view.handleConfirmPaymentResponse(result)
+        }
+    }
+
+    @objc public func onUpdateIntentEvent(_ rootTag: NSNumber, type: String, result: String) {
+        withWidget(rootTag) { widget in
+            widget.handleUpdateIntentEvent(type: type, result: result)
+        }
+    }
+
+    @objc public func emitPaymentEvent(_ rootTag: NSNumber, eventType: String, payload: NSDictionary) {
+        let map = (payload as? [String: Any]) ?? [:]
+        resolveSubscribingTarget(rootTag) { target in
+            if let widget = target as? PaymentWidget, widget.paymentEventListener != nil {
+                widget.dispatchPaymentEvent(type: eventType, payload: map)
+            } else if let cvc = target as? CVCWidget, cvc.paymentEventListener != nil {
+                cvc.dispatchPaymentEvent(type: eventType, payload: map)
+            } else if let sheet = target as? PaymentSheet, sheet.paymentEventListener != nil {
+                sheet.dispatchPaymentEvent(type: eventType, payload: map)
+            }
+        }
+    }
+
+    @objc public func onPaymentConfirmButtonClick(_ rootTag: NSNumber, payload: String, callback: @escaping RCTResponseSenderBlock) {
+        resolveSubscribingTarget(rootTag) { target in
+            if let widget = target as? PaymentWidget {
+                widget.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
+                    callback([shouldProceed])
+                }
+            } else if let sheet = target as? PaymentSheet {
+                sheet.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
+                    callback([shouldProceed])
+                }
+            } else {
+                callback([true])
+            }
+        }
+    }
+
+    // MARK: - 3DS / DDC iframe bridge
+
+    @objc public func openIframeBridge(_ url: String, timeoutMs: NSNumber, callback: @escaping RCTResponseSenderBlock) {
+        DispatchQueue.main.async {
+            let headlessWebView = HeadlessWebView(url: url, timeoutMs: timeoutMs, callback: callback)
+            headlessWebView.startFlow()
+        }
+    }
+
+    // MARK: - Helpers
+
+    private static func jsonObject(from string: String) -> NSMutableDictionary {
+        guard
+            let data = string.data(using: .utf8),
+            let obj = try? JSONSerialization.jsonObject(with: data, options: []) as? [AnyHashable: Any]
+        else {
+            return NSMutableDictionary()
+        }
+        return NSMutableDictionary(dictionary: obj)
     }
 
     private func paymentResult(from rnMessage: String) -> PaymentResult {
@@ -132,42 +228,7 @@ internal class HyperModule: RCTEventEmitter {
         }
     }
 
-    @objc
-    private func exitPaymentMethodManagement(_ reactTag: NSNumber, _ rnMessage: String, _ reset: Bool) {
-        exitSheet(rnMessage)
-    }
-
-    @objc
-    private func notifyWidgetPaymentResult(_ rootTag: NSNumber, _ rnMessage: String) {
-        let result = paymentResult(from: rnMessage)
-        guard case .failed = result else { return }
-        withNativePaymentWidgetView(rootTag) { view in
-            view.handleConfirmPaymentResponse(result)
-        }
-    }
-
-    @objc
-    private func onUpdateIntentEvent(_ rootTag: NSNumber, _ type: String, _ result: String) {
-        withWidget(rootTag) { widget in
-            widget.handleUpdateIntentEvent(type: type, result: result)
-        }
-    }
-
-    @objc func emitPaymentEvent(_ rootTag: NSNumber, _ eventType: String, _ payload: NSDictionary) {
-        let map = (payload as? [String: Any]) ?? [:]
-        resolveSubscribingTarget(rootTag) { target in
-            if let widget = target as? PaymentWidget, widget.paymentEventListener != nil {
-                widget.dispatchPaymentEvent(type: eventType, payload: map)
-            } else if let cvc = target as? CVCWidget, cvc.paymentEventListener != nil {
-                cvc.dispatchPaymentEvent(type: eventType, payload: map)
-            } else if let sheet = target as? PaymentSheet, sheet.paymentEventListener != nil {
-                sheet.dispatchPaymentEvent(type: eventType, payload: map)
-            }
-        }
-    }
-
-    @objc
-    private func exitCardForm(_ rnMessage: String) {
+    private func exitCardFormInternal(_ rnMessage: String) {
         var response: String?
         var error: NSError?
 
@@ -206,7 +267,6 @@ internal class HyperModule: RCTEventEmitter {
         }
     }
 
-    @objc
     private func exitSheet(_ rnMessage: String) {
         var response: String?
         var error: NSError?
@@ -252,34 +312,10 @@ internal class HyperModule: RCTEventEmitter {
         }
     }
 
-    @objc
-    private func onPaymentConfirmButtonClick(_ rootTag: NSNumber, _ payload: String, _ callback: @escaping RCTResponseSenderBlock) {
-        resolveSubscribingTarget(rootTag) { target in
-            if let widget = target as? PaymentWidget {
-                widget.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
-                    callback([shouldProceed])
-                }
-            } else if let sheet = target as? PaymentSheet {
-                sheet.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
-                    callback([shouldProceed])
-                }
-            } else {
-                callback([true])
-            }
-        }
-    }
-
-    @objc
-    private func openIframeBridge(_ url: String, _ timeoutMs: NSNumber, _ callback: @escaping RCTResponseSenderBlock) {
-        DispatchQueue.main.async {
-            let headlessWebView = HeadlessWebView(url: url, timeoutMs: timeoutMs, callback: callback)
-            headlessWebView.startFlow()
-        }
-    }
-
     private func withWidget(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
+        guard let bridge = self.bridge else { return }
         RCTGetUIManagerQueue().async {
-            self.bridge.uiManager.addUIBlock { _, viewRegistry in
+            bridge.uiManager.addUIBlock { _, viewRegistry in
                 guard let view = viewRegistry?[rootTag] else { return }
                 var current: UIView? = view
                 while let v = current {
@@ -294,8 +330,9 @@ internal class HyperModule: RCTEventEmitter {
     }
 
     private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
+        guard let bridge = self.bridge else { return }
         RCTGetUIManagerQueue().async {
-            self.bridge.uiManager.addUIBlock { _, viewRegistry in
+            bridge.uiManager.addUIBlock { _, viewRegistry in
                 guard let view = viewRegistry?[rootTag] else { return }
                 var current: UIView? = view
                 while let v = current {
@@ -310,8 +347,12 @@ internal class HyperModule: RCTEventEmitter {
     }
 
     private func resolveSubscribingTarget(_ rootTag: NSNumber, _ block: @escaping (AnyObject?) -> Void) {
+        guard let bridge = self.bridge else {
+            DispatchQueue.main.async { block(nil) }
+            return
+        }
         RCTGetUIManagerQueue().async {
-            self.bridge.uiManager.addUIBlock { _, viewRegistry in
+            bridge.uiManager.addUIBlock { _, viewRegistry in
                 guard let view = viewRegistry?[rootTag] else {
                     DispatchQueue.main.async { block(nil) }
                     return
@@ -331,8 +372,9 @@ internal class HyperModule: RCTEventEmitter {
     }
 
     private func withPaymentSheet(_ rootTag: NSNumber, _ block: @escaping (UIViewController?, PaymentSheet?) -> Void) {
+        guard let bridge = self.bridge else { return }
         RCTGetUIManagerQueue().async {
-            self.bridge.uiManager.addUIBlock { _, viewRegistry in
+            bridge.uiManager.addUIBlock { _, viewRegistry in
                 let view = viewRegistry?[rootTag]
                 let vc = view?.reactViewController() as? HyperUIViewController
                 let sheet = vc?.paymentSheet
