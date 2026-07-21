@@ -27,6 +27,58 @@ public class HyperswitchModule: NSObject {
     /// can resolve native widget views by reactTag.
     @objc public var viewRegistry_DEPRECATED: RCTViewRegistry?
 
+    // MARK: - JSON string helpers
+
+    /// Serialise a plain `[String: Any?]` to a compact JSON string.
+    /// Returns `"{}"` on failure so callers always receive a valid string.
+    private static func toJSONString(_ dict: [String: Any?]) -> String {
+        // JSONSerialization can't handle `Any?` keys that are nil, so strip them first.
+        let cleaned = dict.compactMapValues { $0 }
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: cleaned, options: []),
+            let str = String(data: data, encoding: .utf8)
+        else { return "{}" }
+        return str
+    }
+
+    /// Encode an `Encodable` value to a JSON string.
+    private static func encodeToJSONString<T: Encodable>(_ value: T) -> String? {
+        guard
+            let data = try? JSONEncoder().encode(value),
+            let str = String(data: data, encoding: .utf8)
+        else { return nil }
+        return str
+    }
+
+    ///   `{"code": ..., "message": ..., "status": ..., "error": ...}`
+    private static func standardResult(
+        status: String,
+        code: String? = nil,
+        message: String? = nil,
+        error: String? = nil
+    ) -> String {
+        return toJSONString([
+            "status": status,
+            "code": code as Any?,
+            "message": message as Any?,
+            "error": error as Any?,
+        ])
+    }
+
+    private static func paymentResultToJSONString(_ result: PaymentResult) -> String {
+        switch result {
+        case .completed:
+            return standardResult(status: "success")
+        case .failed(let error as NSError):
+            let msg = error.userInfo["message"] as? String ?? error.localizedDescription
+            return standardResult(status: "failed", code: error.domain, message: msg, error: msg)
+        case .canceled:
+            return standardResult(status: "cancelled", message: "Payment cancelled")
+        }
+    }
+
+    // MARK: - initialise
+
     @objc(initialiseWithPublishableKey:customBackendUrl:customLogUrl:customParams:resolve:reject:)
     public func initialise(
         publishableKey: String,
@@ -102,6 +154,8 @@ public class HyperswitchModule: NSObject {
         return shared.activeProfileId
     }
 
+    // MARK: - presentPaymentSheet
+
     @objc(presentPaymentSheet:resolve:reject:)
     public func presentPaymentSheet(
         configuration: [String: Any],
@@ -109,29 +163,32 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let session = activePaymentSession else {
-            reject("PRESENT_ERROR", "Payment session not initialized. Call initPaymentSession first.", NSError(domain: "HyperswitchModule", code: 0))
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "PRESENT_ERROR",
+                message: "Payment session not initialized. Call initPaymentSession first.",
+                error: "Payment session not initialized."
+            ))
             return
         }
 
         DispatchQueue.main.async {
             guard let vc = RCTPresentedViewController() else {
-                reject("error", "Could not find presented view controller", NSError())
+                resolve(HyperswitchModule.standardResult(
+                    status: "failed",
+                    code: "PRESENT_ERROR",
+                    message: "Could not find presented view controller",
+                    error: "Could not find presented view controller"
+                ))
                 return
             }
             session.presentPaymentSheetWithParams(
                 viewController: vc,
                 params: configuration,
-                completion: { result in
-                    switch result {
-                    case .completed(let data):
-                        resolve(["status": "completed", "message": data])
-                    case .failed(let error as NSError):
-                        resolve([
-                            "status": "failed", "code": error.domain, "message": "Payment failed: \(error.userInfo["message"] ?? "Failed")",
-                        ])
-                    case .canceled(let data):
-                        resolve(["status": "cancelled", "message": data])
-                    }
+                rawCompletion: { raw in
+                    // `raw` is the unmodified JSON string sent by the JS bundle via
+                    // exitPaymentsheet — identical to what Android resolves with.
+                    resolve(raw)
                 }
             )
         }
@@ -146,99 +203,118 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let session = activePaymentSession else {
-            resolve([
-                "status": "error",
-                "code": "NO_SESSION",
-                "message": "Payment session not initialized. Call initPaymentSession first.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_SESSION",
+                message: "Payment session not initialized. Call initPaymentSession first.",
+                error: "Payment session not initialized."
+            ))
             return
         }
 
         session.getCustomerSavedPaymentMethods { [weak self] handler in
             self?.activePaymentSessionHandler = handler
-            resolve(["status": "success", "message": "Payment methods initialized"])
+            resolve(HyperswitchModule.toJSONString([
+                "code": "success",
+                "message": "Saved payment methods is initialized",
+            ]))
         }
     }
 
+    /// Mirrors Android: resolves with the payment-method data JSON string directly (no wrapper).
     @objc(getCustomerDefaultSavedPaymentMethodDataWithResolve:reject:)
     public func getCustomerDefaultSavedPaymentMethodData(
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let handler = activePaymentSessionHandler else {
-            resolve([
-                "status": "error",
-                "message": "Payment session handler not initialized.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
             return
         }
 
         let result = handler.getCustomerDefaultSavedPaymentMethodData()
         switch result {
         case .success(let paymentMethod):
-            if let jsonData = try? JSONEncoder().encode(paymentMethod),
-                let jsonDict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-            {
-                resolve([
-                    "status": "success",
-                    "message": "Default payment method retrieved",
-                    "data": jsonDict,
-                ])
-            } else {
-                resolve([
-                    "status": "error",
-                    "code": "ENCODE_ERROR",
-                    "message": "Failed to encode payment method data",
-                ])
-            }
+            // Return the payment-method data JSON directly, matching Android's
+            // `ConversionUtils.convertMapToJson(data.toMap()).toString()`.
+            resolve(HyperswitchModule.encodeToJSONString(paymentMethod) ?? "{}")
         case .failure(let error):
-            resolve([
-                "status": "failed",
-                "code": error.code,
-                "message": error.message,
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: error.code,
+                message: error.message,
+                error: error.message
+            ))
         }
     }
 
+    /// Mirrors Android: resolves with the payment-method data JSON string directly (no wrapper).
     @objc(getCustomerLastUsedPaymentMethodDataWithResolve:reject:)
     public func getCustomerLastUsedPaymentMethodData(
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let handler = activePaymentSessionHandler else {
-            resolve([
-                "status": "error",
-                "message": "Payment session handler not initialized.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
             return
         }
 
         let result = handler.getCustomerLastUsedPaymentMethodData()
         switch result {
         case .success(let paymentMethod):
-            if let jsonData = try? JSONEncoder().encode(paymentMethod),
-                let jsonDict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-            {
-                resolve([
-                    "status": "success",
-                    "message": "Last used payment method retrieved",
-                    "data": jsonDict,
-                ])
-            } else {
-                resolve([
-                    "status": "error",
-                    "code": "ENCODE_ERROR",
-                    "message": "Failed to encode payment method",
-                ])
-            }
+            resolve(HyperswitchModule.encodeToJSONString(paymentMethod) ?? "{}")
         case .failure(let error):
-            resolve([
-                "status": "failed",
-                "code": error.code,
-                "message": error.message,
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: error.code,
+                message: error.message,
+                error: error.message
+            ))
         }
     }
+
+    /// Mirrors Android: resolves with a JSON array string of all saved payment methods.
+    @objc(getCustomerSavedPaymentMethodDataWithResolve:reject:)
+    public func getCustomerSavedPaymentMethodData(
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let handler = activePaymentSessionHandler else {
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
+            return
+        }
+
+        let result = handler.getCustomerSavedPaymentMethodData()
+        switch result {
+        case .success(let paymentMethods):
+            // Return a JSON array string, matching Android's `jsonArray.toString()`.
+            resolve(HyperswitchModule.encodeToJSONString(paymentMethods) ?? "[]")
+        case .failure(let error):
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: error.code,
+                message: error.message,
+                error: error.message
+            ))
+        }
+    }
+
+    // MARK: - Confirm methods
 
     @objc(confirmWithCustomerDefaultPaymentMethod:resolve:reject:)
     public func confirmWithCustomerDefaultPaymentMethod(
@@ -247,56 +323,52 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let handler = activePaymentSessionHandler else {
-            resolve([
-                "status": "error",
-                "message": "Payment session handler not initialized.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
             return
         }
 
         let reactTag = Int(cvcWidgetReactTag ?? "") ?? 0
 
         if reactTag > 0 {
-            // CvcWidget reactTag provided — route through the native widget view
-            // so we can use the inner RCTRootView tag (widgetReactTag).
             let result = handler.getCustomerDefaultSavedPaymentMethodData()
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
                     self.withNativePaymentWidgetView(
                         NSNumber(value: reactTag),
-                        onFound: { view in
-//                            view.confirm(
-//                                paymentToken: paymentMethod.paymentToken,
-//                                paymentMethodId: paymentMethod.paymentMethodId,
-//                                resolve: resolve
-//                            )
+                        onFound: { _ in
+                            // CVC widget confirm path — not yet fully wired; fall through.
                         },
                         onMissing: {
-                            resolve([
-                                "status": "failed",
-                                "code": "WIDGET_NOT_FOUND",
-                                "message": "CVC widget view not found for reactTag \(reactTag)",
-                            ])
+                            resolve(HyperswitchModule.standardResult(
+                                status: "failed",
+                                code: "WIDGET_NOT_FOUND",
+                                message: "CVC widget view not found for reactTag \(reactTag)",
+                                error: "CVC widget view not found for reactTag \(reactTag)"
+                            ))
                         }
                     )
                 } else {
-                    // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
                     handler.confirmWithCustomerDefaultPaymentMethod { result in
-                        resolve(HyperswitchModule.paymentResultToDict(result))
+                        resolve(HyperswitchModule.paymentResultToJSONString(result))
                     }
                 }
             case .failure(let error):
-                resolve([
-                    "status": "failed",
-                    "code": error.code,
-                    "message": error.message,
-                ])
+                resolve(HyperswitchModule.standardResult(
+                    status: "failed",
+                    code: error.code,
+                    message: error.message,
+                    error: error.message
+                ))
             }
         } else {
-            // No CvcWidget — confirm through HeadlessTask callback (cvc will be nil)
             handler.confirmWithCustomerDefaultPaymentMethod { result in
-                resolve(HyperswitchModule.paymentResultToDict(result))
+                resolve(HyperswitchModule.paymentResultToJSONString(result))
             }
         }
     }
@@ -308,66 +380,59 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let handler = activePaymentSessionHandler else {
-            resolve([
-                "status": "error",
-                "message": "Payment session handler not initialized.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
             return
         }
 
         let reactTag = Int(cvcWidgetReactTag ?? "") ?? 0
 
         if reactTag > 0 {
-            // CvcWidget reactTag provided — route through the native widget view
-            // so we can use the inner RCTRootView tag (widgetReactTag).
             let result = handler.getCustomerLastUsedPaymentMethodData()
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
                     self.withNativePaymentWidgetView(
                         NSNumber(value: reactTag),
-                        onFound: { view in
-//                            guard let cvcWidget = view.cvcWidgetRef else {
-//                                resolve([
-//                                    "status": "failed",
-//                                    "code": "WIDGET_NOT_READY",
-//                                    "message": "CVC widget is not ready",
-//                                ])
-//                                return
-//                            }
-//                            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { result in
-//                                resolve(HyperswitchModule.paymentResultToDict(result))
-//                            }
+                        onFound: { _ in
+                            // CVC widget confirm path — not yet fully wired; fall through.
                         },
                         onMissing: {
-                            resolve([
-                                "status": "failed",
-                                "code": "WIDGET_NOT_FOUND",
-                                "message": "CVC widget view not found for reactTag \(reactTag)",
-                            ])
+                            resolve(HyperswitchModule.standardResult(
+                                status: "failed",
+                                code: "WIDGET_NOT_FOUND",
+                                message: "CVC widget view not found for reactTag \(reactTag)",
+                                error: "CVC widget view not found for reactTag \(reactTag)"
+                            ))
                         }
                     )
                 } else {
-                    // Not a card or requiresCvv is false — bypass CvcWidget, confirm directly with cvc = nil
-                    resolve([
-                        "status": "failed",
-                        "code": "CVC_WIDGET_REQUIRED",
-                        "message": "CVC widget is required to confirm the last used card payment method",
-                    ])
+                    resolve(HyperswitchModule.standardResult(
+                        status: "failed",
+                        code: "CVC_WIDGET_REQUIRED",
+                        message: "CVC widget is required to confirm the last used card payment method",
+                        error: "CVC widget is required"
+                    ))
                 }
             case .failure(let error):
-                resolve([
-                    "status": "failed",
-                    "code": error.code,
-                    "message": error.message,
-                ])
+                resolve(HyperswitchModule.standardResult(
+                    status: "failed",
+                    code: error.code,
+                    message: error.message,
+                    error: error.message
+                ))
             }
         } else {
-            resolve([
-                "status": "failed",
-                "code": "CVC_WIDGET_REQUIRED",
-                "message": "CVC widget is required to confirm the last used payment method",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "CVC_WIDGET_REQUIRED",
+                message: "CVC widget is required to confirm the last used payment method",
+                error: "CVC widget is required"
+            ))
         }
     }
 
@@ -378,15 +443,17 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let handler = activePaymentSessionHandler else {
-            resolve([
-                "status": "error",
-                "message": "Payment session handler not initialized.",
-            ])
+            resolve(HyperswitchModule.standardResult(
+                status: "failed",
+                code: "NO_HANDLER",
+                message: "Payment session handler not initialized.",
+                error: "Payment session handler not initialized."
+            ))
             return
         }
 
-      handler.confirmWithCustomerPaymentToken(paymentToken: paymentToken) { result in
-            resolve(HyperswitchModule.paymentResultToDict(result))
+        handler.confirmWithCustomerPaymentToken(paymentToken: paymentToken) { result in
+            resolve(HyperswitchModule.paymentResultToJSONString(result))
         }
     }
 
@@ -397,7 +464,11 @@ public class HyperswitchModule: NSObject {
         reject: @escaping RCTPromiseRejectBlock
     ) {
         guard let session = activePaymentSession else {
-            reject("UPDATE_INTENT_ERROR", "Payment session not initialized. Call initPaymentSession first.", NSError(domain: "HyperswitchModule", code: 0))
+            reject(
+                "UPDATE_INTENT_ERROR",
+                "Payment session not initialized. Call initPaymentSession first.",
+                NSError(domain: "HyperswitchModule", code: 0)
+            )
             return
         }
 
@@ -408,9 +479,9 @@ public class HyperswitchModule: NSObject {
             completion: { result in
                 switch result {
                 case .success:
-                    resolve(["status": "success", "message": "Payment intent updated"])
+                    resolve(HyperswitchModule.standardResult(status: "success", message: "Payment intent updated"))
                 case .cancelled:
-                    resolve(["status": "cancelled", "message": "Payment intent update cancelled"])
+                    resolve(HyperswitchModule.standardResult(status: "cancelled", message: "Payment intent update cancelled"))
                 case .failure(let error as NSError):
                     reject(error.domain, error.userInfo[NSLocalizedDescriptionKey] as? String ?? "Payment intent update failed", error)
                 }
@@ -420,9 +491,6 @@ public class HyperswitchModule: NSObject {
 
     // MARK: - CvcWidget View Lookup
 
-    /// Looks up the NativePaymentWidgetView for the supplied React tag by walking up the view
-    /// hierarchy, mirroring the approach used in HyperModule. Calls `onFound` when the widget
-    /// wrapper is located, otherwise `onMissing`.
     private func withNativePaymentWidgetView(
         _ reactTag: NSNumber,
         onFound: @escaping (PaymentWidget) -> Void,
@@ -444,27 +512,17 @@ public class HyperswitchModule: NSObject {
         onMissing()
     }
 
-    /// Convert a PaymentResult to a dictionary suitable for RCTPromiseResolveBlock.
-    private static func paymentResultToDict(_ result: PaymentResult) -> [String: Any] {
+    // MARK: - Internal helpers (used by HyperswitchModule.mm)
+
+    internal static func paymentResultToDict(_ result: PaymentResult) -> [String: Any] {
         switch result {
-        case .completed(let data):
-            return [
-                "status": "success",
-                "message": "Payment confirmed successfully",
-                "data": data,
-            ]
+        case .completed:
+            return ["status": "success", "code": NSNull(), "message": NSNull(), "error": NSNull()]
         case .failed(let error as NSError):
-            return [
-                "status": "failed",
-                "code": error.domain,
-                "message": error.userInfo["message"] as? String ?? "Payment confirmation failed",
-            ]
-        case .canceled(let data):
-            return [
-                "status": "cancelled",
-                "message": "Payment confirmation cancelled",
-                "data": data,
-            ]
+            let msg = error.userInfo["message"] as? String ?? error.localizedDescription
+            return ["status": "failed", "code": error.domain, "message": msg, "error": msg]
+        case .canceled:
+            return ["status": "cancelled", "code": NSNull(), "message": "Payment cancelled", "error": NSNull()]
         }
     }
 }

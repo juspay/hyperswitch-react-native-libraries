@@ -75,11 +75,13 @@ export async function presentPaymentSheetWithPayload(
   }
   setSheetPresented(true);
   try {
+    console.log('Presenting payment sheet with payload:', payload);
     const raw = await NativeHyperswitchModule.presentPaymentSheet({
       hyperswitchConfig: payload.hyperswitchConfig,
       paymentSessionConfig: payload.paymentSessionConfig,
       configuration: payload.configuration,
     });
+    console.log('Native response from presentPaymentSheet:', raw);
     return mapNativeResponseToPaymentResult(raw);
   } finally {
     setSheetPresented(false);

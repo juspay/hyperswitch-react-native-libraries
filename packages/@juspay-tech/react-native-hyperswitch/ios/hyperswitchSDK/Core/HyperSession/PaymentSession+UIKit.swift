@@ -73,6 +73,20 @@ extension PaymentSession {
         paymentSheet.presentWithParams(from: viewController, props: params, completion: completion)
     }
 
+    /// React Native / TurboModule overload — resolves with the raw JSON string from the JS
+    /// bundle so the result reaches the promise without any re-serialisation.
+    internal func presentPaymentSheetWithParams(
+        viewController: UIViewController,
+        params: [String: Any],
+        rawCompletion: @escaping (String) -> Void
+    ) {
+        let paymentSheet = PaymentSheet(
+            paymentSessionConfiguration: paymentSessionConfiguration,
+            hyperswitchConfiguration: hyperswitchConfiguration ?? nil
+        )
+        paymentSheet.presentWithParams(from: viewController, props: params, rawCompletion: rawCompletion)
+    }
+
     public func getCustomerSavedPaymentMethods(
         _ func_: @escaping (PaymentSessionHandler) -> Void,
         configuration: SavedPaymentMethodsConfiguration? = nil
