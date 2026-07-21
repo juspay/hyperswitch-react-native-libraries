@@ -142,7 +142,7 @@ internal class HyperModule: RCTEventEmitter {
         let result = paymentResult(from: rnMessage)
         guard case .failed = result else { return }
         withNativePaymentWidgetView(rootTag) { view in
-            view.handleConfirmPaymentNotification(result)
+            view.handleConfirmPaymentResponse(result)
         }
     }
 
@@ -293,13 +293,13 @@ internal class HyperModule: RCTEventEmitter {
         }
     }
 
-    private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (NativePaymentWidgetView) -> Void) {
+    private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
         RCTGetUIManagerQueue().async {
             self.bridge.uiManager.addUIBlock { _, viewRegistry in
                 guard let view = viewRegistry?[rootTag] else { return }
                 var current: UIView? = view
                 while let v = current {
-                    if let nativeWidget = v as? NativePaymentWidgetView {
+                    if let nativeWidget = v as? PaymentWidget {
                         block(nativeWidget)
                         return
                     }

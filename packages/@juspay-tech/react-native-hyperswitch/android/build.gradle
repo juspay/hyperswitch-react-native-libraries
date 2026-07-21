@@ -140,12 +140,6 @@ android {
     pickFirst '**/libreactnativejni.so'
   }
 }
-rootProject.allprojects { eachProject ->
-  eachProject.repositories.maven {
-    url "https://maven.juspay.in/hyper-sdk/"
-  }
-}
-
 apply from: "./hyperswitch_autolinking.gradle"
 applyHyperswitchAutolinking(project)
 
@@ -154,8 +148,8 @@ dependencies {
   implementation "com.google.android.gms:play-services-wallet:19.4.0"
   implementation 'androidx.activity:activity-ktx:1.10.1'
   implementation 'org.greenrobot:eventbus:3.1.0'
-  implementation "io.hyperswitch:hyperswitch-sdk-android-airborne:1.0.0"
-  implementation "io.hyperswitch:hyperswitch-sdk-android-common:1.0.3"
+//  implementation "io.hyperswitch:hyperswitch-sdk-android-airborne:1.0.0"
+  implementation "io.hyperswitch:hyperswitch-sdk-android-common:1.0.1"
   implementation "io.hyperswitch:hyperswitch-sdk-android-logger:1.0.0"
   implementation 'io.hyperswitch:hyperswitch-sdk-android-webview-utils:1.0.6'
 }

@@ -22,9 +22,9 @@ export interface Spec extends TurboModule {
     customEndpoints: CustomEndpoints
   ): Promise<string>;
 
-  presentPaymentSheet(params: SessionData): Promise<string>;
+  presentPaymentSheet(params: Object): Promise<string>;
 
-  getCustomerSavedPaymentMethods(params?: SessionData): Promise<string>;
+  getCustomerSavedPaymentMethods(params?: Object): Promise<string>;
 
   getCustomerLastUsedPaymentMethodData(): Promise<string>;
 

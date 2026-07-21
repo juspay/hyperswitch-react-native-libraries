@@ -42,10 +42,10 @@ internal class NativePaymentWidget: RCTViewManager {
             }
             // New-arch (Fabric) path: the Fabric NativePaymentElementView registered
             // the inner NativePaymentWidgetView in the shared registry by the same tag.
-            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
-                view.confirmPayment(rnCallback)
-                return
-            }
+//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
+//                view.confirmPayment(rnCallback)
+//                return
+//            }
             rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
         }
     }
@@ -56,10 +56,10 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.updateIntentInit(rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
-                view.updateIntentInit(rnCallback)
-                return
-            }
+//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
+//                view.updateIntentInit(rnCallback)
+//                return
+//            }
             rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
         }
     }
@@ -74,10 +74,10 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
-                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
-                return
-            }
+//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
+//                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+//                return
+//            }
             rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
         }
     }
@@ -93,10 +93,10 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
-                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
-                return
-            }
+//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
+//                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+//                return
+//            }
             rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
         }
     }

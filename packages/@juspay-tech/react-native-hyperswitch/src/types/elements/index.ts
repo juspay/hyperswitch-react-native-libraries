@@ -2,8 +2,6 @@ import { PaymentResult } from "../paymentresult";
 import type {
   PaymentElementHandle,
   PaymentSessionConfiguration,
-  PaymentElement,
-  CvcWidget,
 } from "../definitions";
 import { CustomerSavedPaymentMethodsSession } from "../savedPaymentMethods";
 
@@ -15,12 +13,6 @@ export interface Elements {
   presentPaymentSheet(
     configuration?: Record<string, unknown>
   ): Promise<PaymentResult>;
-  create(options: {
-    type: 'paymentElement';
-    id?: string;
-    options?: any;
-  }): PaymentElement;
-  create(options: { type: 'cvcWidget'; id?: string; options?: any }): CvcWidget;
   updateIntent(
     intentResolver: () => Promise<PaymentSessionConfiguration>
   ): Promise<void>;

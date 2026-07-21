@@ -1,7 +1,6 @@
 import type {
   HyperswitchConfiguration,
   PaymentElementHandle,
-  ElementType,
   PaymentSessionConfiguration,
 } from '../types/definitions';
 import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
@@ -12,10 +11,8 @@ import {
 import type { PaymentResult } from '../types/paymentresult';
 import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
 
-import { createPaymentElement } from '../views/PaymentElement';
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import { Elements } from '../types/elements';
-import { createCvcWidget } from '../views/CVCElement';
 
 type ElementsNativeActions = Pick<
   Elements,
@@ -24,16 +21,6 @@ type ElementsNativeActions = Pick<
   | 'getCustomerSavedPaymentMethods'
   | 'updateIntent'
 >;
-
-const SUPPORTED_ELEMENT_TYPES: readonly ElementType[] = [
-  'paymentElement',
-  'cvcWidget',
-];
-
-
-function isElementType(type: string): type is ElementType {
-  return SUPPORTED_ELEMENT_TYPES.includes(type as ElementType);
-}
 
 export function createElementsNativeActions(
   hyperswitchConfig: HyperswitchConfiguration,
@@ -88,32 +75,6 @@ export function createElements(
   paymentSessionConfig: PaymentSessionConfiguration
 ): Elements {
   return {
-    create(opts: { type: string; id?: string; options?: any }): any {
-      if (!isElementType(opts.type)) {
-        throw new Error(
-          `[react-native-hyperswitch] elements.create('${opts.type}') is not supported. ` +
-            `Supported types are 'paymentElement' and 'cvcWidget'.`
-        );
-      }
-
-      switch (opts.type) {
-        case 'paymentElement':
-          return createPaymentElement({
-            id: opts.id,
-            options: opts.options,
-            hyperswitchConfig,
-            paymentSessionConfig,
-          });
-        case 'cvcWidget':
-          return createCvcWidget({
-            id: opts.id,
-            options: opts.options,
-            hyperswitchConfig,
-            paymentSessionConfig,
-          });
-      }
-    },
-
     ...createElementsNativeActions(hyperswitchConfig, paymentSessionConfig),
   };
 }

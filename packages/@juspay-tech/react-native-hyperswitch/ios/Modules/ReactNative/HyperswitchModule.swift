@@ -266,11 +266,11 @@ public class HyperswitchModule: NSObject {
                     self.withNativePaymentWidgetView(
                         NSNumber(value: reactTag),
                         onFound: { view in
-                            view.confirmCVCPayment(
-                                paymentToken: paymentMethod.paymentToken,
-                                paymentMethodId: paymentMethod.paymentMethodId,
-                                resolve: resolve
-                            )
+//                            view.confirm(
+//                                paymentToken: paymentMethod.paymentToken,
+//                                paymentMethodId: paymentMethod.paymentMethodId,
+//                                resolve: resolve
+//                            )
                         },
                         onMissing: {
                             resolve([
@@ -327,17 +327,17 @@ public class HyperswitchModule: NSObject {
                     self.withNativePaymentWidgetView(
                         NSNumber(value: reactTag),
                         onFound: { view in
-                            guard let cvcWidget = view.cvcWidgetRef else {
-                                resolve([
-                                    "status": "failed",
-                                    "code": "WIDGET_NOT_READY",
-                                    "message": "CVC widget is not ready",
-                                ])
-                                return
-                            }
-                            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { result in
-                                resolve(HyperswitchModule.paymentResultToDict(result))
-                            }
+//                            guard let cvcWidget = view.cvcWidgetRef else {
+//                                resolve([
+//                                    "status": "failed",
+//                                    "code": "WIDGET_NOT_READY",
+//                                    "message": "CVC widget is not ready",
+//                                ])
+//                                return
+//                            }
+//                            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { result in
+//                                resolve(HyperswitchModule.paymentResultToDict(result))
+//                            }
                         },
                         onMissing: {
                             resolve([
@@ -425,7 +425,7 @@ public class HyperswitchModule: NSObject {
     /// wrapper is located, otherwise `onMissing`.
     private func withNativePaymentWidgetView(
         _ reactTag: NSNumber,
-        onFound: @escaping (NativePaymentWidgetView) -> Void,
+        onFound: @escaping (PaymentWidget) -> Void,
         onMissing: @escaping () -> Void
     ) {
         guard let viewRegistry = self.viewRegistry_DEPRECATED else {
@@ -435,7 +435,7 @@ public class HyperswitchModule: NSObject {
         let view = viewRegistry.view(forReactTag: reactTag)
         var current: UIView? = view
         while let v = current {
-            if let nativeWidget = v as? NativePaymentWidgetView {
+            if let nativeWidget = v as? PaymentWidget {
                 onFound(nativeWidget)
                 return
             }

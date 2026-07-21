@@ -119,9 +119,18 @@ public class NativeHyperswitchModuleImpl: NSObject {
                 ])
                 return
             }
+
+            // The SDK's getRootViewWithParams wraps the whole `props` dictionary
+            // under the `configuration` key, so we must pass the contents that
+            // belong inside `configuration`: the merchant-supplied configuration
+            // plus the session/hyperswitch metadata.
+            var sheetProps = params["configuration"] as? [String: Any] ?? [:]
+            sheetProps["hyperswitchConfig"] = params["hyperswitchConfig"]
+            sheetProps["paymentSessionConfig"] = params["paymentSessionConfig"]
+
             session.presentPaymentSheetWithParams(
                 viewController: vc,
-                params: params,
+                params: sheetProps,
                 completion: { result in
                     switch result {
                     case .completed(let data):
@@ -264,11 +273,12 @@ public class NativeHyperswitchModuleImpl: NSObject {
         }
     }
 
-    // MARK: - confirmWithCustomerLastUsedPaymentMethod  (no params — matches Android)
-    // Android: TODO("Not yet implemented")
+    // MARK: - confirmWithCustomerLastUsedPaymentMethod
+    // JS / Android: confirmWithCustomerLastUsedPaymentMethod(reactTag: Double, promise: Promise?)
 
-    @objc(confirmWithCustomerLastUsedPaymentMethodWithResolve:reject:)
+    @objc(confirmWithCustomerLastUsedPaymentMethod:resolve:reject:)
     public func confirmWithCustomerLastUsedPaymentMethod(
+        reactTag: Double,
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {
@@ -276,11 +286,12 @@ public class NativeHyperswitchModuleImpl: NSObject {
         resolve("{\"status\":\"failed\",\"message\":\"Not yet implemented\"}")
     }
 
-    // MARK: - confirmWithCustomerDefaultPaymentMethod  (no params — matches Android)
-    // Android: TODO("Not yet implemented")
+    // MARK: - confirmWithCustomerDefaultPaymentMethod
+    // JS / Android: confirmWithCustomerDefaultPaymentMethod(reactTag: Double, promise: Promise?)
 
-    @objc(confirmWithCustomerDefaultPaymentMethodWithResolve:reject:)
+    @objc(confirmWithCustomerDefaultPaymentMethod:resolve:reject:)
     public func confirmWithCustomerDefaultPaymentMethod(
+        reactTag: Double,
         resolve: @escaping RCTPromiseResolveBlock,
         reject: @escaping RCTPromiseRejectBlock
     ) {

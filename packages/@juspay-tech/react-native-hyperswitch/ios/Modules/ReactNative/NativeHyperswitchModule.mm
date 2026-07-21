@@ -65,10 +65,11 @@ RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)params
 
 // ---------------------------------------------------------------------------
 // getCustomerSavedPaymentMethods
-// JS: getCustomerSavedPaymentMethods(params?: SessionData)
+// JS: getCustomerSavedPaymentMethods(params?: Object)
+// iOS codegen: getCustomerSavedPaymentMethods(NSDictionary *params, Promise)
 // Android: getCustomerSavedPaymentMethods(@Nullable ReadableMap params, Promise)
 // ---------------------------------------------------------------------------
-RCT_EXPORT_METHOD(getCustomerSavedPaymentMethods:(nullable NSDictionary *)params
+RCT_EXPORT_METHOD(getCustomerSavedPaymentMethods:(nonnull NSDictionary *)params
                   resolve:(nonnull RCTPromiseResolveBlock)resolve
                   reject:(nonnull RCTPromiseRejectBlock)reject)
 {
@@ -111,25 +112,29 @@ RCT_EXPORT_METHOD(getCustomerSavedPaymentMethodData:(nonnull RCTPromiseResolveBl
 }
 
 // ---------------------------------------------------------------------------
-// confirmWithCustomerLastUsedPaymentMethod  (no params — matches Android)
-// Android: confirmWithCustomerLastUsedPaymentMethod(Promise?)  → TODO
+// confirmWithCustomerLastUsedPaymentMethod
+// JS / Android: confirmWithCustomerLastUsedPaymentMethod(reactTag: number): Promise<string>
 // ---------------------------------------------------------------------------
-RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(nonnull RCTPromiseResolveBlock)resolve
+RCT_EXPORT_METHOD(confirmWithCustomerLastUsedPaymentMethod:(double)reactTag
+                  resolve:(nonnull RCTPromiseResolveBlock)resolve
                   reject:(nonnull RCTPromiseRejectBlock)reject)
 {
-    [[self moduleImpl] confirmWithCustomerLastUsedPaymentMethodWithResolve:resolve
-                                                                     reject:reject];
+    [[self moduleImpl] confirmWithCustomerLastUsedPaymentMethod:reactTag
+                                                        resolve:resolve
+                                                         reject:reject];
 }
 
 // ---------------------------------------------------------------------------
-// confirmWithCustomerDefaultPaymentMethod  (no params — matches Android)
-// Android: confirmWithCustomerDefaultPaymentMethod(Promise?)  → TODO
+// confirmWithCustomerDefaultPaymentMethod
+// JS / Android: confirmWithCustomerDefaultPaymentMethod(reactTag: number): Promise<string>
 // ---------------------------------------------------------------------------
-RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(nonnull RCTPromiseResolveBlock)resolve
+RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(double)reactTag
+                  resolve:(nonnull RCTPromiseResolveBlock)resolve
                   reject:(nonnull RCTPromiseRejectBlock)reject)
 {
-    [[self moduleImpl] confirmWithCustomerDefaultPaymentMethodWithResolve:resolve
-                                                                    reject:reject];
+    [[self moduleImpl] confirmWithCustomerDefaultPaymentMethod:reactTag
+                                                       resolve:resolve
+                                                        reject:reject];
 }
 
 // ---------------------------------------------------------------------------
