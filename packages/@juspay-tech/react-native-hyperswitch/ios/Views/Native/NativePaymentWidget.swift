@@ -374,7 +374,7 @@ public class NativePaymentWidgetView: UIView {
         }
 
         let eventData: [String: Any] = ["rootTag": tag]
-        RNViewManager.sharedInstance.bridge.enqueueJSCall(
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
             "RCTDeviceEventEmitter",
             method: "emit",
             args: ["updateIntentInit", eventData],
@@ -397,7 +397,7 @@ public class NativePaymentWidgetView: UIView {
             "rootTag": tag,
             "sdkAuthorization": sdkAuthorization,
         ]
-        RNViewManager.sharedInstance.bridge.enqueueJSCall(
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
             "RCTDeviceEventEmitter",
             method: "emit",
             args: ["updateIntentComplete", eventData],

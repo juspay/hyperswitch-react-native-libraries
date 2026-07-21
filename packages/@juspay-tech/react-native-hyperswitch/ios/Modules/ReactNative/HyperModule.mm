@@ -1,5 +1,9 @@
 #import "HyperModule.h"
 
+#import <React/RCTComponent.h>
+#import <memory>
+
+
 #if __has_include("HyperswitchSdkReactNative-Swift.h")
 #import "HyperswitchSdkReactNative-Swift.h"
 #else

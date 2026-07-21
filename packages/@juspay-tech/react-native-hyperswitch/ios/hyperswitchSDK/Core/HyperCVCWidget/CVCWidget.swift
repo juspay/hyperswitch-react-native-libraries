@@ -14,7 +14,7 @@ public class CVCWidget: UIControl {
     private var configurationDict: [String: Any]?
     private var widgetReactTag: NSNumber?
     internal var rootReactTag: NSNumber? { widgetReactTag }
-    private var rootView: RCTRootView?
+    private var rootView: UIView?
     private var cvcCallback: ((PaymentResult) -> Void)?
     private var subscribedEventNames: [String]?
     private let hyperswitch: Hyperswitch
@@ -112,7 +112,7 @@ public class CVCWidget: UIControl {
             "paymentToken": paymentToken,
             "paymentMethodId": paymentMethodId as Any,
         ]
-        self.rootView?.bridge.enqueueJSCall(
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
             "RCTDeviceEventEmitter",
             method: "emit",
             args: ["triggerWidgetAction", payload],
@@ -134,3 +134,4 @@ public class CVCWidget: UIControl {
         self.paymentEventListener = listener
     }
 }
+

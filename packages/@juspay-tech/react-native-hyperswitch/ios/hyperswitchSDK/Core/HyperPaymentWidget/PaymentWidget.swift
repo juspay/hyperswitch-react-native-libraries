@@ -16,7 +16,7 @@ public class PaymentWidget: UIControl {
     private var configurationDict: [String: Any]?
     private var widgetReactTag: NSNumber?
     internal var rootReactTag: NSNumber? { widgetReactTag }
-    private var rootView: RCTRootView?
+    private var rootView: UIView?
     private var initCallback: ((PaymentResult) -> Void)?
     private var shouldProceedWithPaymentCallback: ((PaymentRequestData, @escaping (Bool) -> Void) -> Void)?
     private var cancellables = Set<AnyCancellable>()
@@ -124,7 +124,7 @@ public class PaymentWidget: UIControl {
             .sink { [weak self] in
                 guard let self = self else { return }
                 let payload: [String: Any] = ["rootTag": self.widgetReactTag ?? -1]
-                self.rootView?.bridge.enqueueJSCall(
+                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
                     "RCTDeviceEventEmitter",
                     method: "emit",
                     args: ["updateIntentInit", payload],
@@ -141,7 +141,7 @@ public class PaymentWidget: UIControl {
                     "rootTag": self.widgetReactTag ?? -1,
                     "sdkAuthorization": sdkAuthorization,
                 ]
-                self.rootView?.bridge.enqueueJSCall(
+                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
                     "RCTDeviceEventEmitter",
                     method: "emit",
                     args: ["updateIntentComplete", payload],
@@ -156,7 +156,7 @@ public class PaymentWidget: UIControl {
             "rootTag": self.widgetReactTag ?? -1,
             "actionType": "CONFIRM_PAYMENT_ACTION",
         ]
-        self.rootView?.bridge.enqueueJSCall(
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
             "RCTDeviceEventEmitter",
             method: "emit",
             args: ["triggerWidgetAction", payload],
@@ -210,3 +210,4 @@ public class PaymentWidget: UIControl {
         }
     }
 }
+
