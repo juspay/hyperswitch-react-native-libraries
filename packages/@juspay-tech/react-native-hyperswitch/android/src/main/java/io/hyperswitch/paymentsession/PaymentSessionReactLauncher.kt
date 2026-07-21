@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.addCallback
 import androidx.fragment.app.FragmentActivity
 import com.facebook.react.ReactHost
@@ -132,17 +133,30 @@ class PaymentSessionReactLauncher(
 
   private fun presentSheetInternal(bundle: Bundle): Boolean {
     if (activity is DefaultHardwareBackBtnHandler && activity is FragmentActivity) {
+      val fragmentActivity = activity as FragmentActivity
+      val fragmentManager = fragmentActivity.supportFragmentManager
+      try {
+        fragmentManager.findFragmentByTag("paymentSheet")?.let { existingFragment ->
+          fragmentManager.beginTransaction()
+            .remove(existingFragment)
+            .commitNowAllowingStateLoss()
+        }
+      }catch(e:Exception){
+        Log.i("Manideep", e.message.toString())
+      }
+
       val newReactNativeFragmentSheet =
-        HyperFragment.Builder().setComponentName("hyperSwitch").setLaunchOptions(bundle)
-          .setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED).build()
+        HyperFragment.Builder()
+          .setComponentName("hyperSwitch")
+          .setLaunchOptions(bundle)
+          .setFabricEnabled(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
+          .build()
 
-      val activity2 = activity as FragmentActivity
-
-      activity2.onBackPressedDispatcher.addCallback {
+      fragmentActivity.onBackPressedDispatcher.addCallback {
         newReactNativeFragmentSheet.onBackPressed()
       }
 
-      activity2.supportFragmentManager.beginTransaction()
+      fragmentManager.beginTransaction()
         .add(android.R.id.content, newReactNativeFragmentSheet, "paymentSheet")
         .commitAllowingStateLoss()
 
@@ -156,7 +170,6 @@ class PaymentSessionReactLauncher(
           putExtra("flow", 1)
           putExtra("configuration", bundle)
         })
-
       return false
     }
   }

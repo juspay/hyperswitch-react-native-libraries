@@ -32,9 +32,11 @@ export interface Spec extends TurboModule {
 
   getCustomerSavedPaymentMethodData(): Promise<string>;
 
-  confirmWithCustomerLastUsedPaymentMethod(): Promise<string>;
+  confirmWithCustomerLastUsedPaymentMethod(reactTag: number): Promise<string>;
 
-  confirmWithCustomerDefaultPaymentMethod(): Promise<string>;
+  confirmWithCustomerDefaultPaymentMethod(reactTag: number): Promise<string>;
+
+  confirmWithCustomerPaymentToken(reactTag: number, token: string): Promise<string>;
 }
 
 /**

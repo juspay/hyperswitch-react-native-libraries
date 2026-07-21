@@ -45,6 +45,7 @@ export interface NativePaymentSheetPayload {
 
 import type { ComponentType } from 'react';
 import { CustomerSavedPaymentMethodsSession } from './savedPaymentMethods';
+import type { Elements } from './elements';
 
 
 
@@ -98,3 +99,11 @@ export interface CvcWidget {
   ): { remove: () => void } | null;
 }
 
+
+export interface HyperswitchSession {
+  publishableKey: string;
+  elements(options: PaymentSessionConfiguration): Promise<Elements>;
+  initPaymentSession(
+    options: PaymentSessionConfiguration
+  ): Promise<PaymentSession>;
+}

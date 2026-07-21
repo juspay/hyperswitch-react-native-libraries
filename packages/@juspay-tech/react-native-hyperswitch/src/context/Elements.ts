@@ -15,7 +15,7 @@ import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMe
 import { createPaymentElement } from '../views/PaymentElement';
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import { Elements } from '../types/elements';
-import { createCvcWidget } from '../views/CvcWidget';
+import { createCvcWidget } from '../views/CVCElement';
 
 type ElementsNativeActions = Pick<
   Elements,

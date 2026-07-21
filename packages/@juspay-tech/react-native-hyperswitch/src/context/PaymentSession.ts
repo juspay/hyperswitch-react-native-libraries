@@ -9,6 +9,7 @@ import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import type { PaymentResult } from '../types/paymentresult';
 import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
+import { isInitializing, isSheetPresented, setSheetPresented } from '../utils/InitializationState';
 
 interface NativeResponse {
   status: string;
@@ -58,23 +59,36 @@ export function mapNativeResponseToPaymentResult(
 export async function presentPaymentSheetWithPayload(
   payload: NativePaymentSheetPayload
 ): Promise<PaymentResult> {
-  const raw = await NativeHyperswitchModule.presentPaymentSheet({
-    hyperswitchConfig: payload.hyperswitchConfig,
-    paymentSessionConfig: payload.paymentSessionConfig,
-    configuration: payload.configuration,
-  });
-  return mapNativeResponseToPaymentResult(raw);
+  if (isInitializing()) {
+    return {
+      type: 'failed',
+      message: 'SDK is reloading. Please wait for initialisation to complete before presenting the payment sheet.',
+    };
+  }
+  if (isSheetPresented()) {
+    // A sheet is already open (e.g. a hot-reload fired while the sheet was visible).
+    // Silently skip so the existing sheet is not covered by a new one.
+    return {
+      type: 'canceled',
+      message: 'A payment sheet is already presented.',
+    };
+  }
+  setSheetPresented(true);
+  try {
+    const raw = await NativeHyperswitchModule.presentPaymentSheet({
+      hyperswitchConfig: payload.hyperswitchConfig,
+      paymentSessionConfig: payload.paymentSessionConfig,
+      configuration: payload.configuration,
+    });
+    return mapNativeResponseToPaymentResult(raw);
+  } finally {
+    setSheetPresented(false);
+  }
 }
 
 export async function updateIntent(
   _intentResolver: () => Promise<PaymentSessionConfiguration>
 ): Promise<void> {
-  //   const cfg = await intentResolver();
-  //   const raw = await NativeHyperswitchModule.updateIntent(cfg.sdkAuthorization);
-  //   const parsed = parseNativeResponse(raw);
-  //   if (mapStatus(parsed.status) === 'failed') {
-  //     throw new Error(parsed.message || 'Update intent failed');
-  //   }
 }
 
 export function createPaymentSession(
@@ -102,7 +116,6 @@ export function createPaymentSession(
         configuration
       );
     },
-
     updateIntent,
   };
 }

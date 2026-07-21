@@ -6,7 +6,6 @@ import {
   useState,
 } from 'react';
 import type { ViewStyle } from 'react-native';
-import type { PaymentSessionConfiguration } from '../types/definitions';
 import NativePaymentWidgetImpl from './NativePaymentWidgetImpl';
 import { registerWidget, unregisterWidget } from '../context/WidgetRegistry';
 import { confirmPayment as nativeConfirmPayment } from '../modules/NativeHyperswitchSdk';
@@ -25,7 +24,6 @@ import type {
   paymentEventNative,
   nativeEvent,
 } from '../types/NativeModuleTypes';
-import { HyperswitchConfiguration } from '../types/definitions';
 
 function parsePaymentResult(result: string): paymentResult {
   return JSON.parse(result);
@@ -37,11 +35,11 @@ type PaymentWidgetRef = {
 
 type PaymentElementProps = {
   widgetId: string;
-  hyperswitchConfig?: HyperswitchConfiguration;
-  paymentSessionConfig?: PaymentSessionConfiguration;
-  onPaymentResult: (result: paymentResult) => void;
-  onPaymentEvent?: (event: paymentEventResult) => void;
   options?: PaymentSheetConfiguration;
+  onPaymentResult: (result: paymentResult) => void;
+  // onPaymentConfirmButtonClick:() =>void;
+  onChange?: (event: paymentEventResult) => void;
+  onReady?: (event: string) => void;
   style?: ViewStyle;
 };
 
@@ -51,11 +49,9 @@ export const PaymentElementView = forwardRef<
 >((props, ref) => {
   const {
     widgetId,
-    hyperswitchConfig,
-    paymentSessionConfig,
-    onPaymentResult,
-    onPaymentEvent,
     options,
+    onPaymentResult,
+    onChange,
     style,
   } = props;
   const [viewId, setViewId] = useState<number | undefined>(undefined);
@@ -147,7 +143,7 @@ export const PaymentElementView = forwardRef<
   const warningEmitted = useRef(false);
 
   useEffect(() => {
-    if (!options || !onPaymentEvent || warningEmitted.current) {
+    if (!options || !onChange || warningEmitted.current) {
       return;
     }
     const subscribedEvents = options.subscribedEvents as string[] | undefined;
@@ -156,7 +152,7 @@ export const PaymentElementView = forwardRef<
     if (invalidEvents.length > 0) {
       warningEmitted.current = true;
       const warningPayload = makeUnknownEventWarningPayload(invalidEvents);
-      onPaymentEvent({
+      onChange({
         eventName: 'UNKNOWN_EVENT_SUBSCRIBED',
         payload: {
           message: warningPayload.message,
@@ -165,20 +161,20 @@ export const PaymentElementView = forwardRef<
         },
       });
     }
-  }, [options, onPaymentEvent]);
+  }, [options, onChange]);
 
   const onPaymentResultInternal = (event: nativeEvent) => {
     onPaymentResult(parsePaymentResult(event.nativeEvent.result ?? ''));
   };
 
   const onPaymentEventInternal = (event: paymentEventNative) => {
-    onPaymentEvent?.(event.nativeEvent);
+    onChange?.(event.nativeEvent);
   };
 
   return (
     <NativePaymentWidgetImpl
       ref={viewRef}
-      sdkAuthorization={paymentSessionConfig?.sdkAuthorization}
+      sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
       widgetType="widgetPaymentSheet"
       onPaymentEvent={onPaymentEventInternal}
       onPaymentResult={onPaymentResultInternal}

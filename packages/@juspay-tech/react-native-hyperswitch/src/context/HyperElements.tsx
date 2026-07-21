@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { PaymentSession, Elements, HyperswitchSession } from '../definitions';
+import { PaymentSession } from '../types/definitions';
+import { Elements, HyperswitchSession } from '../types/elements';
 
 interface HyperElementsContext {
   paymentSession: PaymentSession | null;

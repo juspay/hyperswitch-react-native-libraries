@@ -1,28 +1,25 @@
-// Adapter that wraps the handle-based react-native-hyperswitch native module
-// into the universal HyperswitchSession shape consumed by
-// @juspay-tech/react-hyperswitch.
-
 import type {
   HyperswitchConfiguration,
   PaymentSession,
   PaymentSessionConfiguration,
+  HyperswitchSession
 } from './types/definitions';
+
 export type * from './types/definitions';
+export type * from './types/elements';
+export type * from './types/NativeModuleTypes';
+export type * from './types/PaymentSheetConfiguration'
 
 import NativeHyperswitchModule from './specs/NativeHyperswitchModule';
 import { createPaymentSession } from './context/PaymentSession';
-import { createElements } from './context/Elements';
 import { Elements } from './types/elements';
+import { createElements } from './context/Elements';
+import { setInitializing } from './utils/InitializationState';
 
-/**
- * Initialise the Hyperswitch SDK and return a session handle that exposes the
- * universal contract used by @juspay-tech/react-hyperswitch:
- *   - initPaymentSession: headless payment-sheet session
- *   - elements: factory for PaymentElement / CvcWidget handles
- */
 export function loadHyper(
   config: HyperswitchConfiguration
-): Promise<any> {
+): Promise<HyperswitchSession> {
+  setInitializing(true);
   return NativeHyperswitchModule.initialise(
     config.publishableKey,
     config.platformPublishableKey ?? '',
@@ -30,29 +27,27 @@ export function loadHyper(
     config.environment ?? 'PROD',
     config.customEndpoints ?? {}
   ).then(() => {
+    setInitializing(false);
     return {
       publishableKey: config.publishableKey,
       async initPaymentSession(
         options: PaymentSessionConfiguration
       ): Promise<PaymentSession> {
-        // const instanceHandle = await instanceHandlePromise;
-        // await NativeHyperswitchModule.initPaymentSession(
-        //   instanceHandle,
-        //   options.sdkAuthorization
-        // );
         return createPaymentSession(config, options);
       },
       async elements(options: PaymentSessionConfiguration): Promise<Elements> {
-        // await NativeHyperswitchModule.initPaymentSession(
-        //   instanceHandle,
-        //   options.sdkAuthorization
-        // );
         return createElements(config, options);
       },
     }
   }).catch((error) => {
+    setInitializing(false);
     console.error('Error initializing Hyperswitch SDK:', error);
     throw error;
   });
 
 }
+
+
+export const Hyperswitch = {
+  init: loadHyper,
+};

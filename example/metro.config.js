@@ -2,7 +2,6 @@ const path = require('path');
 const { getDefaultConfig } = require('@react-native/metro-config');
 
 const rnhsRoot = path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch');
-const rhsRoot = path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-hyperswitch');
 
 /**
  * Metro configuration
@@ -19,7 +18,7 @@ const config = getDefaultConfig(__dirname);
 const isMerchantApp = process.env.HS_MERCHANT_APP === 'true';
 
 // Watch workspace sources for live reload in development/watch mode only.
-config.watchFolders = isMerchantApp ? [] : [rnhsRoot, rhsRoot];
+config.watchFolders = isMerchantApp ? [] : [rnhsRoot];
 
 config.resolver.nodeModulesPaths = [
   path.resolve(__dirname, 'node_modules'),
@@ -34,12 +33,6 @@ if (!isMerchantApp) {
     if (moduleName === '@juspay-tech/react-native-hyperswitch') {
       return {
         filePath: path.join(rnhsRoot, 'src', 'index.ts'),
-        type: 'sourceFile',
-      };
-    }
-    if (moduleName === '@juspay-tech/react-hyperswitch') {
-      return {
-        filePath: path.join(rhsRoot, 'src', 'index.ts'),
         type: 'sourceFile',
       };
     }

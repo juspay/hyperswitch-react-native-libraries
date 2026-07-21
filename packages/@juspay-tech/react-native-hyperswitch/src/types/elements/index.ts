@@ -2,7 +2,6 @@ import { PaymentResult } from "../paymentresult";
 import type {
   PaymentElementHandle,
   PaymentSessionConfiguration,
-  PaymentSession,
   PaymentElement,
   CvcWidget,
 } from "../definitions";
@@ -39,12 +38,4 @@ export interface ElementsActions {
     intentResolver: () => Promise<PaymentSessionConfiguration>
   ) => Promise<void>;
   getCustomerSavedPaymentMethods(): Promise<CustomerSavedPaymentMethodsSession>;
-}
-
-export interface HyperswitchSession {
-  publishableKey: string;
-  elements(options: PaymentSessionConfiguration): Promise<Elements>;
-  initPaymentSession(
-    options: PaymentSessionConfiguration
-  ): Promise<PaymentSession>;
 }

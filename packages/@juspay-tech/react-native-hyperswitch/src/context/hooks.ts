@@ -1,13 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import type {
-  PaymentSession,
-  PaymentSessionConfiguration,
-  PaymentResult,
-  PaymentElementHandle,
-  ElementsActions,
-  CustomerSavedPaymentMethodsSession,
-} from '../definitions';
 import { useHyperElementsContext } from './HyperElements';
+import { PaymentSession, PaymentSessionConfiguration, PaymentElementHandle } from '../types/definitions';
+import { ElementsActions } from '../types/elements';
+import { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
 
 export function usePaymentSession(): PaymentSession | null {
   const { paymentSession } = useHyperElementsContext();

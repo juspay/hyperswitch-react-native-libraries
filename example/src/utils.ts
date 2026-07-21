@@ -2,8 +2,8 @@ import { Platform } from 'react-native';
 import {
   CvcWidgetOptions,
   PaymentElementOptions,
-} from '@juspay-tech/react-hyperswitch';
-import { LayoutType, SubscriptionEvent } from '@juspay-tech/react-hyperswitch';
+} from '@juspay-tech/react-native-hyperswitch';
+import { LayoutType, SubscriptionEvent } from '@juspay-tech/react-native-hyperswitch';
 
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';

@@ -4,9 +4,6 @@
     "types": ["react-native"],
     "baseUrl": ".",
     "paths": {
-      "@juspay-tech/react-hyperswitch": [
-        "../packages/@juspay-tech/react-hyperswitch/src/index.ts"
-      ],
       "@juspay-tech/react-native-hyperswitch": [
         "../packages/@juspay-tech/react-native-hyperswitch/src/index.ts"
       ]

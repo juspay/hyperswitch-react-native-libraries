@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import io.hyperswitch.paymentsheet.PaymentResult
 import io.hyperswitch.utils.ConversionUtils
+import io.hyperswitch.view.PaymentWidgetView
 //import io.hyperswitch.view.CVCWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,20 +85,20 @@ internal class PaymentSessionHandlerImpl(
     override suspend fun confirmWithCustomerLastUsedPaymentMethod(cvcWidget: View): PaymentResult {
         val method = getCustomerLastUsedPaymentMethodData()
             .getOrElse { return PaymentResult.Failed(it) }
-//        (cvcWidget as? CVCWidget)?.let {
-//            it.setSdkAuthorization(sdkAuthorization)
+        (cvcWidget as? PaymentWidgetView)?.let {
+            it.setSdkAuthorization(sdkAuthorization)
 //            return it.confirmCVCWidget(sdkAuthorization, method.paymentToken, method.billing)
-//        }
+        }
         return PaymentResult.Failed(Throwable("View can't be cast as CVCWidget"))
     }
 
     override suspend fun confirmWithCustomerDefaultPaymentMethod(cvcWidget: View): PaymentResult {
         val method = getCustomerDefaultSavedPaymentMethodData()
             .getOrElse { return PaymentResult.Failed(it) }
-//        (cvcWidget as? CVCWidget)?.let {
-//            it.setSdkAuthorization(sdkAuthorization)
+        (cvcWidget as? PaymentWidgetView)?.let {
+            it.setSdkAuthorization(sdkAuthorization)
 //            return it.confirmCVCWidget(sdkAuthorization, method.paymentToken, method.billing)
-//        }
+        }
         return PaymentResult.Failed(Throwable("View can't be cast as CVCWidget"))
     }
 

@@ -1,22 +1,16 @@
-import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Linking,
-  StyleSheet,
-} from 'react-native';
-import { loadHyper } from '@juspay-tech/react-native-hyperswitch';
-import type { HyperswitchSession } from '@juspay-tech/react-hyperswitch';
-import DemoPopup from './DemoPopup';
-import { profileId, publishableKey } from './utils';
+import { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Hyperswitch } from "@juspay-tech/react-native-hyperswitch";
+import { initialBaseUrl } from "./utils";
+import { getCustomisationOptions, profileId, publishableKey } from "./utils";
+import type { HyperswitchSession } from "@juspay-tech/react-native-hyperswitch";
 
 let hyperSingleton: Promise<HyperswitchSession> | null = null;
 
 function getHyperSingleton(): Promise<HyperswitchSession> | null {
   if (!publishableKey) return null;
   if (!hyperSingleton) {
-    hyperSingleton = loadHyper({
+    hyperSingleton = Hyperswitch.init({
       publishableKey,
       profileId,
     }) as Promise<HyperswitchSession>;
@@ -25,18 +19,37 @@ function getHyperSingleton(): Promise<HyperswitchSession> | null {
 }
 
 export default function App() {
-  const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        setStatus(new URL(url).searchParams.get('status'));
-      }
-    });
-  }, []);
-
   const hyperPromise = getHyperSingleton();
+  const openSDK = async () => {
+    const serverUrl = initialBaseUrl;
+    fetch(`${serverUrl}/create-payment-intent`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.sdkAuthorization) {
+          hyperPromise?.then(async (hyper) => {
+            let session = await hyper.initPaymentSession({
+              sdkAuthorization: data.sdkAuthorization,
+            });
+            let result = await session.presentPaymentSheet(
+              getCustomisationOptions("tabs"),
+            );
+            console.log("Payment result", result);
+            console.log("Payment result", result);
+            if (result.type === "completed") {
+              setStatus("Payment completed successfully");
+            } else {
+              setStatus(`Payment ${result.type}: ${result.message}`);
+            }
+          });
+        } else {
+          setStatus("Failed to get sdkAuthorization from server");
+        }
+      })
+      .catch((err) => {
+        setStatus(`Payment failed: ${err.message}`);
+      });
+  };
 
   if (!publishableKey) {
     return (
@@ -53,16 +66,9 @@ export default function App() {
           <Text style={styles.statusText}>Status: {status.toUpperCase()}</Text>
         </View>
       )}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => setOpen(true)}
-      >
+      <TouchableOpacity style={styles.button} onPress={() => openSDK()}>
         <Text style={styles.buttonText}>Start Demo</Text>
       </TouchableOpacity>
-
-      {open && hyperPromise && (
-        <DemoPopup hyperPromise={hyperPromise} onClose={() => setOpen(false)} />
-      )}
     </View>
   );
 }
@@ -70,38 +76,38 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fafafa',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fafafa",
     padding: 24,
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusBar: {
     marginBottom: 24,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
     borderRadius: 999,
   },
   statusText: {
     fontSize: 16,
-    color: '#111827',
+    color: "#111827",
   },
   button: {
     height: 48,
     paddingHorizontal: 32,
     borderRadius: 999,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#111827",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

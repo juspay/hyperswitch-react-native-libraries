@@ -35,15 +35,32 @@ internal class NativePaymentWidget: RCTViewManager {
 
     @objc func confirmPayment(_ reactTag: NSNumber, _ rnCallback: @escaping RCTResponseSenderBlock) {
         bridge.uiManager.addUIBlock { _, viewRegistry in
-            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
-            view.confirmPayment(rnCallback)
+            // Old-arch path: the view is NativePaymentWidgetView directly.
+            if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
+                view.confirmPayment(rnCallback)
+                return
+            }
+            // New-arch (Fabric) path: the Fabric NativePaymentElementView registered
+            // the inner NativePaymentWidgetView in the shared registry by the same tag.
+            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: reactTag) as? NativePaymentWidgetView {
+                view.confirmPayment(rnCallback)
+                return
+            }
+            rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
         }
     }
 
     @objc func updateIntentInitForWidget(_ rootTag: NSNumber, _ rnCallback: @escaping RCTResponseSenderBlock) {
         bridge.uiManager.addUIBlock { _, viewRegistry in
-            guard let view = viewRegistry?[rootTag] as? NativePaymentWidgetView else { return }
-            view.updateIntentInit(rnCallback)
+            if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
+                view.updateIntentInit(rnCallback)
+                return
+            }
+            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: rootTag) as? NativePaymentWidgetView {
+                view.updateIntentInit(rnCallback)
+                return
+            }
+            rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
         }
     }
 
@@ -53,8 +70,15 @@ internal class NativePaymentWidget: RCTViewManager {
         _ rnCallback: @escaping RCTResponseSenderBlock
     ) {
         bridge.uiManager.addUIBlock { _, viewRegistry in
-            guard let view = viewRegistry?[rootTag] as? NativePaymentWidgetView else { return }
-            view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+            if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
+                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+                return
+            }
+            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: rootTag) as? NativePaymentWidgetView {
+                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+                return
+            }
+            rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
         }
     }
 
@@ -65,22 +89,33 @@ internal class NativePaymentWidget: RCTViewManager {
         _ rnCallback: @escaping RCTResponseSenderBlock
     ) {
         bridge.uiManager.addUIBlock { _, viewRegistry in
-            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else { return }
-            view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+            if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
+                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+                return
+            }
+            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: reactTag) as? NativePaymentWidgetView {
+                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+                return
+            }
+            rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
         }
     }
 }
 
+// @objc exposes this class to Objective-C++ so the Fabric component
+// (NativePaymentElementView.mm) can instantiate it and type-check it.
+@objc(NativePaymentWidgetView)
 internal class NativePaymentWidgetView: UIView {
 
     private var paymentWidget: PaymentWidget?
     private var cvcWidget: CVCWidget?
     internal var cvcWidgetRef: CVCWidget? { cvcWidget }
-    @objc private var widgetType: String?
-    @objc private var sdkAuthorization: String?
-    @objc private var options: [String: Any]?
-    @objc private var onPaymentEvent: RCTDirectEventBlock?
-    @objc private var onPaymentResult: RCTDirectEventBlock?
+    // Internal (not private) so the Fabric wrapper can set these via the ObjC bridge.
+    @objc var widgetType: String?
+    @objc var sdkAuthorization: String?
+    @objc var options: [String: Any]?
+    @objc var onPaymentEvent: RCTDirectEventBlock?
+    @objc var onPaymentResult: RCTDirectEventBlock?
     private var responseSenderCallback: RCTResponseSenderBlock?
     private var appliedConfigKey: String?
 
