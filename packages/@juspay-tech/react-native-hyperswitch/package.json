@@ -171,7 +171,8 @@
     },
     "ios": {
       "componentProvider": {
-        "ApplePayView": "ApplePayView"
+        "ApplePayView": "ApplePayView",
+        "RCTNativePaymentElement": "NativePaymentElementView"
       }
     }
   },

@@ -3,7 +3,7 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
 
 export type CustomEndpoints = Object;
 
-export interface sessionData {
+export interface SessionData {
   hyperswitchConfig: Object;
   paymentSessionConfig: { sdkAuthorization: string };
   configuration: Object;
@@ -22,9 +22,9 @@ export interface Spec extends TurboModule {
     customEndpoints: CustomEndpoints
   ): Promise<string>;
 
-  presentPaymentSheet(params: sessionData): Promise<string>;
+  presentPaymentSheet(params: SessionData): Promise<string>;
 
-  getCustomerSavedPaymentMethods(params?: sessionData): Promise<string>;
+  getCustomerSavedPaymentMethods(params?: SessionData): Promise<string>;
 
   getCustomerLastUsedPaymentMethodData(): Promise<string>;
 

@@ -65,7 +65,7 @@ RCT_EXPORT_METHOD(presentPaymentSheet:(nonnull NSDictionary *)params
 
 // ---------------------------------------------------------------------------
 // getCustomerSavedPaymentMethods
-// JS: getCustomerSavedPaymentMethods(params?: sessionData)
+// JS: getCustomerSavedPaymentMethods(params?: SessionData)
 // Android: getCustomerSavedPaymentMethods(@Nullable ReadableMap params, Promise)
 // ---------------------------------------------------------------------------
 RCT_EXPORT_METHOD(getCustomerSavedPaymentMethods:(nullable NSDictionary *)params
