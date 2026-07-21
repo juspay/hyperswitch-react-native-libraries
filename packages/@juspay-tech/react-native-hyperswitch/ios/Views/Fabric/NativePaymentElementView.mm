@@ -22,6 +22,14 @@
 #import "NativePaymentElementView.h"
 #import "NativePaymentWidgetViewRegistry.h"
 
+// Defines RCTPromiseResolveBlock/RCTPromiseRejectBlock and RCTDirectEventBlock,
+// referenced by the HyperswitchModule / NativePaymentWidgetView interfaces
+// declared in the generated Swift header below.
+#import <React/RCTBridgeModule.h>
+#import <React/RCTComponent.h>
+
+#include <folly/json.h>
+
 #import <react/renderer/components/HyperswitchSdkReactNativeSpec/ComponentDescriptors.h>
 #import <react/renderer/components/HyperswitchSdkReactNativeSpec/EventEmitters.h>
 #import <react/renderer/components/HyperswitchSdkReactNativeSpec/Props.h>

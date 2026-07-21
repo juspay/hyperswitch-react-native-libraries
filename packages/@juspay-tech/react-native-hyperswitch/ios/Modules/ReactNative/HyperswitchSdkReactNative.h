@@ -1,5 +1,5 @@
 #import <HyperswitchSdkReactNativeSpec/HyperswitchSdkReactNativeSpec.h>
 
-@interface HyperswitchSdkReactNative : NSObject <NativeHyperswitchSdkReactNativeSpec>
+@interface HyperswitchSdkReactNative : NSObject <NativeHyperswitchSdkNativeSpec>
 
 @end

@@ -42,7 +42,7 @@ internal class NativePaymentWidget: RCTViewManager {
             }
             // New-arch (Fabric) path: the Fabric NativePaymentElementView registered
             // the inner NativePaymentWidgetView in the shared registry by the same tag.
-            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: reactTag) as? NativePaymentWidgetView {
+            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
                 view.confirmPayment(rnCallback)
                 return
             }
@@ -56,7 +56,7 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.updateIntentInit(rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: rootTag) as? NativePaymentWidgetView {
+            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
                 view.updateIntentInit(rnCallback)
                 return
             }
@@ -74,7 +74,7 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: rootTag) as? NativePaymentWidgetView {
+            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
                 view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
                 return
             }
@@ -93,7 +93,7 @@ internal class NativePaymentWidget: RCTViewManager {
                 view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
                 return
             }
-            if let view = NativePaymentWidgetViewRegistry.shared.view(forTag: reactTag) as? NativePaymentWidgetView {
+            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
                 view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
                 return
             }
@@ -102,20 +102,24 @@ internal class NativePaymentWidget: RCTViewManager {
     }
 }
 
-// @objc exposes this class to Objective-C++ so the Fabric component
-// (NativePaymentElementView.mm) can instantiate it and type-check it.
+// public + @objc exposes this class (and the members below marked @objc) in the
+// generated HyperswitchSdkReactNative-Swift.h header so the Objective-C++ Fabric
+// component (NativePaymentElementView.mm) and TurboModule (NativePaymentElementModule.mm)
+// can instantiate it, type-check it, and call its commands. Framework targets only emit
+// public declarations into that header, even for callers in the same module.
 @objc(NativePaymentWidgetView)
-internal class NativePaymentWidgetView: UIView {
+public class NativePaymentWidgetView: UIView {
 
     private var paymentWidget: PaymentWidget?
     private var cvcWidget: CVCWidget?
     internal var cvcWidgetRef: CVCWidget? { cvcWidget }
-    // Internal (not private) so the Fabric wrapper can set these via the ObjC bridge.
-    @objc var widgetType: String?
-    @objc var sdkAuthorization: String?
-    @objc var options: [String: Any]?
-    @objc var onPaymentEvent: RCTDirectEventBlock?
-    @objc var onPaymentResult: RCTDirectEventBlock?
+    // Public (not just internal) so these show up in the generated Objective-C
+    // header for the Fabric wrapper (NativePaymentElementView.mm) to set via the ObjC bridge.
+    @objc public var widgetType: String?
+    @objc public var sdkAuthorization: String?
+    @objc public var options: [String: Any]?
+    @objc public var onPaymentEvent: RCTDirectEventBlock?
+    @objc public var onPaymentResult: RCTDirectEventBlock?
     private var responseSenderCallback: RCTResponseSenderBlock?
     private var appliedConfigKey: String?
 
@@ -252,7 +256,7 @@ internal class NativePaymentWidgetView: UIView {
         }
     }
 
-    @objc func didSetProps() {
+    @objc public func didSetProps() {
         guard isSupportedWidgetType(), let sdkAuthorization = effectiveSdkAuthorization() else { return }
 
         let configKey = [widgetType ?? "", effectivePublishableKey() ?? "", effectiveProfileId() ?? "", sdkAuthorization].joined(separator: ":")
@@ -319,11 +323,11 @@ internal class NativePaymentWidgetView: UIView {
         }
     }
 
-    override func didSetProps(_ changedProps: [String]) {
+    public override func didSetProps(_ changedProps: [String]) {
         self.didSetProps()
     }
 
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
     }
 
@@ -331,13 +335,13 @@ internal class NativePaymentWidgetView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    internal override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         paymentWidget?.frame = bounds
         cvcWidget?.frame = bounds
     }
 
-    internal func confirmPayment(_ rnCallback: @escaping RCTResponseSenderBlock) {
+    @objc public func confirmPayment(_ rnCallback: @escaping RCTResponseSenderBlock) {
         // avoiding duplicate confirm calls (confirmPayment triggered multiple times from RN layer)
         if self.responseSenderCallback != nil {
             let response = ["status": "failed", "error": "invalid call"]
@@ -358,7 +362,7 @@ internal class NativePaymentWidgetView: UIView {
         paymentWidget.confirm()
     }
 
-    internal func updateIntentInit(_ resolve: @escaping RCTResponseSenderBlock) {
+    @objc public func updateIntentInit(_ resolve: @escaping RCTResponseSenderBlock) {
         guard let tag = rctRootTag else {
             resolve([["status": "failed", "message": "Widget root tag not found"]])
             return
@@ -378,7 +382,7 @@ internal class NativePaymentWidgetView: UIView {
         )
     }
 
-    internal func updateIntentComplete(sdkAuthorization: String, resolve: @escaping RCTResponseSenderBlock) {
+    @objc public func updateIntentComplete(sdkAuthorization: String, resolve: @escaping RCTResponseSenderBlock) {
         guard let tag = rctRootTag else {
             resolve([["status": "failed", "message": "Widget root tag not found"]])
             return
