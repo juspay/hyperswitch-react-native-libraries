@@ -102,12 +102,12 @@ internal extension PaymentSheet {
                                           userInfo: ["message": "An error has occurred."]))
         }
         switch status {
-        case "success", "succeeded", "completed":
+        case "success", "succeeded", "completed", "requires_capture":
             return .completed(data: status)
         case "cancelled", "canceled":
             return .canceled(data: status)
         default:
-            let code    = (dict["code"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "UNKNOWN_ERROR"
+            let code    = (dict["code"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
             let message = dict["message"] as? String ?? "An error has occurred."
             return .failed(error: NSError(domain: code, code: 0, userInfo: ["message": message]))
         }

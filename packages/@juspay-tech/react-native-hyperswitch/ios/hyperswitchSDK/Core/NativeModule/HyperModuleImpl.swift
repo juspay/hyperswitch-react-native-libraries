@@ -206,13 +206,13 @@ public class HyperModuleImpl: NSObject {
 
             let status = jsonDictionary["status"]
 
-            if status == "success" || status == "succeeded" || status == "completed" {
+            if status == "success" || status == "succeeded" || status == "completed" || status == "requires_capture" {
                 return .completed(data: status ?? "success")
             } else if status == "cancelled" || status == "canceled" {
                 return .canceled(data: status ?? "cancelled")
             } else {
                 let error = NSError(
-                    domain: (jsonDictionary["code"] ?? "") != "" ? jsonDictionary["code"]! : "UNKNOWN_ERROR",
+                    domain: (jsonDictionary["code"] ?? "") != "" ? jsonDictionary["code"]! : "",
                     code: 0,
                     userInfo: ["message": jsonDictionary["message"] ?? status ?? "An error has occurred."]
                 )

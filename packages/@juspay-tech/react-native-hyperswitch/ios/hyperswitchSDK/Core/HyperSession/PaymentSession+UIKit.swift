@@ -202,7 +202,7 @@ extension PaymentSession {
                         case "cancelled":
                             completion?(.canceled(data: status))
                         case "failed", "requires_payment_method":
-                            let domain = (message["code"]) != "" ? message["code"] : "UNKNOWN_ERROR"
+                            let domain = (message["code"]) != "" ? message["code"] : ""
                             let errorMessage = message["message"] ?? "An error has occurred."
                             let userInfo = ["message": errorMessage]
                             completion?(.failed(error: NSError(domain: domain ?? "UNKNOWN_ERROR", code: 0, userInfo: userInfo)))

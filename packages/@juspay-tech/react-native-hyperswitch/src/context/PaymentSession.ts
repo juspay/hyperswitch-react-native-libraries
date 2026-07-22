@@ -9,7 +9,11 @@ import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import type { PaymentResult } from '../types/paymentresult';
 import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
-import { isInitializing, isSheetPresented, setSheetPresented } from '../utils/InitializationState';
+import {
+  isInitializing,
+  isSheetPresented,
+  setSheetPresented,
+} from '../utils/InitializationState';
 
 interface NativeResponse {
   status: string;
@@ -49,14 +53,26 @@ export function mapStatus(status: string): PaymentResult['status'] {
   }
 }
 
+function getType(type?: string, message?: string, status?: string): string {
+  if (type && type != '') {
+    return type;
+  } else if (message && message != '') {
+    return message;
+  } else if (status && status != '') {
+    return status;
+  } else {
+    return '';
+  }
+}
+
 export function mapNativeResponseToPaymentResult(
   raw: string | NativeResponse
 ): PaymentResult {
   const parsed = parseNativeResponse(raw);
   return {
     status: mapStatus(parsed.status),
-    type: parsed.type ?? parsed.status ?? "",
-    message: parsed.message ?? parsed.status ?? parsed.code ?? "",
+    type: getType(parsed.type, parsed.message, parsed.status),
+    message: getType(parsed.message, parsed.type, parsed.status) ?? parsed.code ?? '',
   };
 }
 
@@ -67,7 +83,8 @@ export async function presentPaymentSheetWithPayload(
     return {
       status: 'failed',
       type: 'initialization_in_progress',
-      message: 'SDK is reloading. Please wait for initialisation to complete before presenting the payment sheet.',
+      message:
+        'SDK is reloading. Please wait for initialisation to complete before presenting the payment sheet.',
     };
   }
   if (isSheetPresented()) {
@@ -94,8 +111,7 @@ export async function presentPaymentSheetWithPayload(
 
 export async function updateIntent(
   _intentResolver: () => Promise<PaymentSessionConfiguration>
-): Promise<void> {
-}
+): Promise<void> {}
 
 export function createPaymentSession(
   hyperswitchConfig: HyperswitchConfiguration,
