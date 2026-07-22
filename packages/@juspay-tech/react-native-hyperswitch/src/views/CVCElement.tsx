@@ -107,12 +107,12 @@ export const CVCElementView = forwardRef<unknown, CVCElementProps>(
       <NativePaymentWidgetImpl
         ref={viewRef}
         widgetType="widgetPaymentSheet"
-        sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
+        // sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
         onPaymentEvent={onPaymentEventInternal}
         onPaymentResult={onPaymentResultInternal}
         options={{
-          hyperswitchConfig,
-          paymentSessionConfig,
+          // hyperswitchConfig,
+          // paymentSessionConfig,
           configuration: options,
         }}
         style={style}

@@ -174,13 +174,13 @@ export const PaymentElementView = forwardRef<
   return (
     <NativePaymentWidgetImpl
       ref={viewRef}
-      sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
+      // sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
       widgetType="widgetPaymentSheet"
       onPaymentEvent={onPaymentEventInternal}
       onPaymentResult={onPaymentResultInternal}
       options={{
-        hyperswitchConfig,
-        paymentSessionConfig,
+        // hyperswitchConfig,
+        // paymentSessionConfig,
         configuration: options,
       }}
       style={style}

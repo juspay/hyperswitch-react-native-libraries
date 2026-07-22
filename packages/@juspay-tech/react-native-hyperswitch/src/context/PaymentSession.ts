@@ -36,6 +36,7 @@ export function mapStatus(status: string): PaymentResult['status'] {
   switch (status) {
     case 'succeeded':
     case 'completed':
+    case 'requires_capture':
     case 'success':
       return 'completed';
     case 'cancelled':
@@ -54,7 +55,7 @@ export function mapNativeResponseToPaymentResult(
   const parsed = parseNativeResponse(raw);
   return {
     status: mapStatus(parsed.status),
-    type: parsed.type ?? parsed.status ?? parsed.code ?? "",
+    type: parsed.type ?? parsed.code ?? parsed.status ?? "",
     message: parsed.message ?? parsed.status ?? parsed.code ?? "",
   };
 }
