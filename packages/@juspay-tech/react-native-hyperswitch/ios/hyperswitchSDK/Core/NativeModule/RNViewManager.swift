@@ -93,18 +93,14 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
     }
 
     public override func bundleURL() -> URL? {
-//        switch Helper.getInfoPlist("HyperswitchSource") {
-//        case "LocalHosted":
-//            return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
-//        case "LocalBundle":
-//            return Bundle.main.url(forResource: "hyperswitch", withExtension: "bundle")
-//        default:
-//            #if canImport(HyperOTA)
-//            return OTAServices.shared.getBundleURL()
-//            #else
+    //    switch Helper.getInfoPlist("HyperswitchSource") {
+    //    default:
+           #if canImport(HyperOTA)
+                return OTAServices.shared.getBundleURL()
+           #else
             return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
-//            #endif
-//        }
+           #endif
+    //    }
     }
 }
 
