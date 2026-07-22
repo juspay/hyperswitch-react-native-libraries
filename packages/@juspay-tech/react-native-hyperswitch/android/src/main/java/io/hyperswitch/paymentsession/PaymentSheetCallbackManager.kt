@@ -1,6 +1,5 @@
 package io.hyperswitch.paymentsession
 
-import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicReference
 
 typealias Callback = (String) -> Unit

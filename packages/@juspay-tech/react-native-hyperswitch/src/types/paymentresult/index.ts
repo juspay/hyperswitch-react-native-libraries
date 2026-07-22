@@ -1,4 +1,5 @@
 export interface PaymentResult {
-  type: 'completed' | 'canceled' | 'failed';
+  status: 'completed' | 'canceled' | 'failed';
+  type?: string;
   message?: string;
 }

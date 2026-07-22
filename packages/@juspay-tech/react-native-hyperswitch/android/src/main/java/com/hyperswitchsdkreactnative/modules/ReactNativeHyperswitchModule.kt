@@ -100,13 +100,6 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
     promise: Promise?
   ) {
     try {
-//        val map = mutableMapOf<String, Any>().apply {
-//          put("code", "failed")
-//          put("message", "opened alreday")
-//        }
-//        promise?.resolve(map)
-//        return
-//      }
       val props = mutableMapOf<String, Any?>().apply {
         putAll(params?.toHashMap().orEmpty())
         put("type", "payment")
@@ -114,9 +107,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
       val bundle = launchOptions?.getBundleWithHyperParams(props)
       bundle?.let {
         val isFragment = paymentSessionReactLauncher?.presentSheet(bundle)
-//        isPresented.set(true)
         val resultCallback: (String) -> Unit = { it ->
-//          isPresented.set(false)
           promise?.resolve(it)
         }
         PaymentSheetCallbackManager.setCallback(resultCallback, isFragment == true)

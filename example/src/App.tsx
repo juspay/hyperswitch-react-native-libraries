@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Hyperswitch } from "@juspay-tech/react-native-hyperswitch";
 import { initialBaseUrl } from "./utils";
 import { getCustomisationOptions, profileId, publishableKey } from "./utils";
-import type { HyperswitchSession } from "@juspay-tech/react-native-hyperswitch";
+import type { HyperswitchSession, PaymentSessionConfiguration } from "@juspay-tech/react-native-hyperswitch";
 
 let hyperSingleton: Promise<HyperswitchSession> | null = null;
 
@@ -25,16 +25,18 @@ export default function App() {
     const serverUrl = initialBaseUrl;
     fetch(`${serverUrl}/create-payment-intent`)
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: PaymentSessionConfiguration) => {
         if (data.sdkAuthorization) {
           hyperPromise?.then(async (hyper) => {
-            let session = await hyper.initPaymentSession({
-              sdkAuthorization: data.sdkAuthorization,
-            });
+            let session = await hyper.initPaymentSession(data);
+            let handler = await session.getCustomerSavedPaymentMethods();
+            let data2 = await handler.getCustomerLastUsedPaymentMethodData();
+            console.log("Last used payment method data", data2);
+            let data3 = await handler.getCustomerDefaultSavedPaymentMethodData();
+            console.log("Default saved payment method data", data3);
             let result = await session.presentPaymentSheet(
               getCustomisationOptions("tabs"),
             );
-            console.log("Payment result", result);
             console.log("Payment result", result);
             if (result.type === "completed") {
               setStatus("Payment completed successfully");

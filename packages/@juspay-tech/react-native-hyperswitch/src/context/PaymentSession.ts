@@ -14,6 +14,8 @@ import { isInitializing, isSheetPresented, setSheetPresented } from '../utils/In
 interface NativeResponse {
   status: string;
   message: string;
+  code?: string;
+  type?: string;
   data?: any;
 }
 
@@ -30,7 +32,7 @@ export function parseNativeResponse(
   }
 }
 
-export function mapStatus(status: string): PaymentResult['type'] {
+export function mapStatus(status: string): PaymentResult['status'] {
   switch (status) {
     case 'succeeded':
     case 'completed':
@@ -51,8 +53,9 @@ export function mapNativeResponseToPaymentResult(
 ): PaymentResult {
   const parsed = parseNativeResponse(raw);
   return {
-    type: mapStatus(parsed.status),
-    message: parsed.message,
+    status: mapStatus(parsed.status),
+    type: parsed.type ?? parsed.status ?? parsed.code ?? "",
+    message: parsed.message ?? parsed.status ?? parsed.code ?? "",
   };
 }
 
@@ -61,7 +64,8 @@ export async function presentPaymentSheetWithPayload(
 ): Promise<PaymentResult> {
   if (isInitializing()) {
     return {
-      type: 'failed',
+      status: 'failed',
+      type: 'initialization_in_progress',
       message: 'SDK is reloading. Please wait for initialisation to complete before presenting the payment sheet.',
     };
   }
@@ -69,19 +73,18 @@ export async function presentPaymentSheetWithPayload(
     // A sheet is already open (e.g. a hot-reload fired while the sheet was visible).
     // Silently skip so the existing sheet is not covered by a new one.
     return {
-      type: 'canceled',
+      status: 'canceled',
+      type: 'sheet_already_presented',
       message: 'A payment sheet is already presented.',
     };
   }
   setSheetPresented(true);
   try {
-    console.log('Presenting payment sheet with payload:', payload);
     const raw = await NativeHyperswitchModule.presentPaymentSheet({
       hyperswitchConfig: payload.hyperswitchConfig,
       paymentSessionConfig: payload.paymentSessionConfig,
       configuration: payload.configuration,
     });
-    console.log('Native response from presentPaymentSheet:', raw);
     return mapNativeResponseToPaymentResult(raw);
   } finally {
     setSheetPresented(false);

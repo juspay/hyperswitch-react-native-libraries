@@ -139,7 +139,7 @@ public class NativeHyperswitchModuleImpl: NSObject {
                         resolve([
                             "status": "failed",
                             "code": error.domain,
-                            "message": "Payment failed: \(error.userInfo["message"] ?? "Failed")",
+                            "message": "\(error.userInfo["message"] ?? "Failed")",
                         ])
                     case .canceled(let data):
                         resolve(["status": "cancelled", "message": data])
