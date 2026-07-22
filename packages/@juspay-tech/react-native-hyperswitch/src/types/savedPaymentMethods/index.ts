@@ -1,7 +1,7 @@
 import type { PaymentResult } from '../paymentresult';
 
 export interface SavedPaymentMethodsConfiguration {
-    hiddenPaymentMethods?: string[];
+  hiddenPaymentMethods?: string[];
 }
 
 export interface CustomerLastUsedPaymentMethodCard {

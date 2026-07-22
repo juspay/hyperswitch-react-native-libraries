@@ -9,5 +9,5 @@ export function dispatchViewManagerCommand(
 }
 
 export function getFindNodeHandle(ref: unknown): number {
-  return findNodeHandle(ref as React.ElementRef<typeof UIManager>) ?? -1;
+  return findNodeHandle(ref as Parameters<typeof findNodeHandle>[0]) ?? -1;
 }

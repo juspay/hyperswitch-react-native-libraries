@@ -36,7 +36,10 @@ export interface Spec extends TurboModule {
 
   confirmWithCustomerDefaultPaymentMethod(reactTag: number): Promise<string>;
 
-  confirmWithCustomerPaymentToken(reactTag: number, token: string): Promise<string>;
+  confirmWithCustomerPaymentToken(
+    reactTag: number,
+    token: string
+  ): Promise<string>;
 }
 
 /**

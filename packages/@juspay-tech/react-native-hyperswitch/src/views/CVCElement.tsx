@@ -25,16 +25,9 @@ function parsePaymentResult(result: string): paymentResult {
 }
 
 export const CVCElementView = forwardRef<unknown, CVCElementProps>(
-  (props, ref) => {
-    const {
-      id,
-      options,
-      onChange,
-      onFocus,
-      onBlur,
-      onPaymentResult,
-      style,
-    } = props;
+  (props, _ref) => {
+    const { id, options, onChange, onFocus, onBlur, onPaymentResult, style } =
+      props;
     // const {paymentSessionConfig, hyperswitchConfig} = useHyperElementsContext();
     const [viewId, setViewId] = useState<number | undefined>(undefined);
     const viewRef = useRef<unknown>(null);

@@ -1,5 +1,5 @@
-import type {TurboModule} from 'react-native';
-import {TurboModuleRegistry} from 'react-native';
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
 
 /**
  * Codegen spec for the HyperHeadless TurboModule.
@@ -13,7 +13,7 @@ export interface Spec extends TurboModule {
     defaultPaymentMethod: Object,
     lastUsedPaymentMethod: Object,
     allPaymentMethods: Array<Object>,
-    callback: (result: Object) => void,
+    callback: (result: Object) => void
   ): void;
 
   exitHeadless(rootTag: number, status: string): void;

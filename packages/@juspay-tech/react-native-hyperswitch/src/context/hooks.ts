@@ -1,26 +1,34 @@
 import { useCallback, useMemo } from 'react';
 import { useHyperElementsContext } from './HyperElements';
-import { PaymentSession, PaymentSessionConfiguration, PaymentElementHandle } from '../types/definitions';
+import {
+  PaymentSession,
+  PaymentSessionConfiguration,
+  PaymentElementHandle,
+} from '../types/definitions';
 import { ElementsActions } from '../types/elements';
+import type { PaymentResult } from '../types/paymentresult';
 import { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
 
 export function usePaymentSession(): PaymentSession | null {
   const { paymentSession } = useHyperElementsContext();
 
   const updateIntent = useCallback(
-    async (intentResolver: () => Promise<PaymentSessionConfiguration>): Promise<void> => {
+    async (
+      intentResolver: () => Promise<PaymentSessionConfiguration>
+    ): Promise<void> => {
       if (!paymentSession) {
         throw new Error('HyperElements is not initialized');
       }
 
       return paymentSession.updateIntent(intentResolver);
     },
-    [paymentSession],
+    [paymentSession]
   );
 
   return useMemo(
-    () => (paymentSession ? { ...paymentSession, updateIntent } : paymentSession),
-    [paymentSession, updateIntent],
+    () =>
+      paymentSession ? { ...paymentSession, updateIntent } : paymentSession,
+    [paymentSession, updateIntent]
   );
 }
 
@@ -30,7 +38,7 @@ export function useElements(): ElementsActions {
   const confirmPayment = useCallback(
     async (
       paymentElement: { current: PaymentElementHandle | null } | string,
-      options?: { confirmParams?: Record<string, Object> },
+      options?: { confirmParams?: Record<string, Object> }
     ): Promise<PaymentResult> => {
       if (!elements) {
         throw new Error('HyperElements is not initialized');
@@ -40,7 +48,9 @@ export function useElements(): ElementsActions {
       }
 
       if (typeof paymentElement === 'string') {
-        throw new Error('confirmPayment by widget id is not supported by this Hyper elements handle');
+        throw new Error(
+          'confirmPayment by widget id is not supported by this Hyper elements handle'
+        );
       }
 
       const ref = paymentElement.current;
@@ -49,27 +59,30 @@ export function useElements(): ElementsActions {
       }
       return ref.confirmPayment(options);
     },
-    [elements],
+    [elements]
   );
 
   const updateIntent = useCallback(
-    async (intentResolver: () => Promise<PaymentSessionConfiguration>): Promise<void> => {
+    async (
+      intentResolver: () => Promise<PaymentSessionConfiguration>
+    ): Promise<void> => {
       if (!elements) {
         throw new Error('HyperElements is not initialized');
       }
 
       return elements.updateIntent(intentResolver);
     },
-    [elements],
+    [elements]
   );
 
-  const getCustomerSavedPaymentMethods = useCallback(async (): Promise<CustomerSavedPaymentMethodsSession> => {
-    if (!elements) {
-      throw new Error('HyperElements is not initialized');
-    }
+  const getCustomerSavedPaymentMethods =
+    useCallback(async (): Promise<CustomerSavedPaymentMethodsSession> => {
+      if (!elements) {
+        throw new Error('HyperElements is not initialized');
+      }
 
-    return elements.getCustomerSavedPaymentMethods();
-  }, [elements]);
+      return elements.getCustomerSavedPaymentMethods();
+    }, [elements]);
 
   return {
     getCustomerSavedPaymentMethods,

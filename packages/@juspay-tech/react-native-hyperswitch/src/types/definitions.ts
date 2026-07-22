@@ -20,7 +20,6 @@ export type HyperswitchEnvironment = 'PROD' | 'SANDBOX' | 'INTEG';
 
 export type ElementType = 'paymentElement' | 'cvcWidget';
 
-
 export interface HyperswitchConfiguration {
   publishableKey: string;
   platformPublishableKey?: string;
@@ -46,10 +45,6 @@ export interface NativePaymentSheetPayload {
 import type { ComponentType } from 'react';
 import { CustomerSavedPaymentMethodsSession } from './savedPaymentMethods';
 import type { Elements } from './elements';
-
-
-
-
 
 export interface PaymentSession {
   presentPaymentSheet(
@@ -98,7 +93,6 @@ export interface CvcWidget {
     handler?: (data?: any) => void
   ): { remove: () => void } | null;
 }
-
 
 export interface HyperswitchSession {
   publishableKey: string;

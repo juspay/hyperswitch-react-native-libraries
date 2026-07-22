@@ -7,7 +7,22 @@ import {
   CustomerSavedPaymentMethodsSession,
   CustomerLastUsedPaymentMethod,
 } from '../types/savedPaymentMethods';
+import type { PaymentResult } from '../types/paymentresult';
 import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
+import { mapNativeResponseToPaymentResult } from './PaymentSession';
+import { getWidget } from './WidgetRegistry';
+
+function getReactTag(widgetId?: string): number {
+  if (!widgetId) {
+    return 0;
+  }
+
+  const reactTag = getWidget(widgetId);
+  if (reactTag === undefined) {
+    throw new Error(`Widget ${widgetId} not found or not mounted`);
+  }
+  return reactTag;
+}
 
 function parsePaymentMethod(raw: string): CustomerLastUsedPaymentMethod {
   const parsed = JSON.parse(raw) as CustomerLastUsedPaymentMethod & {
@@ -45,22 +60,22 @@ export function createCustomerSavedPaymentMethodsSession(): CustomerSavedPayment
 
     async confirmWithCustomerLastUsedPaymentMethod(args?: {
       id?: string;
-    }): Promise<any> {
-      const raw = await NativeHyperswitchModule
-        .confirmWithCustomerLastUsedPaymentMethod
-        // args?.id
-        ();
-      // return mapNativeResponseToPaymentResult(raw);
+    }): Promise<PaymentResult> {
+      const raw =
+        await NativeHyperswitchModule.confirmWithCustomerLastUsedPaymentMethod(
+          getReactTag(args?.id)
+        );
+      return mapNativeResponseToPaymentResult(raw);
     },
 
     async confirmWithCustomerDefaultPaymentMethod(args?: {
       id?: string;
-    }): Promise<any> {
-      const raw = await NativeHyperswitchModule
-        .confirmWithCustomerDefaultPaymentMethod
-        // args?.id
-        ();
-      // return mapNativeResponseToPaymentResult(raw);
+    }): Promise<PaymentResult> {
+      const raw =
+        await NativeHyperswitchModule.confirmWithCustomerDefaultPaymentMethod(
+          getReactTag(args?.id)
+        );
+      return mapNativeResponseToPaymentResult(raw);
     },
   };
 }

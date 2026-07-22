@@ -5,6 +5,7 @@ import type {
 } from '../types/definitions';
 import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
 import {
+  mapNativeResponseToPaymentResult,
   presentPaymentSheetWithPayload,
   updateIntent,
 } from '../context/PaymentSession';
@@ -13,6 +14,7 @@ import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMe
 
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import { Elements } from '../types/elements';
+import { confirmPayment as confirmWidgetPayment } from './WidgetRegistry';
 
 type ElementsNativeActions = Pick<
   Elements,
@@ -40,20 +42,18 @@ export function createElementsNativeActions(
 
     async confirmPayment(
       paymentElementRef: { current: PaymentElementHandle | null } | string,
-      _confirmOptions?: { confirmParams?: Record<string, any> }
-    ): Promise<any> {
-      //   if (typeof paymentElementRef === 'string') {
-      //     const result = await widgetConfirm(paymentElementRef);
-      //     return {
-      //       type: mapStatus(result.status),
-      //       message: result.message,
-      //     };
-      //   }
-      //   const ref = paymentElementRef.current;
-      //   if (!ref) {
-      //     throw new Error('PaymentElement reference is not mounted');
-      //   }
-      //   return ref.confirmPayment(_confirmOptions);
+      confirmOptions?: { confirmParams?: Record<string, any> }
+    ): Promise<PaymentResult> {
+      if (typeof paymentElementRef === 'string') {
+        const result = await confirmWidgetPayment(paymentElementRef);
+        return mapNativeResponseToPaymentResult(result);
+      }
+
+      const ref = paymentElementRef.current;
+      if (!ref) {
+        throw new Error('PaymentElement reference is not mounted');
+      }
+      return ref.confirmPayment(confirmOptions);
     },
 
     async getCustomerSavedPaymentMethods(

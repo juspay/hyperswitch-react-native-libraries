@@ -1,4 +1,4 @@
-import { HyperswitchConfiguration } from "./definitions";
+import { HyperswitchConfiguration } from './definitions';
 
 export interface Colors {
   primary?: string;
@@ -61,7 +61,6 @@ export interface Font {
   cardTextSizeAdjust?: number;
 }
 
-
 export type SubscriptionEvent =
   | 'PAYMENT_METHOD_INFO_CARD'
   | 'PAYMENT_METHOD_STATUS'
@@ -106,7 +105,11 @@ export interface SavedMethodCustomization {
   hiddenPaymentMethods?: string[];
 }
 
-export type CardBrandIconDisplay = 'hidden' | 'animated' | 'standard' | 'hideGeneric';
+export type CardBrandIconDisplay =
+  | 'hidden'
+  | 'animated'
+  | 'standard'
+  | 'hideGeneric';
 
 export interface PaymentMethodLayout {
   type?: LayoutType;

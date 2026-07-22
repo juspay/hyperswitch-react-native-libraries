@@ -47,13 +47,7 @@ export const PaymentElementView = forwardRef<
   PaymentWidgetRef,
   PaymentElementProps
 >((props, ref) => {
-  const {
-    widgetId,
-    options,
-    onPaymentResult,
-    onChange,
-    style,
-  } = props;
+  const { widgetId, options, onPaymentResult, onChange, style } = props;
   const [viewId, setViewId] = useState<number | undefined>(undefined);
   const viewRef = useRef<unknown>(null);
   const isRegisteredRef = useRef(false);

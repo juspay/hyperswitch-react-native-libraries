@@ -1,9 +1,9 @@
-import { PaymentResult } from "../paymentresult";
+import { PaymentResult } from '../paymentresult';
 import type {
   PaymentElementHandle,
   PaymentSessionConfiguration,
-} from "../definitions";
-import { CustomerSavedPaymentMethodsSession } from "../savedPaymentMethods";
+} from '../definitions';
+import { CustomerSavedPaymentMethodsSession } from '../savedPaymentMethods';
 
 export interface Elements {
   confirmPayment(

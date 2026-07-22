@@ -1,5 +1,5 @@
-import type {TurboModule} from 'react-native';
-import {TurboModuleRegistry} from 'react-native';
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
 
 /**
  * Codegen spec for the HyperModule TurboModule.
@@ -26,14 +26,18 @@ export interface Spec extends TurboModule {
 
   // --- Payment sheet ---
   exitPaymentsheet(rootTag: number, result: string, reset: boolean): void;
-  exitPaymentMethodManagement(rootTag: number, result: string, reset: boolean): void;
+  exitPaymentMethodManagement(
+    rootTag: number,
+    result: string,
+    reset: boolean
+  ): void;
 
   // --- Widget ---
   exitWidget(result: string, widgetType: string): void;
   exitCardForm(result: string): void;
   launchWidgetPaymentSheet(
     requestObj: string,
-    callback: (result: Object) => void,
+    callback: (result: Object) => void
   ): void;
   exitWidgetPaymentsheet(rootTag: number, result: string, reset: boolean): void;
   updateWidgetHeight(height: number): void;
@@ -48,14 +52,14 @@ export interface Spec extends TurboModule {
   onPaymentConfirmButtonClick(
     rootTag: number,
     payload: string,
-    callback: (shouldProceed: boolean) => void,
+    callback: (shouldProceed: boolean) => void
   ): void;
 
   // --- 3DS / DDC iframe bridge ---
   openIframeBridge(
     url: string,
     timeoutMs: number,
-    callback: (result: string) => void,
+    callback: (result: string) => void
   ): void;
 }
 

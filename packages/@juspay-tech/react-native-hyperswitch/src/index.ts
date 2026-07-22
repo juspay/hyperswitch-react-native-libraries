@@ -2,13 +2,13 @@ import type {
   HyperswitchConfiguration,
   PaymentSession,
   PaymentSessionConfiguration,
-  HyperswitchSession
+  HyperswitchSession,
 } from './types/definitions';
 
 export type * from './types/definitions';
 export type * from './types/elements';
 export type * from './types/NativeModuleTypes';
-export type * from './types/PaymentSheetConfiguration'
+export type * from './types/PaymentSheetConfiguration';
 
 import NativeHyperswitchModule from './specs/NativeHyperswitchModule';
 import { createPaymentSession } from './context/PaymentSession';
@@ -26,27 +26,29 @@ export function loadHyper(
     config.profileId ?? '',
     config.environment ?? 'PROD',
     config.customEndpoints ?? {}
-  ).then(() => {
-    setInitializing(false);
-    return {
-      publishableKey: config.publishableKey,
-      async initPaymentSession(
-        options: PaymentSessionConfiguration
-      ): Promise<PaymentSession> {
-        return createPaymentSession(config, options);
-      },
-      async elements(options: PaymentSessionConfiguration): Promise<Elements> {
-        return createElements(config, options);
-      },
-    }
-  }).catch((error) => {
-    setInitializing(false);
-    console.error('Error initializing Hyperswitch SDK:', error);
-    throw error;
-  });
-
+  )
+    .then(() => {
+      setInitializing(false);
+      return {
+        publishableKey: config.publishableKey,
+        async initPaymentSession(
+          options: PaymentSessionConfiguration
+        ): Promise<PaymentSession> {
+          return createPaymentSession(config, options);
+        },
+        async elements(
+          options: PaymentSessionConfiguration
+        ): Promise<Elements> {
+          return createElements(config, options);
+        },
+      };
+    })
+    .catch((error) => {
+      setInitializing(false);
+      console.error('Error initializing Hyperswitch SDK:', error);
+      throw error;
+    });
 }
-
 
 export const Hyperswitch = {
   init: loadHyper,

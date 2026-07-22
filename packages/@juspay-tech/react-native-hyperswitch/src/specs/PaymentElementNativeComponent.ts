@@ -4,7 +4,6 @@ import { DirectEventHandler } from 'react-native/Libraries/Types/CodegenTypes';
 import { UnsafeMixed } from './utils';
 import type { options } from '../types/PaymentSheetConfiguration';
 
-
 export interface NativeProps extends ViewProps {
   widgetType?: string;
   sdkAuthorization?: string;
