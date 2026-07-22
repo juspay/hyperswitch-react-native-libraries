@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		2A2A32D3E3AD9AD574DB5E03 /* libPods-HyperswitchSdkReactNativeExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6BFB493AD625412019C1A78D /* libPods-HyperswitchSdkReactNativeExample.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A91E413A67F55C86385B0A58 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		DBDC2808B580B5537FDCA5A0 /* libPods-HyperswitchSdkReactNativeExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DA841F56A75D761C752935F /* libPods-HyperswitchSdkReactNativeExample.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,12 +19,12 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = HyperswitchSdkReactNativeExample/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = HyperswitchSdkReactNativeExample/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = HyperswitchSdkReactNativeExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		64D596C73E0D05E98F41733A /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HyperswitchSdkReactNativeExample.debug.xcconfig"; path = "Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample.debug.xcconfig"; sourceTree = "<group>"; };
-		6BFB493AD625412019C1A78D /* libPods-HyperswitchSdkReactNativeExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-HyperswitchSdkReactNativeExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E9657F5D2A5F9D2FC621452 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HyperswitchSdkReactNativeExample.release.xcconfig"; path = "Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = HyperswitchSdkReactNativeExample/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = HyperswitchSdkReactNativeExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		9B40EBD2F9ACC6C4E5BEFEC3 /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HyperswitchSdkReactNativeExample.debug.xcconfig"; path = "Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample.debug.xcconfig"; sourceTree = "<group>"; };
+		9DA841F56A75D761C752935F /* libPods-HyperswitchSdkReactNativeExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-HyperswitchSdkReactNativeExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F6107DA25D4002614F282F60 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HyperswitchSdkReactNativeExample.release.xcconfig"; path = "Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,7 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2A2A32D3E3AD9AD574DB5E03 /* libPods-HyperswitchSdkReactNativeExample.a in Frameworks */,
+				DBDC2808B580B5537FDCA5A0 /* libPods-HyperswitchSdkReactNativeExample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,7 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				6BFB493AD625412019C1A78D /* libPods-HyperswitchSdkReactNativeExample.a */,
+				9DA841F56A75D761C752935F /* libPods-HyperswitchSdkReactNativeExample.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -92,8 +92,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				64D596C73E0D05E98F41733A /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */,
-				F6107DA25D4002614F282F60 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */,
+				9B40EBD2F9ACC6C4E5BEFEC3 /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */,
+				3E9657F5D2A5F9D2FC621452 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -105,13 +105,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "HyperswitchSdkReactNativeExample" */;
 			buildPhases = (
-				CC99FD4965F696D719FA2398 /* [CP] Check Pods Manifest.lock */,
+				9D1988253F30CD39A083841B /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				828A470152E5E217C1238B10 /* [CP] Embed Pods Frameworks */,
-				4E38F3446365D6B800A67E36 /* [CP] Copy Pods Resources */,
+				8874570DC0328592C16A39CD /* [CP] Embed Pods Frameworks */,
+				6FB43C2F748B5D06B90CC17A /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -183,7 +183,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		4E38F3446365D6B800A67E36 /* [CP] Copy Pods Resources */ = {
+		6FB43C2F748B5D06B90CC17A /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -200,7 +200,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		828A470152E5E217C1238B10 /* [CP] Embed Pods Frameworks */ = {
+		8874570DC0328592C16A39CD /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -217,7 +217,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-HyperswitchSdkReactNativeExample/Pods-HyperswitchSdkReactNativeExample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		CC99FD4965F696D719FA2398 /* [CP] Check Pods Manifest.lock */ = {
+		9D1988253F30CD39A083841B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,7 +255,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 64D596C73E0D05E98F41733A /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */;
+			baseConfigurationReference = 9B40EBD2F9ACC6C4E5BEFEC3 /* Pods-HyperswitchSdkReactNativeExample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -283,7 +283,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F6107DA25D4002614F282F60 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */;
+			baseConfigurationReference = 3E9657F5D2A5F9D2FC621452 /* Pods-HyperswitchSdkReactNativeExample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

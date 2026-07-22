@@ -112,12 +112,13 @@ public class CVCWidget: UIControl {
             "paymentToken": paymentToken,
             "paymentMethodId": paymentMethodId as Any,
         ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["triggerWidgetAction", payload],
-            completion: nil
-        )
+        // Bridge-based widget emit removed for payment-sheet-only build.
+        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+        //     "RCTDeviceEventEmitter",
+        //     method: "emit",
+        //     args: ["triggerWidgetAction", payload],
+        //     completion: nil
+        // )
     }
 
     internal func dispatchPaymentEvent(type: String, payload: [String: Any]) {

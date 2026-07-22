@@ -38,8 +38,8 @@ public class HyperModuleImpl: NSObject {
         activePaymentSheetVC = vc
     }
 
-    /// The bridge backing the RN-registered emitter (embedded runtime is bridge-based).
-    private var bridge: RCTBridge? { eventEmitter?.bridge }
+    // Bridge-backed widget helpers removed for the new-arch/bridgeless build.
+    // private var bridge: RCTBridge? { eventEmitter?.bridge }
 
     // MARK: - Events
 
@@ -69,16 +69,16 @@ public class HyperModuleImpl: NSObject {
         self.presentCallback = callback
     }
 
-    // MARK: - Widget
+    // MARK: - Widget (commented out — relies on RCTBridge/uiManager)
 
-    @objc public func launchWidgetPaymentSheet(_ requestObj: String, callback: @escaping RCTResponseSenderBlock) {
-        let request = HyperModuleImpl.jsonObject(from: requestObj)
-        expressCheckoutHandler.launchPaymentSheet(paymentResult: request, callBack: callback)
-    }
-
-    @objc public func onAddPaymentMethod(_ rnMessage: String) {
-        PaymentMethodManagementWidget.onAddPaymentMethod?()
-    }
+       @objc public func launchWidgetPaymentSheet(_ requestObj: String, callback: @escaping RCTResponseSenderBlock) {
+        //    let request = HyperModuleImpl.jsonObject(from: requestObj)
+        //    expressCheckoutHandler.launchPaymentSheet(paymentResult: request, callBack: callback)
+       }
+    //
+       @objc public func onAddPaymentMethod(_ rnMessage: String) {
+        //    PaymentMethodManagementWidget.onAddPaymentMethod?()
+       }
 
     // MARK: - Payment sheet exits
 
@@ -101,12 +101,12 @@ public class HyperModuleImpl: NSObject {
         }
     }
 
-    @objc public func exitWidgetPaymentsheet(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
-        let result = paymentResult(from: rnMessage)
-        withWidget(reactTag) { w in
-            w.handleConfirmPaymentResponse(result)
-        }
-    }
+       @objc public func exitWidgetPaymentsheet(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
+        //    let result = paymentResult(from: rnMessage)
+        //    withWidget(reactTag) { w in
+        //        w.handleConfirmPaymentResponse(result)
+        //    }
+       }
 
     @objc public func exitPaymentMethodManagement(_ reactTag: NSNumber, result rnMessage: String, reset: Bool) {
         exitSheet(rnMessage)
@@ -116,49 +116,49 @@ public class HyperModuleImpl: NSObject {
         exitCardFormInternal(rnMessage)
     }
 
-    // MARK: - Payment result / events
+    // MARK: - Payment result / events (commented out — rely on RCTBridge/uiManager)
 
-    @objc public func notifyWidgetPaymentResult(_ rootTag: NSNumber, result rnMessage: String) {
-        let result = paymentResult(from: rnMessage)
-        guard case .failed = result else { return }
-        withNativePaymentWidgetView(rootTag) { view in
-            view.handleConfirmPaymentResponse(result)
-        }
-    }
+       @objc public func notifyWidgetPaymentResult(_ rootTag: NSNumber, result rnMessage: String) {
+        //    let result = paymentResult(from: rnMessage)
+        //    guard case .failed = result else { return }
+        //    withNativePaymentWidgetView(rootTag) { view in
+        //        view.handleConfirmPaymentResponse(result)
+        //    }
+       }
 
-    @objc public func onUpdateIntentEvent(_ rootTag: NSNumber, type: String, result: String) {
-        withWidget(rootTag) { widget in
-            widget.handleUpdateIntentEvent(type: type, result: result)
-        }
-    }
+       @objc public func onUpdateIntentEvent(_ rootTag: NSNumber, type: String, result: String) {
+        //    withWidget(rootTag) { widget in
+        //        widget.handleUpdateIntentEvent(type: type, result: result)
+        //    }
+       }
 
     @objc public func emitPaymentEvent(_ rootTag: NSNumber, eventType: String, payload: NSDictionary) {
-        let map = (payload as? [String: Any]) ?? [:]
-        resolveSubscribingTarget(rootTag) { target in
-            if let widget = target as? PaymentWidget, widget.paymentEventListener != nil {
-                widget.dispatchPaymentEvent(type: eventType, payload: map)
-            } else if let cvc = target as? CVCWidget, cvc.paymentEventListener != nil {
-                cvc.dispatchPaymentEvent(type: eventType, payload: map)
-            } else if let sheet = target as? PaymentSheet, sheet.paymentEventListener != nil {
-                sheet.dispatchPaymentEvent(type: eventType, payload: map)
-            }
-        }
+        // let map = (payload as? [String: Any]) ?? [:]
+        // resolveSubscribingTarget(rootTag) { target in
+        //     if let widget = target as? PaymentWidget, widget.paymentEventListener != nil {
+        //         widget.dispatchPaymentEvent(type: eventType, payload: map)
+        //     } else if let cvc = target as? CVCWidget, cvc.paymentEventListener != nil {
+        //         cvc.dispatchPaymentEvent(type: eventType, payload: map)
+        //     } else if let sheet = target as? PaymentSheet, sheet.paymentEventListener != nil {
+        //         sheet.dispatchPaymentEvent(type: eventType, payload: map)
+        //     }
+        // }
     }
 
     @objc public func onPaymentConfirmButtonClick(_ rootTag: NSNumber, payload: String, callback: @escaping RCTResponseSenderBlock) {
-        resolveSubscribingTarget(rootTag) { target in
-            if let widget = target as? PaymentWidget {
-                widget.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
-                    callback([shouldProceed])
-                }
-            } else if let sheet = target as? PaymentSheet {
-                sheet.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
-                    callback([shouldProceed])
-                }
-            } else {
-                callback([true])
-            }
-        }
+        // resolveSubscribingTarget(rootTag) { target in
+        //     if let widget = target as? PaymentWidget {
+        //         widget.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
+        //             callback([shouldProceed])
+        //         }
+        //     } else if let sheet = target as? PaymentSheet {
+        //         sheet.handleShouldProceedWithPayment(payload: payload) { shouldProceed in
+        //             callback([shouldProceed])
+        //         }
+        //     } else {
+        //         callback([true])
+        //     }
+        // }
     }
 
     // MARK: - 3DS / DDC iframe bridge
@@ -313,74 +313,76 @@ public class HyperModuleImpl: NSObject {
         }
     }
 
-    private func withWidget(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
-        guard let bridge = self.bridge else { return }
-        RCTGetUIManagerQueue().async {
-            bridge.uiManager.addUIBlock { _, viewRegistry in
-                guard let view = viewRegistry?[rootTag] else { return }
-                var current: UIView? = view
-                while let v = current {
-                    if let widget = v as? PaymentWidget {
-                        block(widget)
-                        return
-                    }
-                    current = v.superview
-                }
-            }
-        }
-    }
+    // MARK: - Bridge-backed view lookup helpers (commented out for new-arch/bridgeless build)
 
-    private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
-        guard let bridge = self.bridge else { return }
-        RCTGetUIManagerQueue().async {
-            bridge.uiManager.addUIBlock { _, viewRegistry in
-                guard let view = viewRegistry?[rootTag] else { return }
-                var current: UIView? = view
-                while let v = current {
-                    if let nativeWidget = v as? PaymentWidget {
-                        block(nativeWidget)
-                        return
-                    }
-                    current = v.superview
-                }
-            }
-        }
-    }
-
-    private func resolveSubscribingTarget(_ rootTag: NSNumber, _ block: @escaping (AnyObject?) -> Void) {
-        guard let bridge = self.bridge else {
-            DispatchQueue.main.async { block(nil) }
-            return
-        }
-        RCTGetUIManagerQueue().async {
-            bridge.uiManager.addUIBlock { _, viewRegistry in
-                guard let view = viewRegistry?[rootTag] else {
-                    DispatchQueue.main.async { block(nil) }
-                    return
-                }
-                var current: UIView? = view
-                while let v = current {
-                    if v is PaymentWidget || v is CVCWidget {
-                        DispatchQueue.main.async { block(v) }
-                        return
-                    }
-                    current = v.superview
-                }
-                let sheet = (view.reactViewController() as? HyperUIViewController)?.paymentSheet
-                DispatchQueue.main.async { block(sheet) }
-            }
-        }
-    }
-
-    private func withPaymentSheet(_ rootTag: NSNumber, _ block: @escaping (UIViewController?, PaymentSheet?) -> Void) {
-        guard let bridge = self.bridge else { return }
-        RCTGetUIManagerQueue().async {
-            bridge.uiManager.addUIBlock { _, viewRegistry in
-                let view = viewRegistry?[rootTag]
-                let vc = view?.reactViewController() as? HyperUIViewController
-                let sheet = vc?.paymentSheet
-                DispatchQueue.main.async { block(vc, sheet) }
-            }
-        }
-    }
+    //    private func withWidget(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
+    //        guard let bridge = self.bridge else { return }
+    //        RCTGetUIManagerQueue().async {
+    //            bridge.uiManager.addUIBlock { _, viewRegistry in
+    //                guard let view = viewRegistry?[rootTag] else { return }
+    //                var current: UIView? = view
+    //                while let v = current {
+    //                    if let widget = v as? PaymentWidget {
+    //                        block(widget)
+    //                        return
+    //                    }
+    //                    current = v.superview
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
+    //        guard let bridge = self.bridge else { return }
+    //        RCTGetUIManagerQueue().async {
+    //            bridge.uiManager.addUIBlock { _, viewRegistry in
+    //                guard let view = viewRegistry?[rootTag] else { return }
+    //                var current: UIView? = view
+    //                while let v = current {
+    //                    if let nativeWidget = v as? PaymentWidget {
+    //                        block(nativeWidget)
+    //                        return
+    //                    }
+    //                    current = v.superview
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    private func resolveSubscribingTarget(_ rootTag: NSNumber, _ block: @escaping (AnyObject?) -> Void) {
+    //        guard let bridge = self.bridge else {
+    //            DispatchQueue.main.async { block(nil) }
+    //            return
+    //        }
+    //        RCTGetUIManagerQueue().async {
+    //            bridge.uiManager.addUIBlock { _, viewRegistry in
+    //                guard let view = viewRegistry?[rootTag] else {
+    //                    DispatchQueue.main.async { block(nil) }
+    //                    return
+    //                }
+    //                var current: UIView? = view
+    //                while let v = current {
+    //                    if v is PaymentWidget || v is CVCWidget {
+    //                        DispatchQueue.main.async { block(v) }
+    //                        return
+    //                    }
+    //                    current = v.superview
+    //                }
+    //                let sheet = (view.reactViewController() as? HyperUIViewController)?.paymentSheet
+    //                DispatchQueue.main.async { block(sheet) }
+    //            }
+    //        }
+    //    }
+    //
+    //    private func withPaymentSheet(_ rootTag: NSNumber, _ block: @escaping (UIViewController?, PaymentSheet?) -> Void) {
+    //        guard let bridge = self.bridge else { return }
+    //        RCTGetUIManagerQueue().async {
+    //            bridge.uiManager.addUIBlock { _, viewRegistry in
+    //                let view = viewRegistry?[rootTag]
+    //                let vc = view?.reactViewController() as? HyperUIViewController
+    //                let sheet = vc?.paymentSheet
+    //                DispatchQueue.main.async { block(vc, sheet) }
+    //            }
+    //        }
+    //    }
 }

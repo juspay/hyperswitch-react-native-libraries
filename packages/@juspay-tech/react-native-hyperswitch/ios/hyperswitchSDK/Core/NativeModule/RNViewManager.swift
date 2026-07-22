@@ -16,8 +16,9 @@
 //  runtime under-initialised, so `getEnforcing('DeviceInfo')` fails and the bundle
 //  can't boot — the sheet renders blank.
 //
-//  We keep the *bridge* alive by overriding `bridgelessEnabled` → false, because
-//  the SDK's widget commands still use `bridge.enqueueJSCall` / `bridge.uiManager`.
+//  The bridge is intentionally kept alive (Fabric-on-bridge) for now because the
+//  legacy widget code still uses `bridge.enqueueJSCall` / `bridge.uiManager`.
+//  For the payment-sheet-only build we do not capture or expose the bridge here.
 //
 //  Created by Shivam Shashank on 09/11/22.
 //
@@ -34,9 +35,8 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
 
     private var reactNativeFactory: RCTReactNativeFactory?
 
-    /// Captured when the embedded bridge loads its JS source (see `sourceURL(for:)`).
-    /// The host app is bridgeless, so this embedded bridge is the SDK's only bridge.
-    private weak var capturedBridge: RCTBridge?
+    // Bridge capture removed for the payment-sheet-only/bridgeless build.
+    // private weak var capturedBridge: RCTBridge?
 
     internal static let sharedInstance = RNViewManager()
 
@@ -54,9 +54,9 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
     /// The bridge backing the embedded runtime. Kept for the SDK's widget commands
     /// (`bridge.enqueueJSCall` / `bridge.uiManager`). Available after the first view
     /// is created.
-    internal var bridge: RCTBridge? {
-        return capturedBridge
-    }
+    // internal var bridge: RCTBridge? {
+    //     return capturedBridge
+    // }
 
     internal func viewForModule(_ moduleName: String, initialProperties: [String: Any]?) -> UIView {
         let view = factory().rootViewFactory.view(
@@ -76,8 +76,8 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
 
     // MARK: - Arch configuration
 
-    /// Keep the legacy bridge alive (Fabric-on-bridge) so the SDK's
-    /// `bridge.enqueueJSCall` / `bridge.uiManager` widget commands keep working.
+    /// Keep a bridge-backed Fabric runtime so the bundled payment sheet can boot.
+    /// (The bridge itself is not exposed here; only the factory/rootView is used.)
     public override func bridgelessEnabled() -> Bool {
         return false
     }
@@ -88,7 +88,7 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
     override func sourceURL(for bridge: RCTBridge) -> URL? {
         // Called while the embedded bridge loads its JS — capture it for the SDK's
         // bridge-dependent widget commands.
-        self.capturedBridge = bridge
+        // self.capturedBridge = bridge
         return bundleURL()
     }
 

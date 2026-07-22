@@ -124,12 +124,13 @@ public class PaymentWidget: UIControl {
             .sink { [weak self] in
                 guard let self = self else { return }
                 let payload: [String: Any] = ["rootTag": self.widgetReactTag ?? -1]
-                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                    "RCTDeviceEventEmitter",
-                    method: "emit",
-                    args: ["updateIntentInit", payload],
-                    completion: nil
-                )
+                // Bridge-based widget emit removed for payment-sheet-only build.
+                // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                //     "RCTDeviceEventEmitter",
+                //     method: "emit",
+                //     args: ["updateIntentInit", payload],
+                //     completion: nil
+                // )
             }
             .store(in: &cancellables)
 
@@ -141,12 +142,13 @@ public class PaymentWidget: UIControl {
                     "rootTag": self.widgetReactTag ?? -1,
                     "sdkAuthorization": sdkAuthorization,
                 ]
-                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                    "RCTDeviceEventEmitter",
-                    method: "emit",
-                    args: ["updateIntentComplete", payload],
-                    completion: nil
-                )
+                // Bridge-based widget emit removed for payment-sheet-only build.
+                // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                //     "RCTDeviceEventEmitter",
+                //     method: "emit",
+                //     args: ["updateIntentComplete", payload],
+                //     completion: nil
+                // )
             }
             .store(in: &cancellables)
     }
@@ -156,12 +158,13 @@ public class PaymentWidget: UIControl {
             "rootTag": self.widgetReactTag ?? -1,
             "actionType": "CONFIRM_PAYMENT_ACTION",
         ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["triggerWidgetAction", payload],
-            completion: nil
-        )
+        // Bridge-based widget emit removed for payment-sheet-only build.
+        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+        //     "RCTDeviceEventEmitter",
+        //     method: "emit",
+        //     args: ["triggerWidgetAction", payload],
+        //     completion: nil
+        // )
     }
 
     internal func setPaymentEventListener(_ listener: PaymentEventListener?) {

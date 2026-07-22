@@ -111,11 +111,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
         putAll(params?.toHashMap().orEmpty())
         put("type", "payment")
       }
-
-      val map: Map<String, Any?> = mapOf(
-        "props" to props
-      )
-      val bundle = launchOptions?.toBundle(map)
+      val bundle = launchOptions?.getBundleWithHyperParams(props)
       bundle?.let {
         val isFragment = paymentSessionReactLauncher?.presentSheet(bundle)
 //        isPresented.set(true)

@@ -1,6 +1,6 @@
 {
   "name": "@juspay-tech/react-native-hyperswitch",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Hyperswitch SDK for React Native",
   "main": "lib/commonjs/index.bundle.js",
   "module": "lib/module/index.bundle.js",
@@ -65,7 +65,7 @@
   "author": "Hyperswitch",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/juspay/react-native-hyperswitch"
+    "url": "https://github.com/juspay/react-native-hyperswitch/issues"
   },
   "homepage": "https://hyperswitch.io",
   "publishConfig": {

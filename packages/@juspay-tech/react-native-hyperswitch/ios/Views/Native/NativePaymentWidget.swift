@@ -34,34 +34,34 @@ internal class NativePaymentWidget: RCTViewManager {
     }
 
     @objc func confirmPayment(_ reactTag: NSNumber, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        bridge.uiManager.addUIBlock { _, viewRegistry in
-            // Old-arch path: the view is NativePaymentWidgetView directly.
-            if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
-                view.confirmPayment(rnCallback)
-                return
-            }
-            // New-arch (Fabric) path: the Fabric NativePaymentElementView registered
-            // the inner NativePaymentWidgetView in the shared registry by the same tag.
-//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
-//                view.confirmPayment(rnCallback)
-//                return
-//            }
-            rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
-        }
+//         bridge.uiManager.addUIBlock { _, viewRegistry in
+//             // Old-arch path: the view is NativePaymentWidgetView directly.
+//             if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
+//                 view.confirmPayment(rnCallback)
+//                 return
+//             }
+//             // New-arch (Fabric) path: the Fabric NativePaymentElementView registered
+//             // the inner NativePaymentWidgetView in the shared registry by the same tag.
+// //            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
+// //                view.confirmPayment(rnCallback)
+// //                return
+// //            }
+//             rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
+//         }
     }
 
     @objc func updateIntentInitForWidget(_ rootTag: NSNumber, _ rnCallback: @escaping RCTResponseSenderBlock) {
-        bridge.uiManager.addUIBlock { _, viewRegistry in
-            if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
-                view.updateIntentInit(rnCallback)
-                return
-            }
-//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
-//                view.updateIntentInit(rnCallback)
-//                return
-//            }
-            rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
-        }
+//         bridge.uiManager.addUIBlock { _, viewRegistry in
+//             if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
+//                 view.updateIntentInit(rnCallback)
+//                 return
+//             }
+// //            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
+// //                view.updateIntentInit(rnCallback)
+// //                return
+// //            }
+//             rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
+//         }
     }
 
     @objc func updateIntentCompleteForWidget(
@@ -69,17 +69,17 @@ internal class NativePaymentWidget: RCTViewManager {
         _ sdkAuthorization: String,
         _ rnCallback: @escaping RCTResponseSenderBlock
     ) {
-        bridge.uiManager.addUIBlock { _, viewRegistry in
-            if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
-                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
-                return
-            }
-//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
-//                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
-//                return
-//            }
-            rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
-        }
+//         bridge.uiManager.addUIBlock { _, viewRegistry in
+//             if let view = viewRegistry?[rootTag] as? NativePaymentWidgetView {
+//                 view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+//                 return
+//             }
+// //            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: rootTag) as? NativePaymentWidgetView {
+// //                view.updateIntentComplete(sdkAuthorization: sdkAuthorization, resolve: rnCallback)
+// //                return
+// //            }
+//             rnCallback([["status": "failed", "message": "Widget view not found for tag \(rootTag)"]])
+//         }
     }
 
     @objc func confirmPaymentCVC(
@@ -88,17 +88,17 @@ internal class NativePaymentWidget: RCTViewManager {
         _ paymentMethodId: String,
         _ rnCallback: @escaping RCTResponseSenderBlock
     ) {
-        bridge.uiManager.addUIBlock { _, viewRegistry in
-            if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
-                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
-                return
-            }
-//            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
-//                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
-//                return
-//            }
-            rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
-        }
+//         bridge.uiManager.addUIBlock { _, viewRegistry in
+//             if let view = viewRegistry?[reactTag] as? NativePaymentWidgetView {
+//                 view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+//                 return
+//             }
+// //            if let view = NativePaymentWidgetViewRegistry.shared().view(forTag: reactTag) as? NativePaymentWidgetView {
+// //                view.confirmCVCPayment(paymentToken: paymentToken, paymentMethodId: paymentMethodId, resolve: rnCallback)
+// //                return
+// //            }
+//             rnCallback([["status": "failed", "message": "Widget view not found for tag \(reactTag)"]])
+//         }
     }
 }
 
@@ -343,66 +343,66 @@ public class NativePaymentWidgetView: UIView {
 
     @objc public func confirmPayment(_ rnCallback: @escaping RCTResponseSenderBlock) {
         // avoiding duplicate confirm calls (confirmPayment triggered multiple times from RN layer)
-        if self.responseSenderCallback != nil {
-            let response = ["status": "failed", "error": "invalid call"]
-            rnCallback([response])
-            return
-        }
+        // if self.responseSenderCallback != nil {
+        //     let response = ["status": "failed", "error": "invalid call"]
+        //     rnCallback([response])
+        //     return
+        // }
 
-        self.responseSenderCallback = rnCallback
-        guard let paymentWidget = paymentWidget else {
-            self.responseSenderCallback = nil
-            rnCallback([[
-                "status": "failed",
-                "code": "WIDGET_NOT_READY",
-                "message": "Widget not ready",
-            ]])
-            return
-        }
-        paymentWidget.confirm()
+        // self.responseSenderCallback = rnCallback
+        // guard let paymentWidget = paymentWidget else {
+        //     self.responseSenderCallback = nil
+        //     rnCallback([[
+        //         "status": "failed",
+        //         "code": "WIDGET_NOT_READY",
+        //         "message": "Widget not ready",
+        //     ]])
+        //     return
+        // }
+        // paymentWidget.confirm()
     }
 
     @objc public func updateIntentInit(_ resolve: @escaping RCTResponseSenderBlock) {
-        guard let tag = rctRootTag else {
-            resolve([["status": "failed", "message": "Widget root tag not found"]])
-            return
-        }
+        // guard let tag = rctRootTag else {
+        //     resolve([["status": "failed", "message": "Widget root tag not found"]])
+        //     return
+        // }
 
-        WidgetResponseRegistry.shared.register(rootTag: tag, action: .updateIntentInit) { [weak self] response, _ in
-            guard let self = self else { return }
-            resolve([self.callbackPayload(response["data"])])
-        }
+        // WidgetResponseRegistry.shared.register(rootTag: tag, action: .updateIntentInit) { [weak self] response, _ in
+        //     guard let self = self else { return }
+        //     resolve([self.callbackPayload(response["data"])])
+        // }
 
-        let eventData: [String: Any] = ["rootTag": tag]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["updateIntentInit", eventData],
-            completion: nil
-        )
+        // let eventData: [String: Any] = ["rootTag": tag]
+        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+        //     "RCTDeviceEventEmitter",
+        //     method: "emit",
+        //     args: ["updateIntentInit", eventData],
+        //     completion: nil
+        // )
     }
 
     @objc public func updateIntentComplete(sdkAuthorization: String, resolve: @escaping RCTResponseSenderBlock) {
-        guard let tag = rctRootTag else {
-            resolve([["status": "failed", "message": "Widget root tag not found"]])
-            return
-        }
+        // guard let tag = rctRootTag else {
+        //     resolve([["status": "failed", "message": "Widget root tag not found"]])
+        //     return
+        // }
 
-        WidgetResponseRegistry.shared.register(rootTag: tag, action: .updateIntentComplete) { [weak self] response, _ in
-            guard let self = self else { return }
-            resolve([self.callbackPayload(response["data"])])
-        }
+        // WidgetResponseRegistry.shared.register(rootTag: tag, action: .updateIntentComplete) { [weak self] response, _ in
+        //     guard let self = self else { return }
+        //     resolve([self.callbackPayload(response["data"])])
+        // }
 
-        let eventData: [String: Any] = [
-            "rootTag": tag,
-            "sdkAuthorization": sdkAuthorization,
-        ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["updateIntentComplete", eventData],
-            completion: nil
-        )
+        // let eventData: [String: Any] = [
+        //     "rootTag": tag,
+        //     "sdkAuthorization": sdkAuthorization,
+        // ]
+        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+        //     "RCTDeviceEventEmitter",
+        //     method: "emit",
+        //     args: ["updateIntentComplete", eventData],
+        //     completion: nil
+        // )
     }
 
     internal func confirmCVCPayment(paymentToken: String, paymentMethodId: String, resolve: @escaping RCTResponseSenderBlock) {
