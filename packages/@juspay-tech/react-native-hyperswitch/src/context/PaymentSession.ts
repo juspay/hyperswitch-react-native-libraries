@@ -55,7 +55,7 @@ export function mapNativeResponseToPaymentResult(
   const parsed = parseNativeResponse(raw);
   return {
     status: mapStatus(parsed.status),
-    type: parsed.type ?? parsed.code ?? parsed.status ?? "",
+    type: parsed.type ?? parsed.status ?? "",
     message: parsed.message ?? parsed.status ?? parsed.code ?? "",
   };
 }
