@@ -53,3 +53,5 @@ export function loadHyper(
 export const Hyperswitch = {
   init: loadHyper,
 };
+
+export default Hyperswitch;
