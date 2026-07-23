@@ -7,24 +7,27 @@
 
 import Foundation
 
-/// PaymentSheetResult is an enum that represents the possible outcomes of a payment sheet operation.
-@frozen public enum PaymentSheetResult {
-    case completed(data: String)
-    case canceled(data: String)
-    case failed(error: Error)
-}
-
 /// PaymentSheet is a class that handles the presentation and management of a payment sheet interface.
 public class PaymentSheet {
 
     /// The initializer method that sets up the payment sheet with the required parameters.
-    internal required init(sdkAuthorization: String, configuration: Configuration) {
-        self.sdkAuthorization = sdkAuthorization
+    internal required init(
+        paymentSessionConfiguration: PaymentSessionConfiguration,
+        hyperswitchConfiguration: HyperswitchConfiguration? = nil,
+        configuration: Configuration? = nil
+    ) {
+        self.paymentSessionConfiguration = paymentSessionConfiguration
+        self.hyperswitchConfiguration = hyperswitchConfiguration
         self.configuration = configuration
     }
 
+    internal let paymentSessionConfiguration: PaymentSessionConfiguration
+    internal var hyperswitchConfiguration: HyperswitchConfiguration?
+
     /// The configuration object that holds the settings for the payment sheet.
     internal let configuration: Configuration?
-    internal let sdkAuthorization: String
-    internal var completion: ((PaymentSheetResult) -> Void)?
+    internal var completion: ((String) -> Void)?
+    internal var subscribedEvents: [String]?
+    internal var paymentEventListener: PaymentEventListener?
+    internal var shouldProceedWithPaymentCallback: ((PaymentRequestData, @escaping (Bool) -> Void) -> Void)?
 }
