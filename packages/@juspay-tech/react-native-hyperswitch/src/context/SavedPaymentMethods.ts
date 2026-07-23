@@ -9,7 +9,7 @@ import {
 } from '../types/savedPaymentMethods';
 import type { PaymentResult } from '../types/paymentresult';
 import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
-import { mapNativeResponseToPaymentResult } from './PaymentSession';
+import { mapNativeResponseToPaymentResult } from './NativeResponseMapper';
 import { getWidget } from './WidgetRegistry';
 
 function getReactTag(widgetId?: string): number {

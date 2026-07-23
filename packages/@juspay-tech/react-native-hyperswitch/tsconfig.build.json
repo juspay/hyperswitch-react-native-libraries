@@ -2,10 +2,15 @@
   "extends": "./tsconfig",
   "compilerOptions": {
     "skipLibCheck": true,
+    "noEmit": false,
     "noEmitOnError": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "lib/typescript"
   },
   "exclude": [
     "example",
