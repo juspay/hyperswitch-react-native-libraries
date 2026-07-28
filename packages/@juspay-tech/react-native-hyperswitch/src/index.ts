@@ -4,12 +4,11 @@ import type {
   PaymentSessionConfiguration,
   HyperswitchSession,
 } from './types/definitions';
-
+export type * from './types/savedPaymentMethods';
 export type * from './types/definitions';
 export type * from './types/elements';
 export type * from './types/NativeModuleTypes';
 export type * from './types/PaymentSheetConfiguration';
-
 import NativeHyperswitchModule from './specs/NativeHyperswitchModule';
 import { createPaymentSession } from './context/PaymentSession';
 import { Elements } from './types/elements';

@@ -1,15 +1,4 @@
-<manifest xmlns:tools="http://schemas.android.com/tools"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-  <application android:enableOnBackInvokedCallback="true"
-    tools:targetApi="33">
-    <meta-data
-      android:name="io.hyperswitch.hermes_enabled"
-      android:value="${hermesEnabled}" />
-    <meta-data
-      android:name="io.hyperswitch.new_architecture_enabled"
-      android:value="${newArchEnabled}" />
-    <meta-data
-      android:name="io.hyperswitch.load_so_files"
-      android:value="true" />
-  </application>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+package="com.hyperswitchsdkreactnative">
 </manifest>

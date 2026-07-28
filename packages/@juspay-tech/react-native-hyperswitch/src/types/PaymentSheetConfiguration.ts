@@ -92,7 +92,7 @@ export interface GroupingBehavior {
   groupByPaymentMethods?: boolean;
 }
 
-export interface SavedPaymentMethodsConfiguration {
+export interface SavedPaymentMethodsConfig {
   hiddenPaymentMethods?: string[];
 }
 

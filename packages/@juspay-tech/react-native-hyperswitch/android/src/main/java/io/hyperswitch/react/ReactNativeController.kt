@@ -22,6 +22,7 @@ import com.facebook.react.runtime.hermes.HermesInstance
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.HyperswitchSdkReactNativePackage
 import com.hyperswitchsdkreactnative.R
 import io.hyperswitch.logs.CrashHandler
 import io.hyperswitch.logs.EventName
@@ -118,7 +119,7 @@ object ReactNativeController {
     return object : DefaultReactNativeHost(application) {
       override fun getPackages(): List<ReactPackage> {
         return HyperPackageList(this).packages.apply {
-          add(HyperPackage())
+          add(HyperswitchSdkReactNativePackage())
         }
       }
 

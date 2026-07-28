@@ -50,7 +50,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
     customEndpoints: ReadableMap?,
     promise: Promise?
   ) {
-    val activity = currentActivity
+    val activity = reactApplicationContext.currentActivity
     if (publishableKey.isNullOrBlank()) {
       promise?.reject("INITIALIZATION_ERROR", "publishableKey is required")
       return
@@ -64,7 +64,6 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
       paymentSessionReactLauncher = PaymentSessionReactLauncher(activity)
       paymentSessionReactLauncher?.initializeReactNativeInstance()
     }
-
     val overrideEndpoints: OverrideEndpoints? = customEndpoints?.getMap("overrideEndpoints")?.let {
       val overrideEndpointsMap = customEndpoints.getMap("overrideEndpoints")
       OverrideEndpoints(
@@ -119,8 +118,6 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
         put("reason", e.message.toString())
       }
       promise?.resolve(map)
-    }finally {
-//        isPresented.set(false)
     }
   }
 
@@ -148,7 +145,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
         )
       }
       GetPaymentSessionCallBackManager.setCallback(
-        params?.getMap("sessionConfig")?.getString("sdkAuthorization"),
+        params?.getMap("paymentSessionConfig")?.getString("sdkAuthorization"),
         savedPaymentMethodCallback
       )
       paymentSessionReactLauncher?.recreateReactContext(it)
@@ -163,7 +160,14 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
           promise.resolve(ConversionUtils.convertMapToJson(data.toMap()).toString())
         },
         onFailure = { error ->
-          promise.resolve(error.toString())
+          val pmError = error as? PMError
+          promise.resolve(
+            StandardResult.Failed(
+              code = pmError?.code ?: "UNKNOWN",
+              message = pmError?.message ?: error.message ?: "Unknown error",
+              error = Throwable(pmError?.message ?: error.message ?: "Unknown error")
+            ).toJSONString()
+          )
         }
       )
     }
@@ -176,7 +180,14 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
           promise.resolve(ConversionUtils.convertMapToJson(data.toMap()).toString())
         },
         onFailure = { error ->
-          promise.reject(error.toString())
+          val pmError = error as? PMError
+          promise.resolve(
+            StandardResult.Failed(
+              code = pmError?.code ?: "UNKNOWN",
+              message = pmError?.message ?: error.message ?: "Unknown error",
+              error = Throwable(pmError?.message ?: error.message ?: "Unknown error")
+            ).toJSONString()
+          )
         }
       )
     }
@@ -195,7 +206,14 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
           promise.resolve(jsonArray.toString())
         },
         onFailure = { error ->
-          promise.reject(error.toString())
+          val pmError = error as? PMError
+          promise.resolve(
+            StandardResult.Failed(
+              code = pmError?.code ?: "UNKNOWN",
+              message = pmError?.message ?: error.message ?: "Unknown error",
+              error = Throwable(pmError?.message ?: error.message ?: "Unknown error")
+            ).toJSONString()
+          )
         }
       )
     }
@@ -231,7 +249,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
               code = pmError?.code ?: "UNKNOWN",
               message = pmError?.message ?: error.message ?: "Unknown error",
               error = Throwable(pmError?.message ?: error.message ?: "Unknown error")
-            )
+            ).toJSONString()
           )
         }
       )
@@ -272,7 +290,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
               code = pmError?.code ?: "UNKNOWN",
               message = pmError?.message ?: error.message ?: "Unknown error",
               error = Throwable(pmError?.message ?: error.message ?: "Unknown error")
-            )
+            ).toJSONString()
           )
         }
       )

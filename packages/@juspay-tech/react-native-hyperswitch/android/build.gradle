@@ -79,10 +79,10 @@ android {
     buildConfigField "String", "VERSION_NAME", "\"${version}\""
     buildConfigField "boolean", "IS_HERMES_ENABLED", hermesEnabled
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled
-    manifestPlaceholders = [
-      hermesEnabled: hermesEnabled,
-      newArchEnabled : newArchEnabled
-    ]
+    // manifestPlaceholders = [
+    //   hermesEnabled: hermesEnabled,
+    //   newArchEnabled : newArchEnabled
+    // ]
   }
   buildFeatures {
     buildConfig true
@@ -113,6 +113,7 @@ android {
   }
 
   sourceSets.main {
+    manifest.srcFile "src/main/AndroidManifest.xml"
     java {
       srcDirs += [
         "generated/java",
@@ -126,10 +127,14 @@ android {
         ]
       }
 
-      if (REACT_NATIVE_MINOR_VERSION >= 75) {
-
+      if (REACT_NATIVE_MINOR_VERSION >= 81) {
+        srcDirs += [
+          "src/rn81/java",
+        ]
       } else {
-
+        srcDirs += [
+          "src/rn79/java",
+        ]
       }
     }
   }
