@@ -24,18 +24,23 @@ function getReactTag(widgetId?: string): number {
   return reactTag;
 }
 
-function parsePaymentMethod(raw: string): CustomerLastUsedPaymentMethod {
-  const parsed = JSON.parse(raw) as CustomerLastUsedPaymentMethod & {
-    billing?: string | object | null;
-  };
-  if (parsed.billing && typeof parsed.billing === 'string') {
-    try {
-      parsed.billing = JSON.parse(parsed.billing);
-    } catch {
-      parsed.billing = null;
+function parsePaymentMethod(raw: string): CustomerLastUsedPaymentMethod | null {
+  try {
+    const parsed = JSON.parse(raw) as CustomerLastUsedPaymentMethod & {
+      billing?: string | object | null;
+    };
+    if (parsed.billing && typeof parsed.billing === 'string') {
+      try {
+        parsed.billing = JSON.parse(parsed.billing);
+      } catch {
+        parsed.billing = null;
+      }
     }
+    return parsed as CustomerLastUsedPaymentMethod;
+  } catch {
+    console.warn('Hyperswitch: failed to parse saved payment method data:', raw);
+    return null;
   }
-  return parsed as CustomerLastUsedPaymentMethod;
 }
 
 export function createCustomerSavedPaymentMethodsSession(): CustomerSavedPaymentMethodsSession {

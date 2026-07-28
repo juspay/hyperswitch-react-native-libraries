@@ -14,7 +14,6 @@ function buildPresentPaymentSheetPayload(
   // merchant-facing hyperswitchConfig payload.
   const { platformPublishableKey: _platformPublishableKey, ...restConfig } =
     hyperswitchConfig;
-  console.log(_platformPublishableKey);
   return {
     hyperswitchConfig: restConfig as Record<string, unknown>,
     paymentSessionConfig: paymentSessionConfig,

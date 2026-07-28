@@ -142,7 +142,6 @@ class PaymentSessionReactLauncher(
             .commitNowAllowingStateLoss()
         }
       }catch(e:Exception){
-        Log.i("Manideep", e.message.toString())
       }
 
       val newReactNativeFragmentSheet =

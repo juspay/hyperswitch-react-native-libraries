@@ -15,6 +15,7 @@ import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.fabric.mounting.SurfaceMountingManager
 import com.facebook.react.uimanager.IllegalViewOperationException
 import com.facebook.react.uimanager.UIManagerModule
 import com.hyperswitchsdkreactnative.BuildConfig
@@ -203,7 +204,6 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
 
   @ReactMethod
   override fun notifyWidgetPaymentResult(rootTag: Double, result: String) {
-    Log.i("Manideep", rootTag.toInt().toString())
     findViewWithRootTag(rootTag.toInt(), { fragment ->
       if (fragment == null) {
         Log.w(
@@ -255,7 +255,6 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
 
   @ReactMethod
   override fun emitPaymentEvent(rootTag: Double, eventType: String, payload: ReadableMap) {
-    Log.i("Manideep", rootTag.toInt().toString())
     findViewWithRootTag(rootTag.toInt(), { fragment ->
       if (fragment == null) {
         Log.w("HyperModule", "emitPaymentEvent: no fragment found for rootTag=$rootTag")
@@ -383,23 +382,24 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
   }
 
   private fun findViewWithRootTag(rootTag: Int, onFound: (HyperFragment?) -> Unit) {
-    val uiManagerModule =
-      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
-
-    if (uiManagerModule == null) {
-      onFound(null)
-      return
-    }
-
-    uiManagerModule.addUIBlock { nvhm ->
-      try {
-        val reactRootView = nvhm.resolveView(rootTag)
-        onFound(FragmentManager.findFragment(reactRootView))
-      } catch (e: IllegalViewOperationException) {
-        onFound(null)
-      } catch (e: Exception) {
-        onFound(null)
-      }
-    }
+    //    val uiManagerModule =
+//      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
+//
+//    if (uiManagerModule == null) {
+//      onFound(null)
+//      return
+//    }
+//
+//    uiManagerModule.addUIBlock { nvhm ->
+//      try {
+//        val reactRootView = nvhm.resolveView(rootTag)
+//        onFound(reactRootView?.let { FragmentManager.findFragment(it) })
+//      } catch (e: IllegalViewOperationException) {
+//        onFound(null)
+//      } catch (e: Exception) {
+//        onFound(null)
+//      }
+//    }
+    onFound(null)
   }
 }

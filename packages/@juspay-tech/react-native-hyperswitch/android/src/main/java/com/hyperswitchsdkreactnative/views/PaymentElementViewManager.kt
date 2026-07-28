@@ -48,8 +48,8 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   @ReactProp(name = "options")
   override fun setOptions(container: PaymentWidgetView, options: Dynamic?) {
-    options?.let {
-      container.setConfiguration(it.asMap())
+    options?.asMap()?.let {
+      container.setConfiguration(it)
     }
   }
 
