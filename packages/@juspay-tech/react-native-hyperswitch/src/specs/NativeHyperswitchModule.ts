@@ -49,6 +49,6 @@ export interface Spec extends TurboModule {
 const NativeHyperswitchModule =
   TurboModuleRegistry.get<Spec>('NativeHyperswitchModule') ??
   NativeModules.NativeHyperswitchModule;
-console.log('NativeHyperswitchModule', NativeHyperswitchModule);
+
 export default NativeHyperswitchModule as Spec;
 export { NativeHyperswitchModule };

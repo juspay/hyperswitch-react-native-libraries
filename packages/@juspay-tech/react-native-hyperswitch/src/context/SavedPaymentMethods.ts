@@ -14,7 +14,9 @@ import { getWidget } from './WidgetRegistry';
 
 function getReactTag(widgetId?: string): number {
   if (!widgetId) {
-    return 0;
+    throw new Error(
+      'A widgetId is required to confirm a saved payment method'
+    );
   }
 
   const reactTag = getWidget(widgetId);

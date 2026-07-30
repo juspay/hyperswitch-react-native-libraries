@@ -42,13 +42,13 @@ export interface NativePaymentSheetPayload {
   configuration: Record<string, unknown>;
 }
 
-import type { ComponentType } from 'react';
 import { CustomerSavedPaymentMethodsSession } from './savedPaymentMethods';
 import type { Elements } from './elements';
+import { ColorType, ColorType, PaymentSheetConfShapes, iguShapes, ration, Them, Shapes, Shapese, Theme, Font, SubscriptionEvent } from './PaymentSheetConfiguration';
 
 export interface PaymentSession {
   presentPaymentSheet(
-    configuration?: Record<string, unknown>
+    configuration?: PaymentSheetConfiguration
   ): Promise<PaymentResult>;
   getCustomerSavedPaymentMethods(
     options?: any
@@ -70,29 +70,29 @@ export interface PaymentElementHandle {
   destroy(): void;
 }
 
-export interface PaymentElement extends PaymentElementHandle {
-  Component?: ComponentType<any>;
-  mount(selector: string): void;
-  unmount(): void;
-  on(event: string, handler?: (data?: any) => void): { remove: () => void };
-  onPaymentResult(handler?: (data: PaymentResult) => void): {
-    remove: () => void;
-  };
-  onPaymentConfirmButtonClick(handler?: (data: any) => boolean): {
-    remove: () => void;
-  };
-}
+// export interface PaymentElement extends PaymentElementHandle {
+//   Component?: ComponentType<any>;
+//   mount(selector: string): void;
+//   unmount(): void;
+//   on(event: string, handler?: (data?: any) => void): { remove: () => void };
+//   onPaymentResult(handler?: (data: PaymentResult) => void): {
+//     remove: () => void;
+//   };
+//   onPaymentConfirmButtonClick(handler?: (data: any) => boolean): {
+//     remove: () => void;
+//   };
+// }
 
-export interface CvcWidget {
-  Component?: ComponentType<any>;
-  mount(selector: string, options?: Record<string, any>): void;
-  unmount(): void;
-  destroy(): void;
-  on(
-    event: string,
-    handler?: (data?: any) => void
-  ): { remove: () => void } | null;
-}
+// export interface CvcWidget {
+//   Component?: ComponentType<any>;
+//   mount(selector: string, options?: Record<string, any>): void;
+//   unmount(): void;
+//   destroy(): void;
+//   on(
+//     event: string,
+//     handler?: (data?: any) => void
+//   ): { remove: () => void } | null;
+// }
 
 export interface HyperswitchSession {
   publishableKey: string;
@@ -100,4 +100,18 @@ export interface HyperswitchSession {
   initPaymentSession(
     options: PaymentSessionConfiguration
   ): Promise<PaymentSession>;
+}
+  
+export interface CvcAppearance {
+  theme?: Theme;
+  colors?: ColorType;
+  shapes?: Shapes;
+  font?: Pick<Font, 'family' | 'scale'>;
+}
+
+export interface CvcWidgetOptions {
+  appearance?: CvcAppearance;
+  placeholder?: string;
+  cvcIcon?: 'hidden' | 'shown';
+  subscribedEvents?: SubscriptionEvent[];
 }

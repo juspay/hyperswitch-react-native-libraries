@@ -1,4 +1,5 @@
 import type {
+  ElementType,
   HyperswitchConfiguration,
   PaymentElementHandle,
   PaymentSessionConfiguration,
@@ -15,6 +16,7 @@ import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMe
 import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
 import { Elements } from '../types/elements';
 import { confirmPayment as confirmWidgetPayment } from './WidgetRegistry';
+import { PaymentSheetConfiguration } from '..';
 
 type ElementsNativeActions = Pick<
   Elements,
@@ -30,7 +32,7 @@ export function createElementsNativeActions(
 ): ElementsNativeActions {
   return {
     async presentPaymentSheet(
-      configuration?: Record<string, unknown>
+      configuration?: PaymentSheetConfiguration
     ): Promise<PaymentResult> {
       const payload = buildPresentPaymentSheetPayload(
         hyperswitchConfig,
@@ -74,7 +76,9 @@ export function createElements(
   hyperswitchConfig: HyperswitchConfiguration,
   paymentSessionConfig: PaymentSessionConfiguration
 ): Elements {
+  
   return {
+    hyperswitchConfig,
     ...createElementsNativeActions(hyperswitchConfig, paymentSessionConfig),
   };
 }

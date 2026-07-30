@@ -1,4 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
+import { useHyperElementsContext } from '../context/HyperElements';
+import type { CvcWidgetOptions } from '../types/definitions';
 import type { ViewStyle } from 'react-native';
 import { registerWidget, unregisterWidget } from '../context/WidgetRegistry';
 import { getFindNodeHandle } from '../utils/ReactNativeUtils';
@@ -7,30 +9,48 @@ import type {
   paymentResult,
   paymentEventNative,
 } from '../types/NativeModuleTypes';
-import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
 import NativePaymentWidgetImpl from './NativePaymentWidgetImpl';
+import { useMemo } from 'react';
 
 type CVCElementProps = {
   id?: string;
-  options?: PaymentSheetConfiguration;
+  options?: CvcWidgetOptions;
   onChange?: (event: paymentEventResult) => void;
   onFocus?: () => void;
+  onReady?: () => void;
   onBlur?: () => void;
   onPaymentResult?: (result: paymentResult) => void;
   style?: ViewStyle;
+};
+
+type CVCWidgetRef = {
+  confirmPayment: () => Promise<paymentResult>;
 };
 
 function parsePaymentResult(result: string): paymentResult {
   return JSON.parse(result);
 }
 
-export const CVCElementView = forwardRef<unknown, CVCElementProps>(
+export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
   (props, _ref) => {
     const { id, options, onChange, onFocus, onBlur, onPaymentResult, style } =
       props;
-    // const {paymentSessionConfig, hyperswitchConfig} = useHyperElementsContext();
+    const {paymentSessionConfig, hyperswitchConfig} = useHyperElementsContext();
     const [viewId, setViewId] = useState<number | undefined>(undefined);
-    const viewRef = useRef<unknown>(null);
+    const viewRef = useRef(null);
+    const nativeOptions = useMemo(
+    () => ({
+      ...options,
+      ...{
+        paymentMethodLayout: {
+          savedMethodCustomization: {
+            cvcIcon: options?.cvcIcon ?? 'shown',
+          },
+        },
+      },
+    }),
+    [options]
+  );
 
     useEffect(() => {
       let isMounted = true;
@@ -99,14 +119,14 @@ export const CVCElementView = forwardRef<unknown, CVCElementProps>(
     return (
       <NativePaymentWidgetImpl
         ref={viewRef}
-        widgetType="widgetPaymentSheet"
-        // sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
+        widgetType="cvcWidget"
+        sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
         onPaymentEvent={onPaymentEventInternal}
         onPaymentResult={onPaymentResultInternal}
         options={{
-          // hyperswitchConfig,
-          // paymentSessionConfig,
-          configuration: options,
+          hyperswitchConfig: hyperswitchConfig || undefined,
+          paymentSessionConfig: paymentSessionConfig || undefined,
+          configuration: nativeOptions as Record<string, unknown>
         }}
         style={style}
       />

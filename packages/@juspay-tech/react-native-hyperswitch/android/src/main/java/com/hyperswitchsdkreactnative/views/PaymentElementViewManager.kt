@@ -7,15 +7,15 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.viewmanagers.NativePaymentElementManagerDelegate
-import com.facebook.react.viewmanagers.NativePaymentElementManagerInterface
+import com.facebook.react.viewmanagers.NativePaymentWidgetViewManagerDelegate
+import com.facebook.react.viewmanagers.NativePaymentWidgetViewManagerInterface
 import io.hyperswitch.view.PaymentWidgetView
 
 class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
-  NativePaymentElementManagerInterface<PaymentWidgetView> {
+  NativePaymentWidgetViewManagerInterface<PaymentWidgetView> {
 
   private val mDelegate: ViewManagerDelegate<PaymentWidgetView> =
-    NativePaymentElementManagerDelegate(this)
+    NativePaymentWidgetViewManagerDelegate(this)
 
   override fun getName(): String = NAME
 
@@ -90,7 +90,7 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
   }
 
   companion object {
-    const val NAME = "RCTNativePaymentElement"
+    const val NAME = "NativePaymentWidgetView"
     private const val CVC_WIDGET = "cvcWidget"
     private const val PAYMENT_ELEMENT = "paymentElement"
     private const val WIDGET_PAYMENT_SHEET = "widgetPaymentSheet"

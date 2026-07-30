@@ -1,6 +1,6 @@
 declare global {
-  var __turboModuleProxy: unknown | undefined;
-  var nativeFabricUIManager: unknown | undefined;
+  var __turboModuleProxy: unknown | null | undefined;
+  var nativeFabricUIManager: unknown | null | undefined;
 }
 
 export function isTurboModuleEnabled(): boolean {
@@ -11,8 +11,7 @@ export function isTurboModuleEnabled(): boolean {
 }
 
 export function isFabricEnabled(): boolean {
-  return (
-    typeof global.nativeFabricUIManager !== 'undefined' &&
-    global.nativeFabricUIManager !== null
-  );
+  const enabled = global.nativeFabricUIManager != null;
+  console.log('isFabricEnabled', enabled);
+  return enabled;
 }

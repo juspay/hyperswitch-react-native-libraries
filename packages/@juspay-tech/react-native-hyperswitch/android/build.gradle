@@ -114,6 +114,9 @@ android {
 
   sourceSets.main {
     manifest.srcFile "src/main/AndroidManifest.xml"
+    assets.srcDirs = REACT_NATIVE_MINOR_VERSION >= 82
+      ? ["src/main/assets"]
+      : ["src/rn79/assets"]
     java {
       srcDirs += [
         "generated/java",

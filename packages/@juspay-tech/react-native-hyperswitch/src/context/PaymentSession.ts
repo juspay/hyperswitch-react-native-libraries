@@ -15,6 +15,7 @@ import {
   setSheetPresented,
 } from '../utils/InitializationState';
 import { mapNativeResponseToPaymentResult } from './NativeResponseMapper';
+import { PaymentSheetConfiguration } from '..';
 
 export { parseNativeResponse, mapStatus, mapNativeResponseToPaymentResult } from './NativeResponseMapper';
 
@@ -53,7 +54,11 @@ export async function presentPaymentSheetWithPayload(
 
 export async function updateIntent(
   _intentResolver: () => Promise<PaymentSessionConfiguration>
-): Promise<void> {}
+): Promise<void> {
+  // This feature is not yet implemented. Throw an explicit error rather than
+  // silently succeeding so integrators get immediate feedback.
+  throw new Error('updateIntent is not yet supported by this SDK version');
+}
 
 export function createPaymentSession(
   hyperswitchConfig: HyperswitchConfiguration,
@@ -61,7 +66,7 @@ export function createPaymentSession(
 ): PaymentSession {
   return {
     async presentPaymentSheet(
-      configuration?: Record<string, unknown>
+      configuration?: PaymentSheetConfiguration
     ): Promise<PaymentResult> {
       const payload = buildPresentPaymentSheetPayload(
         hyperswitchConfig,

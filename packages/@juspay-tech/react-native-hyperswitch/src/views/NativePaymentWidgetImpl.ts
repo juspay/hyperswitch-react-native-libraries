@@ -6,10 +6,10 @@ type NativePaymentWidgetComponent =
   React.ComponentType<nativePaymentWidgetType>;
 
 const NativePaymentWidgetImpl: NativePaymentWidgetComponent = isFabricEnabled()
-  ? (require('../specs/PaymentElementNativeComponent')
+  ? (require('../specs/NativePaymentWidgetViewNativeComponent')
       .default as NativePaymentWidgetComponent)
   : (requireNativeComponent(
-      'NativePaymentWidget'
+      'NativePaymentWidgetView'
     ) as unknown as NativePaymentWidgetComponent);
 
 export default NativePaymentWidgetImpl;

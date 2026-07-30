@@ -54,3 +54,10 @@ export const Hyperswitch = {
 };
 
 export default Hyperswitch;
+
+export { HyperElements, usePaymentSession, useElements, useElements as useWidgets } from './context/HyperElements';
+
+
+export { CVCElement as CardCVCElement } from './views/CVCElement';
+
+export { PaymentElement } from './views/PaymentElement';

@@ -17,4 +17,4 @@ export interface NativeProps extends ViewProps {
   }>;
 }
 
-export default codegenNativeComponent<NativeProps>('RCTNativePaymentElement');
+export default codegenNativeComponent<NativeProps>('NativePaymentWidgetView');

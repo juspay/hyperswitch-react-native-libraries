@@ -4,8 +4,8 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from 'react';
-import type { HyperswitchSession, PaymentSession } from '../types/definitions';
+} from "react";
+import type { HyperswitchConfiguration, HyperswitchSession, PaymentSession, PaymentSessionConfiguration } from '../types/definitions';
 import type { Elements } from '../types/elements';
 
 interface HyperElementsContext {
@@ -13,6 +13,8 @@ interface HyperElementsContext {
   elements: Elements | null;
   publishableKey: string | null;
   sdkAuthorization: string | null;
+  hyperswitchConfig: HyperswitchConfiguration | null;
+  paymentSessionConfig: PaymentSessionConfiguration | null;
   loading: boolean;
   error: Error | null;
 }
@@ -38,6 +40,8 @@ export function HyperElements({
     null
   );
   const [elements, setElements] = useState<Elements | null>(null);
+  const [hyperswitchConfig, setHyperswitchConfig] = useState<HyperswitchConfiguration | null>(null);
+  const [paymentSessionConfig, setPaymentSessionConfig] = useState<PaymentSessionConfiguration | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
   const [sdkAuthorization, setSdkAuthorization] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,14 +55,15 @@ export function HyperElements({
     (async () => {
       try {
         const session = await Promise.resolve(hyper);
-        const els = await session.elements({
-          sdkAuthorization: options.sdkAuthorization,
-        });
+        const paymentSessionConfig = { sdkAuthorization: options.sdkAuthorization };
+        const els = await session.elements(paymentSessionConfig);
 
         if (!cancelled) {
           setPaymentSession({
             ...els,
           } as PaymentSession);
+          setHyperswitchConfig(els.hyperswitchConfig);
+          setPaymentSessionConfig(paymentSessionConfig);
           setElements(els);
           setPublishableKey(session.publishableKey ?? null);
           setSdkAuthorization(options.sdkAuthorization ?? null);
@@ -86,6 +91,8 @@ export function HyperElements({
         sdkAuthorization,
         loading,
         error,
+        paymentSessionConfig,
+        hyperswitchConfig,
       }}
     >
       {children}
@@ -102,3 +109,14 @@ export function useHyperElementsContext(): HyperElementsContext {
   }
   return ctx;
 }
+
+
+export function usePaymentSession(): PaymentSession | null {
+  const ctx = useHyperElementsContext();
+  return ctx.paymentSession;
+}
+
+export function useElements(): Elements | null {
+  const ctx = useHyperElementsContext();
+  return ctx.elements;
+} 
