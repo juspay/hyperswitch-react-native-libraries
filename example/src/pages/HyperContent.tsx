@@ -109,8 +109,13 @@ export function HyperContent(props: SharedProps) {
                 },
               },
               cvcIcon: "hidden",
+              subscribedEvents: ["CVC_STATUS"]
             }}
-            onReady={() => console.log("[Example] CvcWidget ready")}
+            onReady={() => {
+              console.log("[Example] CvcWidget ready");
+            }}
+            onFocus={() => console.log("[Example] CvcWidget focused")}
+            onBlur={() => console.log("[Example] CvcWidget blurred")}
             style={{ minHeight: 50 }}
           />
         ) : null
@@ -124,6 +129,9 @@ export function HyperContent(props: SharedProps) {
             setTimeout(() => {
               Alert.alert(`Type: ${data?.type}`, `Message: ${data?.message}`);
             }, 0);
+          }}
+          onChange={(event) => {
+            console.log("[Example] PaymentElement onChange event:", JSON.stringify(event));
           }}
           options={{
             merchantDisplayName: "Hyperswitch Example",
@@ -178,6 +186,12 @@ export function HyperContent(props: SharedProps) {
               },
             },
             splitCardFields: true,
+            subscribedEvents: [
+              "PAYMENT_METHOD_STATUS",
+              "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
+              "PAYMENT_METHOD_INFO_CARD",
+              "FORM_STATUS"
+            ],
           }}
           onReady={() => console.log("[Example] PaymentElement ready")}
           style={{ width: "100%", height: "100%" }}

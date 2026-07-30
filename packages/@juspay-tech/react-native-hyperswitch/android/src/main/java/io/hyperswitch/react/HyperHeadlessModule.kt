@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.hyperswitchsdkreactnative.NativeHyperHeadlessSpec
+import io.hyperswitch.paymentsession.ExitHeadlessCallBackManager
 import io.hyperswitch.paymentsession.GetPaymentSessionCallBackManager
 import io.hyperswitch.paymentsession.PaymentSessionHandlerImpl
 
@@ -34,7 +35,10 @@ class HyperHeadlessModule internal constructor(private val rct: ReactApplication
 
     @ReactMethod
     override fun exitHeadless(rootTag: Double, status: String) {
-//        ExitHeadlessCallBackManager.executeCallback(rootTag, status)
+      try {
+        ExitHeadlessCallBackManager.executeCallback(rootTag.toInt(), status)
+      }catch (_: Exception){
+      }
     }
 
   companion object {

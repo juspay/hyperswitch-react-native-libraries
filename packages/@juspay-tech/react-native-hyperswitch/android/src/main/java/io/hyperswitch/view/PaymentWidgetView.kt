@@ -4,25 +4,22 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReadableMap
 import com.hyperswitchsdkreactnative.BuildConfig
 import io.hyperswitch.PaymentEventListener
+import io.hyperswitch.model.ElementUpdateIntentResult
 import io.hyperswitch.model.HyperswitchBaseConfiguration
-import io.hyperswitch.model.PaymentSessionConfiguration
 import io.hyperswitch.paymentsession.LaunchOptions
 import io.hyperswitch.react.HyperFragment
 import io.hyperswitch.react.HyperFragmentManager
 import io.hyperswitch.react.ReactNativeController
-import io.hyperswitch.utils.ConversionUtils
 import kotlin.collections.orEmpty
 
 import kotlin.math.abs
@@ -201,25 +198,25 @@ open class PaymentWidgetView : FrameLayout {
     }
   }
 
-//  fun updatePaymentIntentComplete(
-//    sdkAuthorization: String,
-//    callback: (ElementUpdateIntentResult) -> Unit
-//  ) {
-//    if (isEligibleForUpdateIntent()) {
-//      sdkAuthorization?.takeIf { it.isNotEmpty() }?.let {
-//        this.sdkAuthorization = it
-//      }
-//      this.fragment?.updatePaymentIntentComplete(sdkAuthorization, callback)
-//        ?: callback(
-//          ElementUpdateIntentResult.Failure(
-//            Throwable("Fragment not attached").apply {
-//              initCause(Throwable("FRAGMENT_NOT_ATTACHED"))
-//            }
-//          ))
-//    } else {
-//      callback(ElementUpdateIntentResult.Success)
-//    }
-//  }
+  fun updatePaymentIntentComplete(
+    sdkAuthorization: String,
+    callback: (String) -> Unit
+  ) {
+    if (isEligibleForUpdateIntent()) {
+      sdkAuthorization.takeIf { it.isNotEmpty() }?.let {
+        this.sdkAuthorization = it
+      }
+      this.fragment?.updatePaymentIntentComplete(sdkAuthorization, callback)
+        ?: callback(
+          ElementUpdateIntentResult.Failure(
+            Throwable("Fragment not attached").apply {
+              initCause(Throwable("FRAGMENT_NOT_ATTACHED"))
+            }
+          ).toString())
+    } else {
+      callback(ElementUpdateIntentResult.Success.toString())
+    }
+  }
 
   private fun isEligibleForUpdateIntent(): Boolean {
     when (widgetType) {

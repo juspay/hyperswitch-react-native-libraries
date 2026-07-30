@@ -1,10 +1,11 @@
 package com.hyperswitchsdkreactnative.modules
 
-import android.annotation.SuppressLint
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.uimanager.UIManagerModule
+import com.facebook.react.bridge.UiThreadUtil
+import com.facebook.react.uimanager.UIManagerHelper
+import com.facebook.react.uimanager.common.UIManagerType
 import com.hyperswitchsdkreactnative.BuildConfig
 import com.hyperswitchsdkreactnative.NativeHyperswitchModuleSpec
 import io.hyperswitch.model.CustomEndpointConfiguration
@@ -24,7 +25,6 @@ import io.hyperswitch.view.PaymentWidgetView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.String
 import kotlin.collections.orEmpty
 
@@ -36,7 +36,11 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
   private var launchOptions: LaunchOptions? = null
   private var handler: PaymentSessionHandler? = null
 
-  private var isPresented: AtomicBoolean = AtomicBoolean(false)
+  private val uiManagerType = if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+    UIManagerType.FABRIC
+  } else {
+    UIManagerType.DEFAULT
+  }
 
   override fun getName(): String {
     return NAME
@@ -333,24 +337,6 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
   }
 
 //  override fun updateIntent(sdkAuthorization: String?, promise: Promise?) {
-//    val sdkAuthorizationNonNull = sdkAuthorization ?: run {
-//      promise?.reject("UPDATE_INTENT_ERROR", "sdkAuthorization is required")
-//      return
-//    }
-//
-//
-//    if (session == null) {
-//      promise?.reject(
-//        "UPDATE_INTENT_ERROR",
-//        "Payment session not initialized. Call initPaymentSession first."
-//      )
-//      return
-//    }
-//
-//    session.updateSdkAuthorization(sdkAuthorizationNonNull)
-//    activeSdkAuthorization = sdkAuthorizationNonNull
-//
-//    promise?.resolve(serializeResult("success", null, "Payment intent updated"))
 //
 //  }
 
@@ -361,12 +347,14 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
     paymentMethodId: String,
     promise: Promise?
   ) {
-
-    val uiManagerModule =
-      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
-    uiManagerModule?.addUIBlock { nvhm ->
+    UiThreadUtil.runOnUiThread {
+      val uiManagerModule =
+        UIManagerHelper.getUIManager(
+          reactApplicationContext,
+          uiManagerType
+        )
       try {
-        val view = nvhm.resolveView(reactTag)
+        val view = uiManagerModule?.resolveView(reactTag)
         if (view is PaymentWidgetView) {
           view.confirmCvcPayment(paymentToken, paymentMethodId) { result: String ->
             promise?.resolve(result)
@@ -388,10 +376,6 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
         )
       }
     }
-  }
-
-  fun resetView() {
-    // PaymentSession manages its own sheet UI; no global provider reset is needed.
   }
 
   companion object {

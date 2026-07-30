@@ -1,14 +1,25 @@
 package com.hyperswitchsdkreactnative.views
 
 import android.app.Activity
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
+import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
+import com.facebook.react.uimanager.common.UIManagerType
+import com.facebook.react.uimanager.events.Event
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerInterface
 import com.facebook.react.viewmanagers.NativePaymentWidgetManagerDelegate
+import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.model.PaymentWidgetEvent
+import com.hyperswitchsdkreactnative.model.PaymentWidgetResult
+import io.hyperswitch.PaymentEvent
+import io.hyperswitch.PaymentEventListener
+import io.hyperswitch.view.PaymentResultListener
 import io.hyperswitch.view.PaymentWidgetView
 
 class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
@@ -19,19 +30,38 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   override fun getName(): String = NAME
 
+  val uiManagerType = if( BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+    UIManagerType.FABRIC
+  }else{
+    UIManagerType.DEFAULT
+  }
+
   override fun getDelegate(): ViewManagerDelegate<PaymentWidgetView> {
     return mDelegate
   }
 
   private var context: ReactApplicationContext? = null
-
+  private var reactContext : ReactContext? = null
   override fun createViewInstance(reactContext: ThemedReactContext): PaymentWidgetView {
+    this.reactContext = reactContext
     context = reactContext.reactApplicationContext
-    return NativeWidgetContainer(context?.currentActivity)
+    return NativeWidgetContainer(context?.currentActivity).apply {
+      onEvent(object : PaymentEventListener {
+        override fun onPaymentEvent(event: PaymentEvent) {
+          emitOnPaymentEvent(this@apply, event)
+        }
+      })
+      onPaymentResult(object : PaymentResultListener {
+        override fun onPaymentResult(result: String) {
+          emitOnPaymentResult(this@apply, result)
+        }
+      })
+    }
   }
 
   override fun onAfterUpdateTransaction(container: PaymentWidgetView) {
     super.onAfterUpdateTransaction(container)
+
   }
 
   @ReactProp(name = "widgetType")
@@ -52,25 +82,43 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
       container.setConfiguration(it)
     }
   }
+  private fun emitOnPaymentResult(
+    container: PaymentWidgetView,
+    result: String
+  ){
+    if(reactContext != null) {
+      val surfaceId = UIManagerHelper.getSurfaceId(container)
+
+      reactContext?.let { it ->
+        UIManagerHelper.getEventDispatcher(it, uiManagerType)
+          ?.dispatchEvent(PaymentWidgetResult(surfaceId, container.id, result))
+      }
+    }
+  }
 
 
-//  @Suppress("UNCHECKED_CAST")
-//  private fun emitOnPaymentEvent(container: PaymentWidgetView, event: PaymentEvent) {
-//    val payloadMap = Arguments.makeNativeMap(event.payload as Map<String, Object>)
-//    val eventData = Arguments.createMap().apply {
-//      putString("eventName", event.type)
-//      putMap("payload", payloadMap)
-//    }
-//    context?.runOnUiQueueThread {
-//      context?.getJSModule(RCTEventEmitter::class.java)
-//        ?.receiveEvent(container.id, "topOnPaymentEvent", eventData)
-//    }
-//  }
+  private fun emitOnPaymentEvent(
+    container: PaymentWidgetView,
+    event: PaymentEvent
+  ) {
+    if(reactContext != null) {
+        val surfaceId = UIManagerHelper.getSurfaceId(container)
 
-  override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any>? {
-    return com.facebook.react.common.MapBuilder.of(
-      "onPaymentEvent",
-      com.facebook.react.common.MapBuilder.of("registrationName", "onPaymentEvent")
+        reactContext?.let { it ->
+          UIManagerHelper.getEventDispatcher(it, uiManagerType)
+            ?.dispatchEvent(PaymentWidgetEvent(surfaceId, container.id, event))
+        }
+    }
+  }
+
+  override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
+    return mutableMapOf(
+      EVENT_ON_PAYMENT to mutableMapOf<String, Any>(
+        "registrationName" to EVENT_ON_PAYMENT
+      ),
+      ON_PAYMENT_RESULT to mutableMapOf(
+        "registrationName" to ON_PAYMENT_RESULT
+      )
     )
   }
 
@@ -91,9 +139,7 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
 
   companion object {
     const val NAME = "RCTNativePaymentWidget"
-    private const val CVC_WIDGET = "cvcWidget"
-    private const val PAYMENT_ELEMENT = "paymentElement"
-    private const val WIDGET_PAYMENT_SHEET = "widgetPaymentSheet"
-    private const val PAYMENT_ELEMENT_TYPE = "payment"
+    const val EVENT_ON_PAYMENT = "onPaymentEvent"
+    const val ON_PAYMENT_RESULT = "onPaymentResult"
   }
 }

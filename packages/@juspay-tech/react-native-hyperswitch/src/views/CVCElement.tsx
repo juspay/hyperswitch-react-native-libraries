@@ -33,24 +33,33 @@ function parsePaymentResult(result: string): paymentResult {
 
 export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
   (props, _ref) => {
-    const { id, options, onChange, onFocus, onBlur, onPaymentResult, style } =
-      props;
-    const {paymentSessionConfig, hyperswitchConfig} = useHyperElementsContext();
+    const {
+      id,
+      options,
+      onChange,
+      onFocus,
+      onBlur,
+      onPaymentResult,
+      style,
+      onReady,
+    } = props;
+    const { paymentSessionConfig, hyperswitchConfig } =
+      useHyperElementsContext();
     const [viewId, setViewId] = useState<number | undefined>(undefined);
     const viewRef = useRef(null);
     const nativeOptions = useMemo(
-    () => ({
-      ...options,
-      ...{
-        paymentMethodLayout: {
-          savedMethodCustomization: {
-            cvcIcon: options?.cvcIcon ?? 'shown',
+      () => ({
+        ...options,
+        ...{
+          paymentMethodLayout: {
+            savedMethodCustomization: {
+              cvcIcon: options?.cvcIcon ?? 'shown',
+            },
           },
         },
-      },
-    }),
-    [options]
-  );
+      }),
+      [options]
+    );
 
     useEffect(() => {
       let isMounted = true;
@@ -59,6 +68,7 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
         if (viewRef.current != null) {
           const nativeId = getFindNodeHandle(viewRef.current);
           if (nativeId !== -1) {
+            onReady && onReady();
             setViewId(nativeId);
           } else if (attempt < 20) {
             setTimeout(() => findNodeHandle(attempt + 1), 100);
@@ -85,14 +95,12 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
       if (event.nativeEvent.eventName === 'CVC_STATUS') {
         try {
           const outerDict = event.nativeEvent.payload as
-            | Record<string, unknown>
-            | undefined;
+            Record<string, unknown> | undefined;
           if (!outerDict) {
             return;
           }
           const cvcStatus = outerDict.cvcStatus as
-            | Record<string, unknown>
-            | undefined;
+            Record<string, unknown> | undefined;
           if (!cvcStatus) {
             return;
           }
@@ -126,7 +134,7 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
         options={{
           hyperswitchConfig: hyperswitchConfig || undefined,
           paymentSessionConfig: paymentSessionConfig || undefined,
-          configuration: nativeOptions as Record<string, unknown>
+          configuration: nativeOptions as Record<string, unknown>,
         }}
         style={style}
       />
