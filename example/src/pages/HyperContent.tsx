@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Platform, Text, View } from "react-native";
+import { Alert } from "react-native";
 import {
   PaymentElement,
   CardCVCElement,
-  useElements,
+  useWidgets,
   usePaymentSession,
   type CustomerLastUsedPaymentMethod,
   type CustomerSavedPaymentMethodsSession,
   type PaymentElementHandle,
-  type Elements,
 } from "@juspay-tech/react-native-hyperswitch";
 import { FormLayout } from "./FormLayout";
 import { initialBaseUrl } from "../utils";
@@ -32,7 +31,7 @@ export type SharedProps = {
 export function HyperContent(props: SharedProps) {
   const { amount, paymentId, setSdkAuthorization } = props;
   const paymentSession = usePaymentSession();
-  const widgets = useElements();
+  const widgets = useWidgets();
   const [lastUsed, setLastUsed] = useState<
     CustomerLastUsedPaymentMethod | null | undefined
   >(null);
@@ -53,8 +52,12 @@ export function HyperContent(props: SharedProps) {
         if (cancelled) return;
         setMethodsSession(handler);
         const data = await handler.getCustomerLastUsedPaymentMethodData();
-        console.log(data);
-        setLastUsed(data);
+        console.log("[Example] Last used payment method data:", data);
+        if (data?.status === "failed") {
+          setLastUsed(null);
+        } else {
+          setLastUsed(data);
+        }
         setLoadingSaved(false);
       } catch (ex) {
         setLastUsed(undefined);
@@ -115,6 +118,7 @@ export function HyperContent(props: SharedProps) {
       paymentSlot={
         <PaymentElement
           widgetId="payment-element-id"
+          ref={paymentRef}
           onPaymentResult={(data) => {
             props.onClose();
             setTimeout(() => {
@@ -125,7 +129,7 @@ export function HyperContent(props: SharedProps) {
             merchantDisplayName: "Hyperswitch Example",
             displayDefaultSavedPaymentIcon: false,
             paymentMethodLayout: {
-              type: "accordion",
+              type: "tabs",
               radios: false,
               maxAccordionItems: 2,
               defaultCollapsed: true,
@@ -138,11 +142,7 @@ export function HyperContent(props: SharedProps) {
                 hideCardExpiry: true,
                 defaultCollapsed: false,
                 groupingBehavior: { displayInSeparateScreen: false },
-                hiddenPaymentMethods: [
-                  "paypal",
-                  "google_pay",
-                  "apple_pay",
-                ],
+                hiddenPaymentMethods: ["paypal", "google_pay", "apple_pay"],
               },
             },
             appearance: {
@@ -179,7 +179,6 @@ export function HyperContent(props: SharedProps) {
             },
             splitCardFields: true,
           }}
-          ref={paymentRef}
           onReady={() => console.log("[Example] PaymentElement ready")}
           style={{ width: "100%", height: "100%" }}
         />

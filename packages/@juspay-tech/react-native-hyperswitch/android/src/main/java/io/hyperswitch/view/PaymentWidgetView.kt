@@ -184,11 +184,7 @@ open class PaymentWidgetView : FrameLayout {
       putAll(widgetConfig?.toHashMap().orEmpty())
       put("type", widgetType)
     }
-
-    val map: Map<String, Any?> = mapOf(
-      "props" to props
-    )
-    val bundle = launchOptions.toBundle(map)
+    val bundle = launchOptions.getBundleWithHyperParams(props)
     return bundle
   }
 

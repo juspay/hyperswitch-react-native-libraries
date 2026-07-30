@@ -152,7 +152,7 @@
   "codegenConfig": {
     "name": "HyperswitchSdkReactNativeSpec",
     "type": "all",
-    "jsSrcsDir": "src/specs",
+    "jsSrcsDir": "src/codegen",
     "android": {
       "javaPackageName": "com.hyperswitchsdkreactnative"
     },

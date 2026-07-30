@@ -11,10 +11,12 @@ import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactRootView
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.views.scroll.ReactHorizontalScrollView
 import com.facebook.react.views.scroll.ReactScrollView
+import com.hyperswitchsdkreactnative.BuildConfig
 import com.proyecto26.inappbrowser.ChromeTabsDismissedEvent
 import com.proyecto26.inappbrowser.ChromeTabsManagerActivity
 import io.hyperswitch.PaymentEvent
@@ -27,10 +29,8 @@ import io.hyperswitch.utils.ConversionUtils
 import io.hyperswitch.utils.StandardResult
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
-import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
-import kotlin.text.ifEmpty
 
 
 enum class EventName {
@@ -163,12 +163,20 @@ class HyperFragment : ReactFragment() {
       return
     }
     callbacks[CallbackType.CONFIRM_ACTION] = HyperCallback.Payment(callback)
-    reactNativeHost.reactInstanceManager.currentReactContext
-      ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-      ?.emit("triggerWidgetAction", Arguments.createMap().apply {
+    val reactContext: ReactContext? =
+      if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+        reactHost.currentReactContext
+      } else {
+        reactNativeHost.reactInstanceManager?.currentReactContext
+      }
+
+    reactContext?.emitDeviceEvent(
+      "triggerWidgetAction",
+      Arguments.createMap().apply {
         putString("actionType", EventName.CONFIRM_PAYMENT_ACTION.name)
         putInt("rootTag", rootTag)
-      })
+      }
+    )
   }
 
   /**

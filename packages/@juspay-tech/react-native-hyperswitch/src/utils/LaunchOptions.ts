@@ -2,9 +2,8 @@ import { PaymentSheetConfiguration } from '..';
 import type {
   HyperswitchConfiguration,
   NativePaymentSheetPayload,
+  PaymentSessionConfiguration,
 } from '../types/definitions';
-import type { PaymentSessionConfiguration } from '../types/definitions';
-import { PaymentResult } from '../types/paymentresult';
 
 function buildPresentPaymentSheetPayload(
   hyperswitchConfig: HyperswitchConfiguration,
@@ -22,20 +21,4 @@ function buildPresentPaymentSheetPayload(
   };
 }
 
-function mapStatus(status: string): PaymentResult['type'] {
-  switch (status) {
-    case 'succeeded':
-    case 'completed':
-    case 'success':
-      return 'completed';
-    case 'cancelled':
-    case 'canceled':
-      return 'canceled';
-    case 'failed':
-    case 'error':
-    default:
-      return 'failed';
-  }
-}
-
-export { buildPresentPaymentSheetPayload, mapStatus };
+export { buildPresentPaymentSheetPayload };

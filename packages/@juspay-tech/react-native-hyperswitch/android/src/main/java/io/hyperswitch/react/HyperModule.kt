@@ -15,9 +15,12 @@ import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.fabric.mounting.SurfaceMountingManager
 import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.UIManagerModule
+import com.facebook.react.uimanager.common.UIManagerType
 import com.hyperswitchsdkreactnative.BuildConfig
 import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
 import io.hyperswitch.payments.GooglePayCallbackManager
@@ -51,6 +54,12 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
     fun confirmECStatic(map: MutableMap<String, String?>) {
       HyperEventEmitter.confirmECStatic(map)
     }
+  }
+
+  private val uiManagerType = if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+    UIManagerType.FABRIC
+  } else {
+    UIManagerType.DEFAULT
   }
 
   override fun getName(): String {
@@ -138,7 +147,6 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
     callback: Callback?
   ) {
     callback?.invoke("Apple pay is not supported")
-
   }
 
   override fun startApplePay(
@@ -382,24 +390,20 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
   }
 
   private fun findViewWithRootTag(rootTag: Int, onFound: (HyperFragment?) -> Unit) {
-    //    val uiManagerModule =
-//      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
-//
-//    if (uiManagerModule == null) {
-//      onFound(null)
-//      return
-//    }
-//
-//    uiManagerModule.addUIBlock { nvhm ->
-//      try {
-//        val reactRootView = nvhm.resolveView(rootTag)
-//        onFound(reactRootView?.let { FragmentManager.findFragment(it) })
-//      } catch (e: IllegalViewOperationException) {
-//        onFound(null)
-//      } catch (e: Exception) {
-//        onFound(null)
-//      }
-//    }
-    onFound(null)
+    UiThreadUtil.runOnUiThread {
+      val uiManagerModule =
+        UIManagerHelper.getUIManager(
+          reactApplicationContext,
+          uiManagerType
+        )
+      try {
+        val view = uiManagerModule?.resolveView(rootTag)
+        return@runOnUiThread onFound(view?.let { FragmentManager.findFragment(it) })
+      } catch (e: IllegalViewOperationException) {
+        return@runOnUiThread onFound(null)
+      } catch (e: Exception) {
+        return@runOnUiThread onFound(null)
+      }
+    }
   }
 }

@@ -20,7 +20,7 @@ export interface Elements {
     intentResolver: () => Promise<PaymentSessionConfiguration>
   ): Promise<void>;
   getCustomerSavedPaymentMethods(
-    options?: any
+    options?: PaymentSheetConfiguration
   ): Promise<CustomerSavedPaymentMethodsSession>;
 }
 

@@ -1,4 +1,4 @@
-import NativeHyperswitchModule from '../specs/NativeHyperswitchModule';
+import NativeHyperswitchModule from '../codegen/modules/NativeHyperswitchModule';
 import type {
   HyperswitchConfiguration,
   NativePaymentSheetPayload,
@@ -77,7 +77,7 @@ export function createPaymentSession(
     },
 
     async getCustomerSavedPaymentMethods(
-      configuration?: Record<string, unknown>
+      configuration?: PaymentSheetConfiguration
     ): Promise<CustomerSavedPaymentMethodsSession> {
       return getCustomerSavedPaymentMethods(
         hyperswitchConfig,

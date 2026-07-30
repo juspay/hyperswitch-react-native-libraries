@@ -5,19 +5,28 @@ import android.view.View
 import android.view.ViewGroup
 import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.uimanager.IllegalViewOperationException
+import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.UIManagerModule
-import com.hyperswitchsdkreactnative.NativePaymentElementModuleSpec
+import com.facebook.react.uimanager.common.UIManagerType
+import com.hyperswitchsdkreactnative.BuildConfig
+import com.hyperswitchsdkreactnative.NativeWidgetHelperModuleSpec
 import io.hyperswitch.view.PaymentWidgetView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
-class NativePaymentWidgetModule(reactContext: ReactApplicationContext) :
-  NativePaymentElementModuleSpec(reactContext) {
+class NativeWidgetHelperModule(reactContext: ReactApplicationContext) :
+  NativeWidgetHelperModuleSpec(reactContext) {
 
   private val moduleScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+  private val uiManagerType = if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+    UIManagerType.FABRIC
+  } else {
+    UIManagerType.DEFAULT
+  }
 
   override fun invalidate() {
     moduleScope.cancel()
@@ -32,11 +41,14 @@ class NativePaymentWidgetModule(reactContext: ReactApplicationContext) :
     reactTag: Double,
     callback: Callback
   ) {
-    val uiManagerModule =
-    reactApplicationContext.getNativeModule(UIManagerModule::class.java)
-    uiManagerModule?.addUIBlock { nvhm ->
+    UiThreadUtil.runOnUiThread {
+      val uiManagerModule =
+        UIManagerHelper.getUIManager(
+          reactApplicationContext,
+          uiManagerType
+        )
       try {
-        val view = nvhm.resolveView(reactTag.toInt())
+        val view = uiManagerModule?.resolveView(reactTag.toInt())
         val element = resolveHyperswitchElement(view)
         if (element != null) {
           element.confirmPayment { result ->
@@ -80,10 +92,12 @@ class NativePaymentWidgetModule(reactContext: ReactApplicationContext) :
     callback: Callback
   ) {
     val uiManagerModule =
-      reactApplicationContext.getNativeModule<UIManagerModule?>(UIManagerModule::class.java)
-    uiManagerModule?.addUIBlock { nvhm ->
-      try {
-        val view = nvhm.resolveView(reactTag.toInt())
+      UIManagerHelper.getUIManager(
+        reactApplicationContext,
+        uiManagerType
+      )
+    try {
+      val view = uiManagerModule?.resolveView(reactTag.toInt())
 //        val element = resolveHyperswitchElement(view)
 //        if (element != null) {
 //          moduleScope.launch {
@@ -97,11 +111,11 @@ class NativePaymentWidgetModule(reactContext: ReactApplicationContext) :
 //        } else {
 //          callback.invoke("ERROR", "Invalid view type")
 //        }
-      } catch (e: IllegalViewOperationException) {
-        callback.invoke("ERROR", "View not found: ${e.message}")
-      }
+    } catch (e: IllegalViewOperationException) {
+      callback.invoke("ERROR", "View not found: ${e.message}")
     }
   }
+
 
 //  private fun paymentResultToMap(result: PaymentResult): ReadableMap {
 //    val map = Arguments.createMap()
@@ -168,6 +182,6 @@ class NativePaymentWidgetModule(reactContext: ReactApplicationContext) :
 //  }
 
   companion object {
-    const val NAME = "NativePaymentElementModule"
+    const val NAME = "NativeWidgetHelperModule"
   }
 }

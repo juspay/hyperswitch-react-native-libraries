@@ -89,17 +89,19 @@ export function FormLayout({
       return;
     }
 
-    if (!widgets) return;
-    const result = await widgets.confirmPayment("payment-element-id");
+    if (/*!hyper ||*/ !widgets) return;
+    const { type, message } = await widgets.confirmPayment(
+      "payment-element-id",
+    );
     setIsLoading(false);
-    const msg = result.message ?? "";
+    const msg = message ?? "";
     if (
-      msg !==
-      "Payment form has validation errors. Please correct them and try again."
+      type !==
+      "form_validation_error"
     ) {
       onClose();
       setTimeout(() => {
-        Alert.alert(`Type: ${result.type}\nMessage: ${msg}`);
+        Alert.alert(`Type: ${type}\nMessage: ${msg}`);
       }, 0);
     } else {
       setMessage("Please fill the form");

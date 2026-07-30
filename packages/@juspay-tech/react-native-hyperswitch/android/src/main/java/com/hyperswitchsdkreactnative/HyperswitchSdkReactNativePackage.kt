@@ -6,7 +6,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.model.ReactModuleInfo
 import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
-import com.hyperswitchsdkreactnative.modules.NativePaymentWidgetModule
+import com.hyperswitchsdkreactnative.modules.NativeWidgetHelperModule
 import com.hyperswitchsdkreactnative.modules.ReactNativeHyperswitchModule
 import com.hyperswitchsdkreactnative.views.PaymentElementViewManager
 import io.hyperswitch.react.GooglePayButtonManager
@@ -20,7 +20,7 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
       HyperModule.NAME -> HyperModule(reactContext)
       HyperHeadlessModule.NAME -> HyperHeadlessModule(reactContext)
       ReactNativeHyperswitchModule.NAME -> ReactNativeHyperswitchModule(reactContext)
-//      NativePaymentWidgetNativeModule.NAME -> NativePaymentWidgetNativeModule(reactContext)
+      NativeWidgetHelperModule.NAME -> NativeWidgetHelperModule(reactContext)
       else -> null
     }
   }
@@ -38,7 +38,7 @@ class HyperswitchSdkReactNativePackage : BaseReactPackage() {
         HyperModule.NAME,
         HyperHeadlessModule.NAME,
         ReactNativeHyperswitchModule.NAME,
-        NativePaymentWidgetModule.NAME,
+        NativeWidgetHelperModule.NAME,
       ).associateWith {
         ReactModuleInfo(it, it, false, false, false, BuildConfig.IS_NEW_ARCHITECTURE_ENABLED)
       }.toMutableMap()

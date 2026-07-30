@@ -42,16 +42,16 @@ export interface NativePaymentSheetPayload {
   configuration: Record<string, unknown>;
 }
 
-import { CustomerSavedPaymentMethodsSession } from './savedPaymentMethods';
+import { CustomerSavedPaymentMethodsSession, SavedPaymentMethodsConfiguration } from './savedPaymentMethods';
 import type { Elements } from './elements';
-import { ColorType, ColorType, PaymentSheetConfShapes, iguShapes, ration, Them, Shapes, Shapese, Theme, Font, SubscriptionEvent } from './PaymentSheetConfiguration';
+import type { ColorType, Shapes, Theme, Font, SubscriptionEvent, PaymentSheetConfiguration } from './PaymentSheetConfiguration';
 
 export interface PaymentSession {
   presentPaymentSheet(
     configuration?: PaymentSheetConfiguration
   ): Promise<PaymentResult>;
   getCustomerSavedPaymentMethods(
-    options?: any
+    options?: SavedPaymentMethodsConfiguration
   ): Promise<CustomerSavedPaymentMethodsSession>;
   updateIntent(
     intentResolver: () => Promise<PaymentSessionConfiguration>
@@ -62,12 +62,6 @@ export interface PaymentElementHandle {
   confirmPayment(options?: {
     confirmParams?: Record<string, any>;
   }): Promise<PaymentResult>;
-  collapse(): void;
-  focus(): void;
-  blur(): void;
-  clear(): void;
-  update(options: Record<string, any>): void;
-  destroy(): void;
 }
 
 // export interface PaymentElement extends PaymentElementHandle {

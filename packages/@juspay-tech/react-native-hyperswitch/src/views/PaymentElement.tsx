@@ -8,8 +8,6 @@ import {
 import type { ViewStyle } from 'react-native';
 import NativePaymentWidgetImpl from './NativePaymentWidgetImpl';
 import { registerWidget, unregisterWidget } from '../context/WidgetRegistry';
-import { confirmPayment as nativeConfirmPayment } from '../modules/NativeHyperswitchSdk';
-import type { paymentResult } from '../modules/NativeHyperswitchSdk';
 import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
 import { useHyperElementsContext } from '../context/HyperElements';
 import {
@@ -25,26 +23,23 @@ import type {
   paymentEventNative,
   nativeEvent,
 } from '../types/NativeModuleTypes';
+import { PaymentElementHandle } from '../types/definitions';
+import { PaymentResult } from '../types/paymentresult';
+import { mapNativeResponseToPaymentResult } from '../context/NativeResponseMapper';
+import { nativeConfirmPayment } from '../utils/NativeModuleUtils';
 
-function parsePaymentResult(result: string): paymentResult {
-  return JSON.parse(result);
-}
-
-type PaymentWidgetRef = {
-  confirmPayment: () => Promise<paymentResult>;
-};
 
 type PaymentElementProps = {
   widgetId: string;
   options?: PaymentSheetConfiguration;
-  onPaymentResult: (result: paymentResult) => void;
+  onPaymentResult: (result: PaymentResult) => void;
   // onPaymentConfirmButtonClick:() =>void;
   onChange?: (event: paymentEventResult) => void;
   onReady?: (event: string) => void;
   style?: ViewStyle;
 };
 
-export const PaymentElement = forwardRef<PaymentWidgetRef, PaymentElementProps>(
+export const PaymentElement = forwardRef<PaymentElementHandle, PaymentElementProps>(
   (props, ref) => {
     const { widgetId, options, onPaymentResult, onChange, style } = props;
     const [viewId, setViewId] = useState<number | undefined>(undefined);
@@ -102,7 +97,7 @@ export const PaymentElement = forwardRef<PaymentWidgetRef, PaymentElementProps>(
     useImperativeHandle(
       ref,
       () => ({
-        confirmPayment: (): Promise<paymentResult> => {
+        confirmPayment: (options?: { confirmParams?: Record<string, any> }): Promise<PaymentResult> => {
           if (viewRef.current == null) {
             return Promise.resolve({
               status: 'failed',
@@ -121,7 +116,7 @@ export const PaymentElement = forwardRef<PaymentWidgetRef, PaymentElementProps>(
             });
           }
           return new Promise((resolve) => {
-            nativeConfirmPayment(id, (result: paymentResult) => {
+            nativeConfirmPayment(id, (result: PaymentResult) => {
               resolve({
                 status: result.status,
                 message: result.message,
@@ -159,7 +154,7 @@ export const PaymentElement = forwardRef<PaymentWidgetRef, PaymentElementProps>(
     }, [options, onChange]);
 
     const onPaymentResultInternal = (event: nativeEvent) => {
-      onPaymentResult(parsePaymentResult(event.nativeEvent.result ?? ''));
+      onPaymentResult(mapNativeResponseToPaymentResult(event.nativeEvent.result ?? ''));
     };
 
     const onPaymentEventInternal = (event: paymentEventNative) => {

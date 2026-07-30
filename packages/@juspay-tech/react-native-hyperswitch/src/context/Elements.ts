@@ -1,5 +1,4 @@
 import type {
-  ElementType,
   HyperswitchConfiguration,
   PaymentElementHandle,
   PaymentSessionConfiguration,
@@ -59,7 +58,7 @@ export function createElementsNativeActions(
     },
 
     async getCustomerSavedPaymentMethods(
-      configuration?: Record<string, unknown>
+      configuration?: PaymentSheetConfiguration
     ): Promise<CustomerSavedPaymentMethodsSession> {
       return getCustomerSavedPaymentMethods(
         hyperswitchConfig,

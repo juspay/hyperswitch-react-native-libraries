@@ -4,7 +4,6 @@ import {
   HyperElements,
   type HyperswitchSession,
 } from "@juspay-tech/react-native-hyperswitch";
-import { initialBaseUrl } from "../utils";
 import { FormLayout } from "./FormLayout";
 import { HyperContent, type SharedProps } from "./HyperContent";
 

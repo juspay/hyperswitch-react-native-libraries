@@ -3,16 +3,6 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
 
 export type CustomEndpoints = Object;
 
-export interface SessionData {
-  hyperswitchConfig: Object;
-  paymentSessionConfig: { sdkAuthorization: string };
-  configuration: Object;
-}
-
-export interface SavedPaymentMethodsConfiguration {
-  hiddenPaymentMethods?: string[];
-}
-
 export interface Spec extends TurboModule {
   initialise(
     publishableKey: string,

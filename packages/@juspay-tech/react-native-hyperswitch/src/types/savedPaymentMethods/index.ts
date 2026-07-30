@@ -59,6 +59,7 @@ export interface CustomerLastUsedPaymentMethod {
   default_payment_method_set: boolean;
   billing: CustomerPaymentMethodBilling | null;
   error?: any;
+  status?: string;
 }
 
 export interface CustomerSavedPaymentMethodsSession {

@@ -92,10 +92,6 @@ export interface GroupingBehavior {
   groupByPaymentMethods?: boolean;
 }
 
-export interface SavedPaymentMethodsConfig {
-  hiddenPaymentMethods?: string[];
-}
-
 export interface SavedMethodCustomization {
   defaultCollapsed?: boolean;
   hideCardExpiry?: boolean;

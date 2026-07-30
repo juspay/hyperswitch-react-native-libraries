@@ -127,3 +127,54 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return JSON.stringify(error);
 };
+
+
+export const intentData = {
+  amount: 6500,
+  order_details: [
+    { product_name: "Apple iphone 15", quantity: 1, amount: 6500 },
+  ],
+  currency: "EUR",
+  confirm: false,
+  capture_method: "automatic",
+  authentication_type: "three_ds",
+  setup_future_usage: "on_session",
+  request_external_three_ds_authentication: false,
+  description: "Hello this is description",
+  profile_id: profileId,
+  shipping: {
+    address: {
+      state: "California",
+      city: "Banglore",
+      country: "US",
+      line1: "sdsdfsdf",
+      line2: "hsgdbhd",
+      line3: "alsksoe",
+      zip: "571201",
+      first_name: "John",
+      last_name: "Doe",
+    },
+    phone: { number: "1234567890", country_code: "+1" },
+  },
+  connector_metadata: { noon: { order_category: "applepay" } },
+  metadata: {
+    udf1: "value1",
+    new_customer: "true",
+    login_date: "2019-09-10T10:11:12Z",
+  },
+  billing: {
+    address: {
+      line1: "1467",
+      line2: "Harrison Street",
+      line3: "Harrison Street",
+      city: "San Fransico",
+      state: "California",
+      zip: "94122",
+      country: "DE",
+      first_name: "joseph",
+      last_name: "Doe",
+    },
+  phone: { number: "1234567890", country_code: "+91" },
+  },
+  customer_id: "hyperswitch_sdk_demo_id",
+};

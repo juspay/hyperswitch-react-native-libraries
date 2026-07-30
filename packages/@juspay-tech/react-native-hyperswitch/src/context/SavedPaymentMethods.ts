@@ -1,4 +1,4 @@
-import NativeHyperswitchModule from '../specs/NativeHyperswitchModule';
+import NativeHyperswitchModule from '../codegen/modules/NativeHyperswitchModule';
 import {
   HyperswitchConfiguration,
   PaymentSessionConfiguration,
@@ -8,6 +8,7 @@ import {
   CustomerLastUsedPaymentMethod,
 } from '../types/savedPaymentMethods';
 import type { PaymentResult } from '../types/paymentresult';
+import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
 import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
 import { mapNativeResponseToPaymentResult } from './NativeResponseMapper';
 import { getWidget } from './WidgetRegistry';
@@ -90,7 +91,7 @@ export function createCustomerSavedPaymentMethodsSession(): CustomerSavedPayment
 export async function getCustomerSavedPaymentMethods(
   hyperswitchConfig: HyperswitchConfiguration,
   paymentSessionConfig: PaymentSessionConfiguration,
-  configuration?: Record<string, unknown>
+  configuration?: PaymentSheetConfiguration
 ): Promise<CustomerSavedPaymentMethodsSession> {
   const payload = buildPresentPaymentSheetPayload(
     hyperswitchConfig,
