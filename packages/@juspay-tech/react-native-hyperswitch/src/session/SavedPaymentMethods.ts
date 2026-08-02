@@ -53,10 +53,6 @@ function parsePaymentMethod(raw: string): CustomerLastUsedPaymentMethod | null {
     };
     return result;
   } catch {
-    console.warn(
-      'Hyperswitch: failed to parse saved payment method data:',
-      raw
-    );
     return null;
   }
 }

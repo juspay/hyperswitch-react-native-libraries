@@ -103,7 +103,6 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
         #else
             // Detect merchant app's React Native version
             guard let rnVersion = RCTGetReactNativeVersion() else {
-                print("[Hyperswitch] WARNING: Could not detect RN version, using fallback bundle")
                 return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
             }
             
@@ -129,12 +128,8 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
             }
             
             let bundleURL = Bundle(for: RNViewManager.self).url(forResource: bundleName, withExtension: "bundle")
-            
-            // Log version detection for debugging
-            print("[Hyperswitch] Detected RN version: \(majorVersion).\(minorVersion), using bundle: \(bundleName).bundle")
-            
+
             if bundleURL == nil {
-                print("[Hyperswitch] WARNING: Bundle not found: \(bundleName).bundle, falling back to hyperswitch.bundle")
                 return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
             }
             

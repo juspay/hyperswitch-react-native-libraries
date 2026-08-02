@@ -352,8 +352,7 @@ class HyperFragment : ReactFragment() {
           )
         }
       }
-    } catch (exception: Exception) {
-      Log.e(TAG, "Error in notifyResult", exception)
+    } catch (_: Exception) {
     }
   }
 
@@ -401,8 +400,7 @@ class HyperFragment : ReactFragment() {
           payload
         )
       }
-    } catch (exception: Exception) {
-      Log.e(TAG, "Error in notifyEvent", exception)
+    } catch (_: Exception) {
     }
   }
 

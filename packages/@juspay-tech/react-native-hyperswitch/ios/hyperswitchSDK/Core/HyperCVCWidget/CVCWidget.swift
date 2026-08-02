@@ -62,7 +62,6 @@ public class CVCWidget: UIControl {
     }
 
     private func commonInit() {
-        print("[Hyperswitch] CVCWidget commonInit() called")
         
         let sdkParams = SDKParams.getSDKParams()
 
@@ -70,7 +69,6 @@ public class CVCWidget: UIControl {
         var props = configurationDict ?? [:]
         props["sdkParams"] = sdkParams
         
-        print("[Hyperswitch] CVCWidget creating embedded RN view with props: \(props.keys.joined(separator: ", "))")
 
         self.rootView = RNViewManager.sharedInstance.widgetViewForModule(
             "hyperSwitch",
@@ -78,7 +76,6 @@ public class CVCWidget: UIControl {
         )
         if let rootView = self.rootView {
             self.widgetReactTag = rootView.reactTag
-            print("[Hyperswitch] CVCWidget embedded view created with reactTag: \(rootView.reactTag?.intValue ?? -1)")
 
             rootView.backgroundColor = .clear
 
@@ -91,9 +88,7 @@ public class CVCWidget: UIControl {
                 rootView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 rootView.trailingAnchor.constraint(equalTo: trailingAnchor),
             ])
-            print("[Hyperswitch] CVCWidget embedded view added to hierarchy, frame: \(rootView.frame)")
         } else {
-            print("[Hyperswitch] ERROR: CVCWidget failed to create embedded RN view!")
         }
     }
 

@@ -321,17 +321,14 @@ public class NativePaymentWidgetView: UIView {
 
     @objc public func didSetProps() {
         guard isSupportedWidgetType(), let sdkAuthorization = effectiveSdkAuthorization() else {
-            print("[Hyperswitch] didSetProps guard failed: widgetType=\(widgetType ?? "nil"), sdkAuth=\(effectiveSdkAuthorization() != nil)")
             return
         }
 
         let configKey = [widgetType ?? "", effectivePublishableKey() ?? "", effectiveProfileId() ?? "", sdkAuthorization].joined(separator: ":")
         if paymentWidget != nil || cvcWidget != nil, appliedConfigKey == configKey {
-            print("[Hyperswitch] Widget already created with same config, skipping")
             return
         }
 
-        print("[Hyperswitch] Creating widget: type=\(widgetType ?? "unknown")")
         clearWidget()
         appliedConfigKey = configKey
 
@@ -348,9 +345,7 @@ public class NativePaymentWidgetView: UIView {
 
         let widget: UIView?
         if widgetType == "cvcWidget" {
-            print("[Hyperswitch] Creating CVCWidget...")
             guard let hyperswitch = activeOrNewHyperswitch() else {
-                print("[Hyperswitch] ERROR: Failed to get Hyperswitch instance for CVCWidget")
                 return
             }
             let cvc = CVCWidget(
@@ -361,14 +356,10 @@ public class NativePaymentWidgetView: UIView {
             cvc.setPaymentEventListener(listener)
             cvcWidget = cvc
             widget = cvc
-            print("[Hyperswitch] CVCWidget instance created")
         } else {
-            print("[Hyperswitch] Creating PaymentWidget...")
             guard let session = activeOrNewPaymentSession(sdkAuthorization: sdkAuthorization) else {
-                print("[Hyperswitch] ERROR: Failed to get PaymentSession for PaymentWidget")
                 return
             }
-            print("[Hyperswitch] Got PaymentSession, initializing PaymentWidget...")
             let payment = PaymentWidget(
                 paymentSession: session,
                 configurationDict: configuration,
@@ -380,14 +371,11 @@ public class NativePaymentWidgetView: UIView {
             payment.setPaymentEventListener(listener)
             paymentWidget = payment
             widget = payment
-            print("[Hyperswitch] PaymentWidget instance created")
         }
 
         guard let widget = widget else {
-            print("[Hyperswitch] ERROR: Widget creation returned nil!")
             return
         }
-        print("[Hyperswitch] Adding widget to view hierarchy, widget frame: \(widget.frame)")
         addSubview(widget)
         widget.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -399,21 +387,17 @@ public class NativePaymentWidgetView: UIView {
 
         if let paymentWidget = widget as? PaymentWidget {
             rctRootTag = paymentWidget.rootReactTag
-            print("[Hyperswitch] PaymentWidget created, rootTag=\(paymentWidget.rootReactTag?.intValue ?? -1)")
             
             // Update registry mapping: embedded tag -> outer tag
             if let embeddedTag = paymentWidget.rootReactTag, let outerTag = reactTag {
                 NativePaymentWidgetRegistry.shared.updateEmbeddedTag(embeddedTag, forOuterTag: outerTag)
-                print("[Hyperswitch] Registered mapping: embeddedTag=\(embeddedTag) -> outerTag=\(outerTag)")
             }
         } else if let cvcWidget = widget as? CVCWidget {
             rctRootTag = cvcWidget.rootReactTag
-            print("[Hyperswitch] CVCWidget created, rootTag=\(cvcWidget.rootReactTag?.intValue ?? -1)")
             
             // Update registry mapping: embedded tag -> outer tag
             if let embeddedTag = cvcWidget.rootReactTag, let outerTag = reactTag {
                 NativePaymentWidgetRegistry.shared.updateEmbeddedTag(embeddedTag, forOuterTag: outerTag)
-                print("[Hyperswitch] Registered mapping: embeddedTag=\(embeddedTag) -> outerTag=\(outerTag)")
             }
         }
     }

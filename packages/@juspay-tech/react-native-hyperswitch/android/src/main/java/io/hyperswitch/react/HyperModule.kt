@@ -297,8 +297,7 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
               (wrapper.parent as? ViewGroup)?.removeView(wrapper)
               wrapper.webView.stopLoading()
               wrapper.webView.destroy()
-            } catch (e: Exception) {
-              Log.e("HyperDDC", "cleanup error: ${e.message}")
+            } catch (_: Exception) {
             }
           }
           webViewWrapper = null
@@ -343,7 +342,6 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
           if (request.isForMainFrame) {
             val url = request.url.toString()
-            Log.d("HyperDDC", "shouldOverride intercepted: $url")
             invokeCallback("{\"next_action\":{\"type\":\"redirect_to_url\",\"url\":\"$url\"}}")
             return true
           }
@@ -352,7 +350,6 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
 
         @Suppress("DEPRECATION")
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-          Log.d("HyperDDC", "shouldOverride intercepted (legacy): $url")
           invokeCallback("{\"next_action\":{\"type\":\"redirect_to_url\",\"url\":\"$url\"}}")
           return true
         }

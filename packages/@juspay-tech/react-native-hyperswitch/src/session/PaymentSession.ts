@@ -15,40 +15,13 @@ import {
 export async function updateIntent(
   intentResolver: () => Promise<PaymentSessionConfiguration>
 ): Promise<void> {
-  try {
-    const initResults = await updateIntentInitForAllWidgets();
-    initResults.forEach((result) => {
-      if (result.status === 'failed') {
-        console.error('Error updating intent for widget:', result.message);
-      }
-    });
-  } catch (e) {
-    console.error('Error preparing widgets for intent update:', e);
-    return;
-  }
-
   let newIntent: PaymentSessionConfiguration;
   try {
+    await updateIntentInitForAllWidgets();
     newIntent = await intentResolver();
-  } catch (e) {
-    console.error('Error resolving new intent:', e);
+    await updateIntentCompleteForAllWidgets(newIntent.sdkAuthorization);
+  } catch {
     return;
-  }
-
-  try {
-    const completeResults = await updateIntentCompleteForAllWidgets(
-      newIntent.sdkAuthorization
-    );
-    completeResults.forEach((result) => {
-      if (result.status === 'failed') {
-        console.error(
-          'Error completing intent update for widget:',
-          result.message
-        );
-      }
-    });
-  } catch (e) {
-    console.error('Error finalizing widget intent update:', e);
   }
 }
 
