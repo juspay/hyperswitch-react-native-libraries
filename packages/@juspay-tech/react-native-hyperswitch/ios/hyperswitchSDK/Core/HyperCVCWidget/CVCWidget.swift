@@ -62,26 +62,15 @@ public class CVCWidget: UIControl {
     }
 
     private func commonInit() {
-
-        let hyperswitchConfiguration = try? hyperswitch.hyperswitchConfiguration.toDictionary()
-
+        print("[Hyperswitch] CVCWidget commonInit() called")
+        
         let sdkParams = SDKParams.getSDKParams()
 
-        var nativeConfig = try? configuration?.toDictionary()
-        if self.subscribedEventNames == nil {
-            self.subscribedEventNames = configurationDict?["subscribedEvents"] as? [String]
-                ?? nativeConfig?["subscribedEvents"] as? [String]
-        }
-        nativeConfig?["subscribedEvents"] = self.subscribedEventNames
-        configurationDict?["subscribedEvents"] = self.subscribedEventNames
-
-        let props: [String: Any] = [
-            "hyperswitchConfig": hyperswitchConfiguration as Any,
-            "type": "cvcWidget",
-            "sdkParams": sdkParams,
-            "configuration": configurationDict ?? nativeConfig as Any,
-            "from": (configurationDict != nil) ? "rn" : "nativeWidget",
-        ]
+        // Use configurationDict directly from React Native (already contains everything)
+        var props = configurationDict ?? [:]
+        props["sdkParams"] = sdkParams
+        
+        print("[Hyperswitch] CVCWidget creating embedded RN view with props: \(props.keys.joined(separator: ", "))")
 
         self.rootView = RNViewManager.sharedInstance.widgetViewForModule(
             "hyperSwitch",
@@ -89,6 +78,7 @@ public class CVCWidget: UIControl {
         )
         if let rootView = self.rootView {
             self.widgetReactTag = rootView.reactTag
+            print("[Hyperswitch] CVCWidget embedded view created with reactTag: \(rootView.reactTag?.intValue ?? -1)")
 
             rootView.backgroundColor = .clear
 
@@ -101,6 +91,9 @@ public class CVCWidget: UIControl {
                 rootView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 rootView.trailingAnchor.constraint(equalTo: trailingAnchor),
             ])
+            print("[Hyperswitch] CVCWidget embedded view added to hierarchy, frame: \(rootView.frame)")
+        } else {
+            print("[Hyperswitch] ERROR: CVCWidget failed to create embedded RN view!")
         }
     }
 
@@ -112,13 +105,12 @@ public class CVCWidget: UIControl {
             "paymentToken": paymentToken,
             "paymentMethodId": paymentMethodId as Any,
         ]
-        // Bridge-based widget emit removed for payment-sheet-only build.
-        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-        //     "RCTDeviceEventEmitter",
-        //     method: "emit",
-        //     args: ["triggerWidgetAction", payload],
-        //     completion: nil
-        // )
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+            "RCTDeviceEventEmitter",
+            method: "emit",
+            args: ["triggerWidgetAction", payload],
+            completion: nil
+        )
     }
 
     internal func dispatchPaymentEvent(type: String, payload: [String: Any]) {

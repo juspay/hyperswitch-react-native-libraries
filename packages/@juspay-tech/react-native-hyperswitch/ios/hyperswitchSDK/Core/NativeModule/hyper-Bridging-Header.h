@@ -7,6 +7,8 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTViewManager.h>
 #import <React/RCTUIManager.h>
+#import <React/RCTEventEmitter.h>
+#import <React/RCTComponent.h>
 // Factory for the SDK's internal React Native surface, usable from Swift.
 #import "RNBridgeFactory.h"
 // Shared view registry — exposes NativePaymentWidgetViewRegistry to Swift so that

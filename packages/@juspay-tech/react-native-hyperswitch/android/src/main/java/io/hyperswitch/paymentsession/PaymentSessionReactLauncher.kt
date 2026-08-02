@@ -13,6 +13,7 @@ import com.facebook.react.ReactNativeHost
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.UiThreadUtil
+import com.facebook.react.common.LifecycleState
 import com.facebook.react.common.assets.ReactFontManager
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.jstasks.HeadlessJsTaskContext
@@ -76,20 +77,38 @@ class PaymentSessionReactLauncher(
    */
   fun recreateReactContext(bundle: Bundle) {
     activity.runOnUiThread {
-      val context = reactContext
+      var context = reactContext
       if (context == null) {
         if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-          val reactHost = checkNotNull(reactHost)
-          reactHost.addReactInstanceEventListener(
+          // Live surfaces bind their host at fragment-attach time; forcing all
+          // routes through getOrRecreateReactHost() ensures a DESTROYED host is
+          // swapped out before any fragment/activity can re-bind to it.
+          val host = ReactNativeController.getOrRecreateReactHost(activity.application)
+          reactHost = host
+
+          context = host.currentReactContext
+          if (context != null) {
+            startHeadlessTask(context, bundle)
+            reactContext = context
+            return@runOnUiThread
+          }
+
+          host.addReactInstanceEventListener(
             object : ReactInstanceEventListener {
               override fun onReactContextInitialized(context: ReactContext) {
                 startHeadlessTask(context, bundle)
-                reactContext = reactHost.currentReactContext
-                reactHost.removeReactInstanceEventListener(this)
+                reactContext = host.currentReactContext ?: context
+                host.removeReactInstanceEventListener(this)
               }
             }
           )
-          reactHost.start()
+          when (host.lifecycleState) {
+            // Instance died (JS crash/invalidate) but host is still alive.
+            LifecycleState.READY -> host.reload("headless-session-recreate")
+            // Fresh/recreated (or not-yet-started) host. start() is idempotent
+            // while a ReactInstance creation is already in flight.
+            else -> host.start()
+          }
         } else {
           val reactInstanceManager = reactNativeHost?.reactInstanceManager
           reactInstanceManager?.addReactInstanceEventListener(
@@ -101,7 +120,16 @@ class PaymentSessionReactLauncher(
               }
             }
           )
-          reactInstanceManager?.createReactContextInBackground()
+          reactInstanceManager?.run {
+            // recreateReactContextInBackground() cleanly tears down any old
+            // (possibly dead) context before creating a new one, unlike
+            // createReactContextInBackground() which no-ops once started.
+            if (hasStartedCreatingInitialContext()) {
+              recreateReactContextInBackground()
+            } else {
+              createReactContextInBackground()
+            }
+          }
         }
       } else {
         startHeadlessTask(context, bundle)

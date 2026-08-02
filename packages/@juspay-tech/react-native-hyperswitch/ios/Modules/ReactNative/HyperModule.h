@@ -14,12 +14,12 @@
  * the registered module; all business logic lives in the Swift singleton
  * `HyperModuleImpl.shared`, to which every call is forwarded.
  *
- * The generated spec protocol/JSI (`NativeHyperswitchSdkNativeSpec` /
- * `NativeHyperswitchSdkNativeSpecJSI`) is produced by codegen from
- * `src/specs/NativeHyperswitchSdkNative.ts`. Note the spec FILENAME drives those
+ * The generated spec protocol/JSI (`NativeHyperModuleSpec` /
+ * `NativeHyperModuleSpecJSI`) is produced by codegen from
+ * `src/codegen/modules/NativeHyperModule.ts`. Note the spec FILENAME drives those
  * class names; the runtime module name ("HyperModule") comes from
  * `TurboModuleRegistry.get('HyperModule')` + `RCT_EXPORT_MODULE(HyperModule)`.
  */
-@interface HyperModule : RCTEventEmitter <NativeHyperswitchSdkNativeSpec>
+@interface HyperModule : RCTEventEmitter <NativeHyperModuleSpec>
 
 @end

@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.79.2):
     - hermes-engine/Pre-built (= 0.79.2)
   - hermes-engine/Pre-built (0.79.2)
-  - HyperswitchSdkReactNative (0.4.12):
+  - HyperswitchSdkReactNative (1.0.0-beta.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1373,7 +1373,7 @@ PODS:
     - React-Codegen
     - React-Core
     - ReactCommon/turbomodule/core
-  - react-native-webview (13.16.1):
+  - react-native-webview (13.17.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2051,7 +2051,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 314be5250afa5692b57b4dd1705959e1973a8ebe
-  HyperswitchSdkReactNative: cfd6f3965c3018d436ecee618cc7ca16e02a1c0e
+  HyperswitchSdkReactNative: 252970d1709c85ca8d1bb2762d4cdd5d1d0ccb00
   RCT-Folly: e78785aa9ba2ed998ea4151e314036f6c49e6d82
   RCTDeprecation: 83ffb90c23ee5cea353bd32008a7bca100908f8c
   RCTRequired: eb7c0aba998009f47a540bec9e9d69a54f68136e
@@ -2086,7 +2086,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 054f34e9b82f02bd40f09cebd4083828b5b2beb6
   react-native-hyperswitch-netcetera-3ds: c58c2a2a9f5da34ad56e4827195fae8a2e931eab
   react-native-hyperswitch-scancard: 84752e3b0ea4213e6abce2435349db15bcabc094
-  react-native-webview: d74ca5d9a0f33757e0d6df40c9392ed6b3592980
+  react-native-webview: d40f8965e2adf7f36d4ad00543d49e5bfad47179
   React-NativeModulesApple: 2c4377e139522c3d73f5df582e4f051a838ff25e
   React-oscompat: ef5df1c734f19b8003e149317d041b8ce1f7d29c
   React-perflogger: 9a151e0b4c933c9205fd648c246506a83f31395d

@@ -73,38 +73,43 @@ export function FormLayout({
     }
     if (isAmountScreen) {
       if (!methodsSession) return;
-      const { type, message } =
+      const { type, message, status } =
         await methodsSession.confirmWithCustomerLastUsedPaymentMethod({
           id: "card-cvc-element",
         });
       setIsLoading(false);
-      if (type === "failed") setMessage(message ?? "Payment error");
-      if (type !== "failed") setMessage(`Payment status: ${type}`);
-      if (type === "completed") {
+      if (status === "failed") setMessage(message ?? "Payment error");
+      if (status === "canceled") setMessage("Payment canceled");
+      if (status === "completed") {
         setTimeout(() => {
           onClose();
-          Alert.alert(`Type: ${type}\nMessage: ${message ?? ""}`);
+          Alert.alert(`Payment completed successfully!`);
         }, 0);
+      }else{
+        setMessage(`Type: ${type}\nMessage: ${message ?? ""}`);
       }
       return;
     }
 
     if (/*!hyper ||*/ !widgets) return;
-    const { type, message } = await widgets.confirmPayment(
+    const { type, message, status } = await widgets.confirmPayment(
       "payment-element-id",
     );
+    console.log("Payment result", JSON.stringify({ type, message, status }));
     setIsLoading(false);
     const msg = message ?? "";
-    if (
-      type !==
-      "form_validation_error"
-    ) {
+    if (status === "completed") {
+      onClose();
+      setTimeout(() => {
+        Alert.alert(`Payment completed successfully!`);
+      }, 0);
+    } else if (type === "form_validation_error") {
+      setMessage("Please fill the form");
+    } else {
       onClose();
       setTimeout(() => {
         Alert.alert(`Type: ${type}\nMessage: ${msg}`);
       }, 0);
-    } else {
-      setMessage("Please fill the form");
     }
   };
 

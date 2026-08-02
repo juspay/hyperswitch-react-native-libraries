@@ -138,6 +138,21 @@ RCT_EXPORT_METHOD(confirmWithCustomerDefaultPaymentMethod:(double)reactTag
 }
 
 // ---------------------------------------------------------------------------
+// confirmWithCustomerPaymentToken
+// JS / Android: confirmWithCustomerPaymentToken(reactTag: number, token: string): Promise<string>
+// ---------------------------------------------------------------------------
+RCT_EXPORT_METHOD(confirmWithCustomerPaymentToken:(double)reactTag
+                  token:(nonnull NSString *)token
+                  resolve:(nonnull RCTPromiseResolveBlock)resolve
+                  reject:(nonnull RCTPromiseRejectBlock)reject)
+{
+    [[self moduleImpl] confirmWithCustomerPaymentToken:reactTag
+                                                 token:token
+                                               resolve:resolve
+                                                reject:reject];
+}
+
+// ---------------------------------------------------------------------------
 // TurboModule (New Architecture) — JSI spec wiring
 // The generated spec class name follows codegen convention:
 //   NativeHyperswitchModuleSpec  →  NativeHyperswitchModuleSpecJSI

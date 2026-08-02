@@ -8,6 +8,7 @@ import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.JSBundleLoader
 import com.facebook.react.bridge.ReactContext
+import com.facebook.react.common.LifecycleState
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.facebook.react.defaults.DefaultComponentsRegistry
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
@@ -166,6 +167,32 @@ object ReactNativeController {
   fun getReactHost(): ReactHost {
     return checkNotNull(reactHost.get()) {
       "ReactNative not initialized. Call ReactNativeController.initialize()"
+    }
+  }
+
+  /**
+   * Returns the current ReactHost if it is still usable, or a freshly created
+   * one if the previous host reached the terminal [LifecycleState.DESTROYED]
+   * state (e.g. after `ReactActivityDelegate.onHostDestroy` on a finishing
+   * activity). `ReactHostImpl.start()`/`reload()` are dead-ends on a destroyed
+   * host, so keeping such a host would silently break subsequent sessions.
+   *
+   * The destroyed host is intentionally NOT destroyed again: destroy() is a
+   * READY -> DESTROYED transition and a no-op on an already destroyed host,
+   * so it can simply be garbage-collected along with its mounted fragments.
+   *
+   * Thread-safe and idempotent.
+   *
+   * @param application Application context
+   * @return A ReactHost whose lifecycleState is not DESTROYED
+   */
+  fun getOrRecreateReactHost(application: Application): ReactHost {
+    synchronized(this) {
+      val existing = reactHost.get()
+      if (existing != null && existing.lifecycleState != LifecycleState.DESTROYED) {
+        return existing
+      }
+      return createReactHost(application).also { reactHost.set(it) }
     }
   }
 

@@ -35,6 +35,7 @@ export function createElementsNativeActions(
     ): Promise<PaymentResult> {
       if (typeof paymentElementRef === 'string') {
         const result = await confirmWidgetPayment(paymentElementRef);
+        console.log('confirmPayment result:', result);
         return mapNativeResponseToPaymentResult(result);
       }
 

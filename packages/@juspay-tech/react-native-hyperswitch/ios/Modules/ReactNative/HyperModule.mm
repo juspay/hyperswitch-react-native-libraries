@@ -36,7 +36,7 @@ RCT_EXPORT_MODULE(HyperModule)
 
 - (NSArray<NSString *> *)supportedEvents
 {
-     return @[ @"confirm" ];
+     return @[ @"confirm", @"updateIntentInit", @"updateIntentComplete", @"triggerWidgetAction" ];
 }
 
 + (BOOL)requiresMainQueueSetup
@@ -97,7 +97,7 @@ RCT_EXPORT_MODULE(HyperModule)
 
 - (void)exitWidgetPaymentsheet:(double)rootTag result:(NSString *)result reset:(BOOL)reset
 {
-    // [HyperModuleImpl.shared exitWidgetPaymentsheet:@(rootTag) result:result reset:reset];
+    [HyperModuleImpl.shared exitWidgetPaymentsheet:@(rootTag) result:result reset:reset];
 }
 
 // MARK: - Widget
@@ -114,7 +114,7 @@ RCT_EXPORT_MODULE(HyperModule)
 
 - (void)launchWidgetPaymentSheet:(NSString *)requestObj callback:(RCTResponseSenderBlock)callback
 {
-    // [HyperModuleImpl.shared launchWidgetPaymentSheet:requestObj callback:callback];
+    [HyperModuleImpl.shared launchWidgetPaymentSheet:requestObj callback:callback];
 }
 
 - (void)updateWidgetHeight:(double)height
@@ -124,31 +124,31 @@ RCT_EXPORT_MODULE(HyperModule)
 
 - (void)notifyWidgetPaymentResult:(double)rootTag result:(NSString *)result
 {
-    // [HyperModuleImpl.shared notifyWidgetPaymentResult:@(rootTag) result:result];
+    [HyperModuleImpl.shared notifyWidgetPaymentResult:@(rootTag) result:result];
 }
 
 // MARK: - Payment method management
 
 - (void)onAddPaymentMethod:(NSString *)data
 {
-    // [HyperModuleImpl.shared onAddPaymentMethod:data];
+    [HyperModuleImpl.shared onAddPaymentMethod:data];
 }
 
 // MARK: - Payment events
 
 - (void)emitPaymentEvent:(double)rootTag eventType:(NSString *)eventType payload:(NSDictionary *)payload
 {
-    // [HyperModuleImpl.shared emitPaymentEvent:@(rootTag) eventType:eventType payload:payload];
+    [HyperModuleImpl.shared emitPaymentEvent:@(rootTag) eventType:eventType payload:payload];
 }
 
 - (void)onUpdateIntentEvent:(double)rootTag type:(NSString *)type result:(NSString *)result
 {
-    // [HyperModuleImpl.shared onUpdateIntentEvent:@(rootTag) type:type result:result];
+    [HyperModuleImpl.shared onUpdateIntentEvent:@(rootTag) type:type result:result];
 }
 
 - (void)onPaymentConfirmButtonClick:(double)rootTag payload:(NSString *)payload callback:(RCTResponseSenderBlock)callback
 {
-    // [HyperModuleImpl.shared onPaymentConfirmButtonClick:@(rootTag) payload:payload callback:callback];
+    [HyperModuleImpl.shared onPaymentConfirmButtonClick:@(rootTag) payload:payload callback:callback];
 }
 
 // MARK: - 3DS / DDC iframe bridge
@@ -163,7 +163,7 @@ RCT_EXPORT_MODULE(HyperModule)
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
-    return std::make_shared<facebook::react::NativeHyperswitchSdkNativeSpecJSI>(params);
+    return std::make_shared<facebook::react::NativeHyperModuleSpecJSI>(params);
 }
 
 @end

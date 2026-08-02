@@ -23,21 +23,29 @@ public class HyperswitchModule: NSObject {
     private var activePaymentSessionHandler: PaymentSessionHandler?
     @objc internal static var isCvcWidgetActive: Bool = false
 
-    /// View-registry reference injected by HyperswitchSdkReactNative.mm so this singleton
-    /// can resolve native widget views by reactTag.
-    @objc public var viewRegistry_DEPRECATED: RCTViewRegistry?
-
     // MARK: - JSON string helpers
 
     /// Serialise a plain `[String: Any?]` to a compact JSON string.
     /// Returns `"{}"` on failure so callers always receive a valid string.
-    private static func toJSONString(_ dict: [String: Any?]) -> String {
+    internal static func toJSONString(_ dict: [String: Any?]) -> String {
         // JSONSerialization can't handle `Any?` keys that are nil, so strip them first.
         let cleaned = dict.compactMapValues { $0 }
         guard
             let data = try? JSONSerialization.data(withJSONObject: cleaned, options: []),
             let str = String(data: data, encoding: .utf8)
         else { return "{}" }
+        return str
+    }
+    
+    /// Serialise an array of `[String: Any?]` to a compact JSON string.
+    /// Returns `"[]"` on failure so callers always receive a valid string.
+    internal static func toJSONString(_ array: [[String: Any?]]) -> String {
+        // JSONSerialization can't handle `Any?` values that are nil, so clean them first.
+        let cleaned = array.map { dict in dict.compactMapValues { $0 } }
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: cleaned, options: []),
+            let str = String(data: data, encoding: .utf8)
+        else { return "[]" }
         return str
     }
 
@@ -242,7 +250,7 @@ public class HyperswitchModule: NSObject {
         case .success(let paymentMethod):
             // Return the payment-method data JSON directly, matching Android's
             // `ConversionUtils.convertMapToJson(data.toMap()).toString()`.
-            resolve(HyperswitchModule.encodeToJSONString(paymentMethod) ?? "{}")
+            resolve(HyperswitchModule.toJSONString(paymentMethod.toDictionary()))
         case .failure(let error):
             resolve(HyperswitchModule.standardResult(
                 status: "failed",
@@ -272,7 +280,7 @@ public class HyperswitchModule: NSObject {
         let result = handler.getCustomerLastUsedPaymentMethodData()
         switch result {
         case .success(let paymentMethod):
-            resolve(HyperswitchModule.encodeToJSONString(paymentMethod) ?? "{}")
+            resolve(HyperswitchModule.toJSONString(paymentMethod.toDictionary()))
         case .failure(let error):
             resolve(HyperswitchModule.standardResult(
                 status: "failed",
@@ -303,7 +311,8 @@ public class HyperswitchModule: NSObject {
         switch result {
         case .success(let paymentMethods):
             // Return a JSON array string, matching Android's `jsonArray.toString()`.
-            resolve(HyperswitchModule.encodeToJSONString(paymentMethods) ?? "[]")
+            let dictionaries = paymentMethods.map { $0.toDictionary() }
+            resolve(HyperswitchModule.toJSONString(dictionaries))
         case .failure(let error):
             resolve(HyperswitchModule.standardResult(
                 status: "failed",
@@ -339,20 +348,13 @@ public class HyperswitchModule: NSObject {
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
-                    self.withNativePaymentWidgetView(
-                        NSNumber(value: reactTag),
-                        onFound: { _ in
-                            // CVC widget confirm path — not yet fully wired; fall through.
-                        },
-                        onMissing: {
-                            resolve(HyperswitchModule.standardResult(
-                                status: "failed",
-                                code: "WIDGET_NOT_FOUND",
-                                message: "CVC widget view not found for reactTag \(reactTag)",
-                                error: "CVC widget view not found for reactTag \(reactTag)"
-                            ))
-                        }
-                    )
+                    // TODO: CVC widget confirm path — use NativeHyperswitchModule instead
+                    resolve(HyperswitchModule.standardResult(
+                        status: "failed",
+                        code: "NOT_IMPLEMENTED",
+                        message: "CVC widget path - use NativeHyperswitchModule.confirmWithCustomerDefaultPaymentMethod",
+                        error: "Use NativeHyperswitchModule instead"
+                    ))
                 } else {
                     handler.confirmWithCustomerDefaultPaymentMethod { result in
                         resolve(HyperswitchModule.paymentResultToJSONString(result))
@@ -396,20 +398,13 @@ public class HyperswitchModule: NSObject {
             switch result {
             case .success(let paymentMethod):
                 if paymentMethod.requiresCvv && paymentMethod.paymentMethod == "card" {
-                    self.withNativePaymentWidgetView(
-                        NSNumber(value: reactTag),
-                        onFound: { _ in
-                            // CVC widget confirm path — not yet fully wired; fall through.
-                        },
-                        onMissing: {
-                            resolve(HyperswitchModule.standardResult(
-                                status: "failed",
-                                code: "WIDGET_NOT_FOUND",
-                                message: "CVC widget view not found for reactTag \(reactTag)",
-                                error: "CVC widget view not found for reactTag \(reactTag)"
-                            ))
-                        }
-                    )
+                    // TODO: CVC widget confirm path — use NativeHyperswitchModule instead
+                    resolve(HyperswitchModule.standardResult(
+                        status: "failed",
+                        code: "NOT_IMPLEMENTED",
+                        message: "CVC widget path - use NativeHyperswitchModule.confirmWithCustomerLastUsedPaymentMethod",
+                        error: "Use NativeHyperswitchModule instead"
+                    ))
                 } else {
                     resolve(HyperswitchModule.standardResult(
                         status: "failed",
@@ -489,8 +484,9 @@ public class HyperswitchModule: NSObject {
         )
     }
 
-    // MARK: - CvcWidget View Lookup
+    // MARK: - CvcWidget View Lookup (DEPRECATED - not used)
 
+    /* COMMENTED OUT - viewRegistry approach deprecated
     private func withNativePaymentWidgetView(
         _ reactTag: NSNumber,
         onFound: @escaping (PaymentWidget) -> Void,
@@ -511,6 +507,7 @@ public class HyperswitchModule: NSObject {
         }
         onMissing()
     }
+    */
 
     // MARK: - Internal helpers (used by HyperswitchModule.mm)
 

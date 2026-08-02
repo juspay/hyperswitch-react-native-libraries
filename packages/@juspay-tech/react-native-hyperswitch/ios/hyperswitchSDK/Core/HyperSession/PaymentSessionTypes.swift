@@ -27,6 +27,7 @@ public struct PaymentMethod: Codable {
     public let requiresCvv: Bool
     public let lastUsedAt: String
     public let defaultPaymentMethodSet: Bool
+    public let billing: String?
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -48,6 +49,7 @@ public struct PaymentMethod: Codable {
         requiresCvv = try container.decodeIfPresent(Bool.self, forKey: .requiresCvv) ?? false
         lastUsedAt = try container.decodeIfPresent(String.self, forKey: .lastUsedAt) ?? ""
         defaultPaymentMethodSet = try container.decodeIfPresent(Bool.self, forKey: .defaultPaymentMethodSet) ?? false
+        billing = try container.decodeIfPresent(String.self, forKey: .billing)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -69,6 +71,7 @@ public struct PaymentMethod: Codable {
         case requiresCvv = "requires_cvv"
         case lastUsedAt = "last_used_at"
         case defaultPaymentMethodSet = "default_payment_method_set"
+        case billing
     }
 }
 
@@ -172,3 +175,53 @@ public struct PaymentSessionHandler {
         confirmWithCustomerPaymentToken(paymentToken, nil, resultHandler)
     }
 }
+
+// MARK: - Dictionary Conversion (matches Android toMap())
+
+extension Card {
+    func toDictionary() -> [String: Any?] {
+        return [
+            "scheme": scheme,
+            "issuer_country": issuerCountry,
+            "last4_digits": last4Digits,
+            "expiry_month": expiryMonth,
+            "expiry_year": expiryYear,
+            "card_token": cardToken,
+            "card_holder_name": cardHolderName,
+            "card_fingerprint": cardFingerprint,
+            "nick_name": nickName,
+            "card_network": cardNetwork,
+            "card_isin": cardIsin,
+            "card_issuer": cardIssuer,
+            "card_type": cardType,
+            "saved_to_locker": savedToLocker,
+        ]
+    }
+}
+
+extension PaymentMethod {
+    func toDictionary() -> [String: Any?] {
+        return [
+            "payment_token": paymentToken,
+            "payment_method_id": paymentMethodId,
+            "customer_id": customerId,
+            "payment_method": paymentMethod,
+            "payment_method_type": paymentMethodType,
+            "payment_method_issuer": paymentMethodIssuer,
+            "payment_method_issuer_code": paymentMethodIssuerCode,
+            "recurring_enabled": recurringEnabled,
+            "installment_payment_enabled": installmentPaymentEnabled,
+            "payment_experience": paymentExperience,
+            "card": card?.toDictionary(),
+            "metadata": metadata,
+            "created": created,
+            "bank": bank,
+            "surcharge_details": surchargeDetails,
+            "requires_cvv": requiresCvv,
+            "last_used_at": lastUsedAt,
+            "default_payment_method_set": defaultPaymentMethodSet,
+            "billing": billing,
+        ]
+    }
+}
+

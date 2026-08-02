@@ -103,13 +103,19 @@ internal extension PaymentSheet {
         }
         switch status {
         case "success", "succeeded", "completed", "requires_capture":
-            return .completed(data: status)
+            return .completed(data: raw)  // Pass raw JSON string, not just status
         case "cancelled", "canceled":
-            return .canceled(data: status)
+            return .canceled(data: raw)   // Pass raw JSON string, not just status
         default:
-            let code    = (dict["code"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? ""
+            // Failed result - preserve original raw JSON for JS layer
+            let code    = (dict["code"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "UNKNOWN_ERROR"
             let message = dict["message"] as? String ?? "An error has occurred."
-            return .failed(error: NSError(domain: code, code: 0, userInfo: ["message": message]))
+            
+            // Store raw JSON in userInfo so it can be passed to JS without data loss
+            return .failed(error: NSError(domain: code, code: 0, userInfo: [
+                "message": message,
+                "rawJSON": raw  // Preserve original JSON with all fields (type_, etc.)
+            ]))
         }
     }
 }

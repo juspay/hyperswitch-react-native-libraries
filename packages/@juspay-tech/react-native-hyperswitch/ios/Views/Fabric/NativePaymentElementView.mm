@@ -8,7 +8,7 @@
 //    ┌─────────────────────────────────────────────────────────────────────┐
 //    │  NativePaymentElementView  (RCTViewComponentView — Fabric host)     │
 //    │    • receives props via updateProps (widgetType, sdkAuth, options)  │
-//    │    • fires events via Fabric RCTNativePaymentElementEventEmitter     │
+//    │    • fires events via Fabric RCTNativePaymentWidgetEventEmitter     │
 //    │    └── NativePaymentWidgetView  (inner UIView — actual widget)      │
 //    │          • shared with the old-arch NativePaymentWidget ViewManager  │
 //    │          • registered in NativePaymentWidgetViewRegistry by tag      │
@@ -42,6 +42,12 @@
 #import <HyperswitchSdkReactNative/HyperswitchSdkReactNative-Swift.h>
 #endif
 
+// Category to expose internal event block properties
+@interface NativePaymentWidgetView (FabricEvents)
+@property (nonatomic, copy) RCTDirectEventBlock onPaymentResult;
+@property (nonatomic, copy) RCTDirectEventBlock onPaymentEvent;
+@end
+
 using namespace facebook::react;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,7 +78,7 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-@interface NativePaymentElementView () <RCTRCTNativePaymentElementViewProtocol>
+@interface NativePaymentElementView () <RCTRCTNativePaymentWidgetViewProtocol>
 @end
 
 @implementation NativePaymentElementView {
@@ -83,7 +89,7 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
 
 + (ComponentDescriptorProvider)componentDescriptorProvider
 {
-    return concreteComponentDescriptorProvider<RCTNativePaymentElementComponentDescriptor>();
+    return concreteComponentDescriptorProvider<RCTNativePaymentWidgetComponentDescriptor>();
 }
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -121,7 +127,7 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
 - (void)updateProps:(Props::Shared const &)props
            oldProps:(Props::Shared const &)oldProps
 {
-    const auto &p = *std::static_pointer_cast<RCTNativePaymentElementProps const>(props);
+    const auto &p = *std::static_pointer_cast<RCTNativePaymentWidgetProps const>(props);
 
     NSString *widgetType   = [NSString stringWithUTF8String:p.widgetType.c_str()];
     NSString *sdkAuth      = [NSString stringWithUTF8String:p.sdkAuthorization.c_str()];
@@ -129,13 +135,9 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
     _widgetView.widgetType        = widgetType.length > 0 ? widgetType : nil;
     _widgetView.sdkAuthorization  = sdkAuth.length   > 0 ? sdkAuth    : nil;
 
-    // options is a folly::dynamic (arbitrary JS object). Convert → NSDictionary.
-    if (!p.options.isNull()) {
-        NSDictionary *optDict = dynamicToDict(p.options);
-        if (optDict) {
-            _widgetView.options = optDict;
-        }
-    }
+    // options is now Readonly<{}> from codegen - just pass nil for now
+    // TODO: properly handle options struct
+    _widgetView.options = nil;
 
     // Notify the inner view that all props have been applied (mirrors
     // the old-arch bridge calling didSetProps:changedProps: after KVC sets).
@@ -168,12 +170,12 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
         NativePaymentElementView *strongSelf = weakSelf;
         if (!strongSelf) return;
 
-        auto em = std::dynamic_pointer_cast<const RCTNativePaymentElementEventEmitter>(
+        auto em = std::dynamic_pointer_cast<const RCTNativePaymentWidgetEventEmitter>(
             strongSelf->_eventEmitter);
         if (!em) return;
 
         NSString *result = event[@"result"] ?: @"";
-        RCTNativePaymentElementEventEmitter::OnPaymentResult payload;
+        RCTNativePaymentWidgetEventEmitter::OnPaymentResult payload;
         payload.result = std::string([result UTF8String]);
         em->onPaymentResult(std::move(payload));
     };
@@ -183,18 +185,19 @@ static folly::dynamic dictToDynamic(NSDictionary * _Nullable dict)
         NativePaymentElementView *strongSelf = weakSelf;
         if (!strongSelf) return;
 
-        auto em = std::dynamic_pointer_cast<const RCTNativePaymentElementEventEmitter>(
+        auto em = std::dynamic_pointer_cast<const RCTNativePaymentWidgetEventEmitter>(
             strongSelf->_eventEmitter);
         if (!em) return;
 
         NSString *eventName = event[@"eventName"] ?: @"";
         id payloadObj = event[@"payload"];
 
-        RCTNativePaymentElementEventEmitter::OnPaymentEvent paymentEvent;
+        RCTNativePaymentWidgetEventEmitter::OnPaymentEvent paymentEvent;
         paymentEvent.eventName = std::string([eventName UTF8String]);
-        if ([payloadObj isKindOfClass:[NSDictionary class]]) {
-            paymentEvent.payload = dictToDynamic((NSDictionary *)payloadObj);
-        }
+        // TODO: Fix payload struct after updating codegen types
+        // if ([payloadObj isKindOfClass:[NSDictionary class]]) {
+        //     paymentEvent.payload = dictToDynamic((NSDictionary *)payloadObj);
+        // }
         em->onPaymentEvent(std::move(paymentEvent));
     };
 }

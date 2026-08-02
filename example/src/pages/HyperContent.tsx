@@ -47,7 +47,7 @@ export function HyperContent(props: SharedProps) {
     (async () => {
       try {
         const handler = await paymentSession.getCustomerSavedPaymentMethods({
-          hiddenPaymentMethods: ["paypal", "google_pay", "apple_pay", "ach"],
+          hiddenPaymentMethods: ["paypal", "google_pay", "apple_pay"],
         });
         if (cancelled) return;
         setMethodsSession(handler);

@@ -74,30 +74,11 @@ public class PaymentWidget: UIControl {
     }
 
     private func commonInit() {
-
-        let hyperswitchConfiguration = try? paymentSession.hyperswitchConfiguration?.toDictionary()
-        let paymentSessionConfiguration = try? paymentSession.paymentSessionConfiguration.toDictionary()
-
         let sdkParams = SDKParams.getSDKParams()
 
-        var nativeConfig = try? configuration?.toDictionary()
-        if self.subscribedEventNames == nil {
-            self.subscribedEventNames = configurationDict?["subscribedEvents"] as? [String]
-                ?? nativeConfig?["subscribedEvents"] as? [String]
-        }
-        nativeConfig?["hideConfirmButton"] = true
-        nativeConfig?["subscribedEvents"] = subscribedEventNames
-        configurationDict?["hideConfirmButton"] = true
-        configurationDict?["subscribedEvents"] = subscribedEventNames
-
-        let props: [String: Any] = [
-            "type": "widgetPaymentSheet",
-            "hyperswitchConfig": hyperswitchConfiguration as Any,
-            "paymentSessionConfig": paymentSessionConfiguration as Any,
-            "sdkParams": sdkParams,
-            "configuration": configurationDict ?? nativeConfig as Any,
-            "from": (configurationDict != nil) ? "rn" : "nativeWidget",
-        ]
+        // Use configurationDict directly from React Native (already contains everything)
+        var props = configurationDict ?? [:]
+        props["sdkParams"] = sdkParams
 
         self.rootView = RNViewManager.sharedInstance.widgetViewForModule(
             "hyperSwitch",
@@ -124,13 +105,12 @@ public class PaymentWidget: UIControl {
             .sink { [weak self] in
                 guard let self = self else { return }
                 let payload: [String: Any] = ["rootTag": self.widgetReactTag ?? -1]
-                // Bridge-based widget emit removed for payment-sheet-only build.
-                // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                //     "RCTDeviceEventEmitter",
-                //     method: "emit",
-                //     args: ["updateIntentInit", payload],
-                //     completion: nil
-                // )
+                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                    "RCTDeviceEventEmitter",
+                    method: "emit",
+                    args: ["updateIntentInit", payload],
+                    completion: nil
+                )
             }
             .store(in: &cancellables)
 
@@ -142,13 +122,12 @@ public class PaymentWidget: UIControl {
                     "rootTag": self.widgetReactTag ?? -1,
                     "sdkAuthorization": sdkAuthorization,
                 ]
-                // Bridge-based widget emit removed for payment-sheet-only build.
-                // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                //     "RCTDeviceEventEmitter",
-                //     method: "emit",
-                //     args: ["updateIntentComplete", payload],
-                //     completion: nil
-                // )
+                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                    "RCTDeviceEventEmitter",
+                    method: "emit",
+                    args: ["updateIntentComplete", payload],
+                    completion: nil
+                )
             }
             .store(in: &cancellables)
     }
@@ -158,13 +137,12 @@ public class PaymentWidget: UIControl {
             "rootTag": self.widgetReactTag ?? -1,
             "actionType": "CONFIRM_PAYMENT_ACTION",
         ]
-        // Bridge-based widget emit removed for payment-sheet-only build.
-        // RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-        //     "RCTDeviceEventEmitter",
-        //     method: "emit",
-        //     args: ["triggerWidgetAction", payload],
-        //     completion: nil
-        // )
+        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+            "RCTDeviceEventEmitter",
+            method: "emit",
+            args: ["triggerWidgetAction", payload],
+            completion: nil
+        )
     }
 
     internal func setPaymentEventListener(_ listener: PaymentEventListener?) {
@@ -184,6 +162,7 @@ public class PaymentWidget: UIControl {
     }
 
     internal func handleUpdateIntentEvent(type: String, result: String) {
+        // Send to Combine publishers (for potential future use)
         switch type {
         case "UPDATE_INTENT_INIT_RETURNED":
             paymentSession.updateIntentInitReturned.send(result)

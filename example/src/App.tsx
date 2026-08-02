@@ -45,7 +45,7 @@ export default function App() {
     const url = initialBaseUrl
       ? `${initialBaseUrl}/create-payment-intent`
       : undefined;
-    fetch(serverUrl ?? url, {
+    fetch(`${serverUrl !== '' ? serverUrl :  url}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

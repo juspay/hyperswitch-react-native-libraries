@@ -158,7 +158,9 @@
     },
     "ios": {
       "modulesProvider": {
-        "NativeHyperswitchModule": "NativeHyperswitchModule"
+        "NativeHyperswitchModule": "NativeHyperswitchModule",
+        "NativeWidgetHelperModule": "NativeWidgetHelperModule",
+        "HyperHeadless": "HyperHeadlessModule"
       },
       "componentProvider": {
         "ApplePayView": "ApplePayView",

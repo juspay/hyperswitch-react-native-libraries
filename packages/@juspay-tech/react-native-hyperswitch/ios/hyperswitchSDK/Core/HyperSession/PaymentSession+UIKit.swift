@@ -200,14 +200,15 @@ extension PaymentSession {
                         }
                         switch status {
                         case "cancelled":
-                            completion?(.canceled(data: status))
+                            completion?(.canceled(data: rnMessage))  // Pass raw JSON
                         case "failed", "requires_payment_method":
-                            let domain = (message["code"]) != "" ? message["code"] : ""
+                            let domain = (message["code"]) != "" ? message["code"] : "UNKNOWN_ERROR"
                             let errorMessage = message["message"] ?? "An error has occurred."
-                            let userInfo = ["message": errorMessage]
+                            // Store raw JSON to preserve all fields (type_, etc.)
+                            let userInfo = ["message": errorMessage, "rawJSON": rnMessage]
                             completion?(.failed(error: NSError(domain: domain ?? "UNKNOWN_ERROR", code: 0, userInfo: userInfo)))
                         default:
-                            completion?(.completed(data: status))
+                            completion?(.completed(data: rnMessage))  // Pass raw JSON
                         }
                     } else {
                         let domain = "UNKNOWN_ERROR"

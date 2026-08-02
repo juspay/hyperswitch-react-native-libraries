@@ -35,8 +35,8 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
 
     private var reactNativeFactory: RCTReactNativeFactory?
 
-    // Bridge capture removed for the payment-sheet-only/bridgeless build.
-    // private weak var capturedBridge: RCTBridge?
+    // Bridge capture for widget operations (enqueueJSCall / uiManager).
+    private weak var capturedBridge: RCTBridge?
 
     internal static let sharedInstance = RNViewManager()
 
@@ -54,9 +54,9 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
     /// The bridge backing the embedded runtime. Kept for the SDK's widget commands
     /// (`bridge.enqueueJSCall` / `bridge.uiManager`). Available after the first view
     /// is created.
-    // internal var bridge: RCTBridge? {
-    //     return capturedBridge
-    // }
+    internal var bridge: RCTBridge? {
+        return capturedBridge
+    }
 
     internal func viewForModule(_ moduleName: String, initialProperties: [String: Any]?) -> UIView {
         let view = factory().rootViewFactory.view(
@@ -88,19 +88,58 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
     override func sourceURL(for bridge: RCTBridge) -> URL? {
         // Called while the embedded bridge loads its JS — capture it for the SDK's
         // bridge-dependent widget commands.
-        // self.capturedBridge = bridge
+        self.capturedBridge = bridge
         return bundleURL()
     }
 
+    /// Detects the merchant app's React Native version and returns the appropriate bundle.
+    /// Version selection:
+    ///   - RN 0.76 - 0.81: hyperswitch-rn76-81.bundle
+    ///   - RN 0.82+:       hyperswitch-rn82plus.bundle
+    ///   - Fallback:       hyperswitch.bundle (legacy)
     public override func bundleURL() -> URL? {
-    //    switch Helper.getInfoPlist("HyperswitchSource") {
-    //    default:
-           #if canImport(HyperOTA)
-                return OTAServices.shared.getBundleURL()
-           #else
-            return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
-           #endif
-    //    }
+        #if canImport(HyperOTA)
+            return OTAServices.shared.getBundleURL()
+        #else
+            // Detect merchant app's React Native version
+            guard let rnVersion = RCTGetReactNativeVersion() else {
+                print("[Hyperswitch] WARNING: Could not detect RN version, using fallback bundle")
+                return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
+            }
+            
+            let majorVersion = (rnVersion["major"] as? Int) ?? 0
+            let minorVersion = (rnVersion["minor"] as? Int) ?? 0
+            
+            let bundleName: String
+            
+            // Version selection logic
+            if majorVersion == 0 {
+                // RN 0.x versions
+                if minorVersion >= 76 && minorVersion <= 81 {
+                    bundleName = "hyperswitch-rn76-81"
+                } else if minorVersion >= 82 {
+                    bundleName = "hyperswitch-rn82plus"
+                } else {
+                    // Legacy fallback for versions < 0.76
+                    bundleName = "hyperswitch"
+                }
+            } else {
+                // Future RN 1.x+ versions - use latest bundle
+                bundleName = "hyperswitch-rn82plus"
+            }
+            
+            let bundleURL = Bundle(for: RNViewManager.self).url(forResource: bundleName, withExtension: "bundle")
+            
+            // Log version detection for debugging
+            print("[Hyperswitch] Detected RN version: \(majorVersion).\(minorVersion), using bundle: \(bundleName).bundle")
+            
+            if bundleURL == nil {
+                print("[Hyperswitch] WARNING: Bundle not found: \(bundleName).bundle, falling back to hyperswitch.bundle")
+                return Bundle(for: RNViewManager.self).url(forResource: "hyperswitch", withExtension: "bundle")
+            }
+            
+            return bundleURL
+        #endif
     }
 }
 
