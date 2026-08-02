@@ -55,3 +55,8 @@ lerna-debug.log*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+
+RN76/*
+RN81/*
+RN85/*

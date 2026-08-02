@@ -6,18 +6,15 @@ import {
 import {
   CustomerSavedPaymentMethodsSession,
   CustomerLastUsedPaymentMethod,
+  SavedPaymentMethodsConfiguration,
 } from '../types/savedPaymentMethods';
 import type { PaymentResult } from '../types/paymentresult';
-import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
-import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
-import { mapNativeResponseToPaymentResult } from './NativeResponseMapper';
-import { getWidget } from './WidgetRegistry';
+import { mapNativeResponseToPaymentResult } from '../native/NativeResponseMapper';
+import { getWidget } from '../widget/WidgetRegistry';
 
 function getReactTag(widgetId?: string): number {
   if (!widgetId) {
-    throw new Error(
-      'A widgetId is required to confirm a saved payment method'
-    );
+    throw new Error('A widgetId is required to confirm a saved payment method');
   }
 
   const reactTag = getWidget(widgetId);
@@ -27,21 +24,39 @@ function getReactTag(widgetId?: string): number {
   return reactTag;
 }
 
+type RawCustomerPaymentMethod = Omit<
+  CustomerLastUsedPaymentMethod,
+  'billing'
+> & {
+  billing?: string | CustomerLastUsedPaymentMethod['billing'];
+};
+
+function parseBilling(
+  raw: RawCustomerPaymentMethod['billing']
+): CustomerLastUsedPaymentMethod['billing'] {
+  if (raw == null || typeof raw !== 'string') {
+    return (raw ?? null) as CustomerLastUsedPaymentMethod['billing'];
+  }
+  try {
+    return JSON.parse(raw) as CustomerLastUsedPaymentMethod['billing'];
+  } catch {
+    return null;
+  }
+}
+
 function parsePaymentMethod(raw: string): CustomerLastUsedPaymentMethod | null {
   try {
-    const parsed = JSON.parse(raw) as CustomerLastUsedPaymentMethod & {
-      billing?: string | object | null;
+    const parsed = JSON.parse(raw) as RawCustomerPaymentMethod;
+    const result: CustomerLastUsedPaymentMethod = {
+      ...parsed,
+      billing: parseBilling(parsed.billing),
     };
-    if (parsed.billing && typeof parsed.billing === 'string') {
-      try {
-        parsed.billing = JSON.parse(parsed.billing);
-      } catch {
-        parsed.billing = null;
-      }
-    }
-    return parsed as CustomerLastUsedPaymentMethod;
+    return result;
   } catch {
-    console.warn('Hyperswitch: failed to parse saved payment method data:', raw);
+    console.warn(
+      'Hyperswitch: failed to parse saved payment method data:',
+      raw
+    );
     return null;
   }
 }
@@ -91,13 +106,13 @@ export function createCustomerSavedPaymentMethodsSession(): CustomerSavedPayment
 export async function getCustomerSavedPaymentMethods(
   hyperswitchConfig: HyperswitchConfiguration,
   paymentSessionConfig: PaymentSessionConfiguration,
-  configuration?: PaymentSheetConfiguration
+  configuration?: SavedPaymentMethodsConfiguration
 ): Promise<CustomerSavedPaymentMethodsSession> {
-  const payload = buildPresentPaymentSheetPayload(
+  const payload = {
     hyperswitchConfig,
     paymentSessionConfig,
-    configuration
-  );
+    configuration,
+  };
   await NativeHyperswitchModule.getCustomerSavedPaymentMethods(payload);
   return createCustomerSavedPaymentMethodsSession();
 }

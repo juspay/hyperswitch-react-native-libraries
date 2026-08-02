@@ -102,10 +102,7 @@ export interface SavedMethodCustomization {
 }
 
 export type CardBrandIconDisplay =
-  | 'hidden'
-  | 'animated'
-  | 'standard'
-  | 'hideGeneric';
+  'hidden' | 'animated' | 'standard' | 'hideGeneric';
 
 export interface PaymentMethodLayout {
   type?: LayoutType;

@@ -1,16 +1,16 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef } from 'react';
+import type { ViewStyle } from 'react-native';
 import { useHyperElementsContext } from '../context/HyperElements';
 import type { CvcWidgetOptions } from '../types/definitions';
-import type { ViewStyle } from 'react-native';
-import { registerWidget, unregisterWidget } from '../context/WidgetRegistry';
-import { getFindNodeHandle } from '../utils/ReactNativeUtils';
+import { registerWidget, unregisterWidget } from '../widget/WidgetRegistry';
 import type {
   paymentEventResult,
   paymentResult,
   paymentEventNative,
-} from '../types/NativeModuleTypes';
-import NativePaymentWidgetImpl from './NativePaymentWidgetImpl';
-import { useMemo } from 'react';
+} from '../types/NativeEventTypes';
+import type { SavedMethodCustomization } from '../types/PaymentSheetConfiguration';
+import NativePaymentWidgetImpl from './PaymentWidgetBridge';
+import { useNativeViewTag } from './useNativeViewTag';
 
 type CVCElementProps = {
   id?: string;
@@ -45,49 +45,39 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
     } = props;
     const { paymentSessionConfig, hyperswitchConfig } =
       useHyperElementsContext();
-    const [viewId, setViewId] = useState<number | undefined>(undefined);
     const viewRef = useRef(null);
-    const nativeOptions = useMemo(
-      () => ({
-        ...options,
-        ...{
-          paymentMethodLayout: {
-            savedMethodCustomization: {
-              cvcIcon: options?.cvcIcon ?? 'shown',
-            },
+    const viewTag = useNativeViewTag(viewRef, onReady);
+
+    const shouldRegister = id !== undefined && viewTag !== undefined;
+    useEffect(() => {
+      if (!shouldRegister) return undefined;
+      const widgetId = id as string;
+      const tag = viewTag as number;
+      registerWidget(widgetId, tag);
+      return () => unregisterWidget(widgetId);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shouldRegister]);
+
+    const nativeOptions = useMemo(() => {
+      const opts = options as
+        | (CvcWidgetOptions & {
+            paymentMethodLayout?: {
+              savedMethodCustomization?: SavedMethodCustomization;
+            };
+          })
+        | undefined;
+      const layout = opts?.paymentMethodLayout;
+      return {
+        ...opts,
+        paymentMethodLayout: {
+          ...layout,
+          savedMethodCustomization: {
+            ...layout?.savedMethodCustomization,
+            cvcIcon: opts?.cvcIcon ?? 'shown',
           },
         },
-      }),
-      [options]
-    );
-
-    useEffect(() => {
-      let isMounted = true;
-      const findNodeHandle = (attempt: number) => {
-        if (!isMounted || viewId !== undefined) return;
-        if (viewRef.current != null) {
-          const nativeId = getFindNodeHandle(viewRef.current);
-          if (nativeId !== -1) {
-            onReady && onReady();
-            setViewId(nativeId);
-          } else if (attempt < 20) {
-            setTimeout(() => findNodeHandle(attempt + 1), 100);
-          }
-        } else if (attempt < 20) {
-          setTimeout(() => findNodeHandle(attempt + 1), 100);
-        }
       };
-      findNodeHandle(0);
-      return () => {
-        isMounted = false;
-      };
-    }, [viewId]);
-
-    useEffect(() => {
-      if (!id || viewId === undefined) return undefined;
-      registerWidget(id, viewId);
-      return () => unregisterWidget(id);
-    }, [id, viewId]);
+    }, [options]);
 
     const onPaymentEventInternal = (event: paymentEventNative) => {
       onChange?.(event.nativeEvent);

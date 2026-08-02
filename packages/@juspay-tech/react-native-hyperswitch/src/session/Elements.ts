@@ -3,19 +3,15 @@ import type {
   PaymentElementHandle,
   PaymentSessionConfiguration,
 } from '../types/definitions';
-import { buildPresentPaymentSheetPayload } from '../utils/LaunchOptions';
-import {
-  mapNativeResponseToPaymentResult,
-  presentPaymentSheetWithPayload,
-  updateIntent,
-} from '../context/PaymentSession';
 import type { PaymentResult } from '../types/paymentresult';
-import type { CustomerSavedPaymentMethodsSession } from '../types/savedPaymentMethods';
-
-import { getCustomerSavedPaymentMethods } from './SavedPaymentMethods';
-import { Elements } from '../types/elements';
-import { confirmPayment as confirmWidgetPayment } from './WidgetRegistry';
-import { PaymentSheetConfiguration } from '..';
+import type { Elements } from '../types/elements';
+import { mapNativeResponseToPaymentResult } from '../native/NativeResponseMapper';
+import { confirmPayment as confirmWidgetPayment } from '../widget/WidgetRegistry';
+import { updateIntent } from './PaymentSession';
+import {
+  bindGetCustomerSavedPaymentMethods,
+  bindPresentPaymentSheet,
+} from './binders';
 
 type ElementsNativeActions = Pick<
   Elements,
@@ -29,17 +25,9 @@ export function createElementsNativeActions(
   hyperswitchConfig: HyperswitchConfiguration,
   paymentSessionConfig: PaymentSessionConfiguration
 ): ElementsNativeActions {
+  const bindings = { hyperswitchConfig, paymentSessionConfig };
   return {
-    async presentPaymentSheet(
-      configuration?: PaymentSheetConfiguration
-    ): Promise<PaymentResult> {
-      const payload = buildPresentPaymentSheetPayload(
-        hyperswitchConfig,
-        paymentSessionConfig,
-        configuration
-      );
-      return presentPaymentSheetWithPayload(payload);
-    },
+    presentPaymentSheet: bindPresentPaymentSheet(bindings),
 
     async confirmPayment(
       paymentElementRef: { current: PaymentElementHandle | null } | string,
@@ -57,17 +45,10 @@ export function createElementsNativeActions(
       return ref.confirmPayment(confirmOptions);
     },
 
-    async getCustomerSavedPaymentMethods(
-      configuration?: PaymentSheetConfiguration
-    ): Promise<CustomerSavedPaymentMethodsSession> {
-      return getCustomerSavedPaymentMethods(
-        hyperswitchConfig,
-        paymentSessionConfig,
-        configuration
-      );
-    },
+    getCustomerSavedPaymentMethods:
+      bindGetCustomerSavedPaymentMethods(bindings),
 
-    updateIntent: updateIntent,
+    updateIntent,
   };
 }
 
@@ -75,7 +56,6 @@ export function createElements(
   hyperswitchConfig: HyperswitchConfiguration,
   paymentSessionConfig: PaymentSessionConfiguration
 ): Elements {
-  
   return {
     hyperswitchConfig,
     ...createElementsNativeActions(hyperswitchConfig, paymentSessionConfig),

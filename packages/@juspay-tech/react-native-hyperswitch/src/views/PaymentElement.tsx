@@ -1,19 +1,9 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import type { ViewStyle } from 'react-native';
-import NativePaymentWidgetImpl from './NativePaymentWidgetImpl';
-import { registerWidget, unregisterWidget } from '../context/WidgetRegistry';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { UIManager, findNodeHandle, type ViewStyle } from 'react-native';
+import NativePaymentWidgetImpl from './PaymentWidgetBridge';
+import { registerWidget, unregisterWidget } from '../widget/WidgetRegistry';
 import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
 import { useHyperElementsContext } from '../context/HyperElements';
-import {
-  dispatchViewManagerCommand,
-  getFindNodeHandle,
-} from '../utils/ReactNativeUtils';
 import {
   makeUnknownEventWarningPayload,
   validateSubscribedEventStrings,
@@ -22,17 +12,17 @@ import type {
   paymentEventResult,
   paymentEventNative,
   nativeEvent,
-} from '../types/NativeModuleTypes';
-import { PaymentElementHandle } from '../types/definitions';
-import { PaymentResult } from '../types/paymentresult';
-import { mapNativeResponseToPaymentResult } from '../context/NativeResponseMapper';
-import { nativeConfirmPayment } from '../utils/NativeModuleUtils';
+} from '../types/NativeEventTypes';
+import type { PaymentElementHandle } from '../types/definitions';
+import type { PaymentResult } from '../types/paymentresult';
+import { mapNativeResponseToPaymentResult } from '../native/NativeResponseMapper';
+import NativeWidgetHelperModule from '../codegen/modules/NativeWidgetHelperModule';
+import { useNativeViewTag } from './useNativeViewTag';
 
 type PaymentElementProps = {
   widgetId: string;
   options?: PaymentSheetConfiguration;
   onPaymentResult: (result: PaymentResult) => void;
-  // onPaymentConfirmButtonClick:() =>void;
   onChange?: (event: paymentEventResult) => void;
   onReady?: () => void;
   style?: ViewStyle;
@@ -44,94 +34,58 @@ export const PaymentElement = forwardRef<
 >((props, ref) => {
   const { widgetId, options, onPaymentResult, onChange, onReady, style } =
     props;
-  const [viewId, setViewId] = useState<number | undefined>(undefined);
   const { paymentSessionConfig, hyperswitchConfig } = useHyperElementsContext();
   const viewRef = useRef(null);
-  const isRegisteredRef = useRef(false);
+  const viewTag = useNativeViewTag(viewRef, onReady);
 
   useEffect(() => {
-    let isMounted = true;
+    if (viewTag === undefined) return undefined;
+    registerWidget(widgetId, viewTag);
+    return () => unregisterWidget(widgetId);
+  }, [viewTag, widgetId]);
 
-    const findNodeHandle = (attempt: number) => {
-      if (!isMounted || viewId !== undefined) {
-        return;
-      }
-      if (viewRef.current != null) {
-        const id = getFindNodeHandle(viewRef.current);
-        if (id !== -1) {
-          onReady && onReady();
-          setViewId(id);
-        } else if (attempt < 20) {
-          setTimeout(() => findNodeHandle(attempt + 1), 100);
-        }
-      } else if (attempt < 20) {
-        setTimeout(() => findNodeHandle(attempt + 1), 100);
-      }
-    };
-
-    findNodeHandle(3);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [viewId]);
-
+  // Old-arch view manager command "1": tells the native view to attach itself
+  // to the active payment session. Without it the widget mounts but renders
+  // an empty container on Paper.
   useEffect(() => {
-    if (viewId !== undefined) {
-      registerWidget(widgetId, viewId);
-      isRegisteredRef.current = true;
-      return () => {
-        if (isRegisteredRef.current) {
-          unregisterWidget(widgetId);
-          isRegisteredRef.current = false;
-        }
-      };
+    if (viewTag !== undefined) {
+      UIManager.dispatchViewManagerCommand(viewTag, 1, []);
     }
-    return undefined;
-  }, [viewId, widgetId]);
-
-  useEffect(() => {
-    if (viewId !== undefined) {
-      dispatchViewManagerCommand(viewId, 1, []);
-    }
-  }, [viewId]);
+  }, [viewTag]);
 
   useImperativeHandle(
     ref,
     () => ({
-      confirmPayment: (options?: {
+      confirmPayment: (_options?: {
         confirmParams?: Record<string, any>;
       }): Promise<PaymentResult> => {
         if (viewRef.current == null) {
           return Promise.resolve({
             status: 'failed',
+            type: 'widget_not_ready',
             message: 'Widget not ready',
-            error: 'Widget not ready',
-            type: undefined,
           });
         }
-        const id = getFindNodeHandle(viewRef.current);
+        const id =
+          findNodeHandle(
+            viewRef.current as Parameters<typeof findNodeHandle>[0]
+          ) ?? -1;
         if (id === -1) {
           return Promise.resolve({
             status: 'failed',
-            message: 'Widget not ready',
-            error: 'Unable to find native view handle',
-            type: undefined,
+            type: 'widget_not_ready',
+            message: 'Unable to find native view handle',
           });
         }
-        return new Promise((resolve) => {
-          nativeConfirmPayment(id, (result: PaymentResult) => {
-            resolve({
-              status: result.status,
-              message: result.message,
-              type: result.type,
-            });
+        return new Promise<PaymentResult>((resolve) => {
+          NativeWidgetHelperModule.confirmPayment(id, (raw) => {
+            resolve(mapNativeResponseToPaymentResult(raw));
           });
         });
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewId]
+    [viewTag]
   );
 
   const warningEmitted = useRef(false);

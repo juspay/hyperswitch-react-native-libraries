@@ -84,6 +84,7 @@ class PaymentSessionReactLauncher(
             object : ReactInstanceEventListener {
               override fun onReactContextInitialized(context: ReactContext) {
                 startHeadlessTask(context, bundle)
+                reactContext = reactHost.currentReactContext
                 reactHost.removeReactInstanceEventListener(this)
               }
             }
@@ -95,6 +96,7 @@ class PaymentSessionReactLauncher(
             object : ReactInstanceEventListener {
               override fun onReactContextInitialized(context: ReactContext) {
                 startHeadlessTask(context, bundle)
+                reactContext = reactInstanceManager.currentReactContext
                 reactInstanceManager.removeReactInstanceEventListener(this)
               }
             }

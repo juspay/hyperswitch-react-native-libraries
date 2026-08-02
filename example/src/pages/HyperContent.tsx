@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import {
   PaymentElement,
@@ -69,25 +69,30 @@ export function HyperContent(props: SharedProps) {
     };
   }, [paymentSession]);
 
-  const updateAmount =
-    paymentSession && paymentId
-      ? async () => {
-          await paymentSession.updateIntent(async () => {
-            const response = await fetch(`${initialBaseUrl}/update-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                payment_id: paymentId,
-                amount: amount * 100,
-              }),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error ?? "Update failed");
-            setSdkAuthorization(data.sdkAuthorization);
-            return { sdkAuthorization: data.sdkAuthorization };
-          });
-        }
-      : null;
+  const updateAmount = useCallback(async () => {
+    if (!paymentSession || !paymentId) {
+      console.log(
+        "[Example] Cannot update amount: paymentSession or paymentId is null",
+      );
+      return;
+    }
+    console.log("[Example] Updating amount to:", amount);
+    await paymentSession.updateIntent(async () => {
+      const response = await fetch(`${initialBaseUrl}/update-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: paymentId,
+          amount: amount * 100,
+        }),
+      });
+      const data = await response.json();
+      console.log("[Example] Update response:", data);  
+      if (!response.ok) throw new Error(data.error ?? "Update failed");
+      setSdkAuthorization(data.sdkAuthorization);
+      return { sdkAuthorization: data.sdkAuthorization };
+    });
+  }, [paymentSession, paymentId, amount, setSdkAuthorization]);
 
   return (
     <FormLayout
@@ -109,7 +114,7 @@ export function HyperContent(props: SharedProps) {
                 },
               },
               cvcIcon: "hidden",
-              subscribedEvents: ["CVC_STATUS"]
+              subscribedEvents: ["CVC_STATUS"],
             }}
             onReady={() => {
               console.log("[Example] CvcWidget ready");
@@ -131,7 +136,10 @@ export function HyperContent(props: SharedProps) {
             }, 0);
           }}
           onChange={(event) => {
-            console.log("[Example] PaymentElement onChange event:", JSON.stringify(event));
+            console.log(
+              "[Example] PaymentElement onChange event:",
+              JSON.stringify(event),
+            );
           }}
           options={{
             merchantDisplayName: "Hyperswitch Example",
@@ -190,7 +198,7 @@ export function HyperContent(props: SharedProps) {
               "PAYMENT_METHOD_STATUS",
               "PAYMENT_METHOD_INFO_BILLING_ADDRESS",
               "PAYMENT_METHOD_INFO_CARD",
-              "FORM_STATUS"
+              "FORM_STATUS",
             ],
           }}
           onReady={() => console.log("[Example] PaymentElement ready")}

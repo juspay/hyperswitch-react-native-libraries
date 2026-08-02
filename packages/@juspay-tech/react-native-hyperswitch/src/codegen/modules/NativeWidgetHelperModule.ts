@@ -14,8 +14,8 @@ export interface Spec extends TurboModule {
   ): void;
 }
 
-const NativePaymentElementModule =
+const NativeWidgetHelperModule =
   TurboModuleRegistry.get<Spec>('NativeWidgetHelperModule') ??
-  NativeModules.NativePaymentElementModule;
+  NativeModules.NativeWidgetHelperModule;
 
-export default NativePaymentElementModule as Spec;
+export default NativeWidgetHelperModule as Spec;

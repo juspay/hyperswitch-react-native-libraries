@@ -38,26 +38,13 @@ export function mapStatus(status: string): PaymentResult['status'] {
   }
 }
 
-function getType(type?: string, message?: string, status?: string): string {
-  if (type && type !== '') {
-    return type;
-  } else if (message && message !== '') {
-    return message;
-  } else if (status && status !== '') {
-    return status;
-  } else {
-    return '';
-  }
-}
-
 export function mapNativeResponseToPaymentResult(
   raw: string | NativeResponse
 ): PaymentResult {
   const parsed = parseNativeResponse(raw);
   return {
     status: mapStatus(parsed.status),
-    type: getType(parsed.type, parsed.message, parsed.status),
-    message:
-      getType(parsed.message, parsed.type, parsed.status) ?? parsed.code ?? '',
+    type: parsed.type ?? '',
+    message: parsed.message ?? parsed.code ?? '',
   };
 }

@@ -18,6 +18,10 @@ export interface OverrideEndpoints {
 
 export type HyperswitchEnvironment = 'PROD' | 'SANDBOX' | 'INTEG';
 
+/**
+ * @deprecated Not used by the SDK anymore. Kept for source compatibility;
+ *             will be removed in a future major release.
+ */
 export type ElementType = 'paymentElement' | 'cvcWidget';
 
 export interface HyperswitchConfiguration {
@@ -42,9 +46,19 @@ export interface NativePaymentSheetPayload {
   configuration: Record<string, unknown>;
 }
 
-import { CustomerSavedPaymentMethodsSession, SavedPaymentMethodsConfiguration } from './savedPaymentMethods';
+import {
+  CustomerSavedPaymentMethodsSession,
+  SavedPaymentMethodsConfiguration,
+} from './savedPaymentMethods';
 import type { Elements } from './elements';
-import type { ColorType, Shapes, Theme, Font, SubscriptionEvent, PaymentSheetConfiguration } from './PaymentSheetConfiguration';
+import type {
+  ColorType,
+  Shapes,
+  Theme,
+  Font,
+  SubscriptionEvent,
+  PaymentSheetConfiguration,
+} from './PaymentSheetConfiguration';
 
 export interface PaymentSession {
   presentPaymentSheet(
@@ -64,30 +78,6 @@ export interface PaymentElementHandle {
   }): Promise<PaymentResult>;
 }
 
-// export interface PaymentElement extends PaymentElementHandle {
-//   Component?: ComponentType<any>;
-//   mount(selector: string): void;
-//   unmount(): void;
-//   on(event: string, handler?: (data?: any) => void): { remove: () => void };
-//   onPaymentResult(handler?: (data: PaymentResult) => void): {
-//     remove: () => void;
-//   };
-//   onPaymentConfirmButtonClick(handler?: (data: any) => boolean): {
-//     remove: () => void;
-//   };
-// }
-
-// export interface CvcWidget {
-//   Component?: ComponentType<any>;
-//   mount(selector: string, options?: Record<string, any>): void;
-//   unmount(): void;
-//   destroy(): void;
-//   on(
-//     event: string,
-//     handler?: (data?: any) => void
-//   ): { remove: () => void } | null;
-// }
-
 export interface HyperswitchSession {
   publishableKey: string;
   elements(options: PaymentSessionConfiguration): Promise<Elements>;
@@ -95,7 +85,7 @@ export interface HyperswitchSession {
     options: PaymentSessionConfiguration
   ): Promise<PaymentSession>;
 }
-  
+
 export interface CvcAppearance {
   theme?: Theme;
   colors?: ColorType;

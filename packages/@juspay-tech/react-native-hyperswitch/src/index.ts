@@ -7,13 +7,13 @@ import type {
 export type * from './types/savedPaymentMethods';
 export type * from './types/definitions';
 export type * from './types/elements';
-export type * from './types/NativeModuleTypes';
+export type * from './types/NativeEventTypes';
 export type * from './types/PaymentSheetConfiguration';
 import NativeHyperswitchModule from './codegen/modules/NativeHyperswitchModule';
-import { createPaymentSession } from './context/PaymentSession';
+import { createPaymentSession } from './session/PaymentSession';
 import { Elements } from './types/elements';
-import { createElements } from './context/Elements';
-import { setInitializing } from './utils/InitializationState';
+import { createElements } from './session/Elements';
+import { setInitializing } from './native/InitializationState';
 
 export function loadHyper(
   config: HyperswitchConfiguration
@@ -55,8 +55,12 @@ export const Hyperswitch = {
 
 export default Hyperswitch;
 
-export { HyperElements, usePaymentSession, useElements, useElements as useWidgets } from './context/HyperElements';
-
+export {
+  HyperElements,
+  usePaymentSession,
+  useElements,
+  useElements as useWidgets,
+} from './context/HyperElements';
 
 export { CVCElement as CardCVCElement } from './views/CVCElement';
 

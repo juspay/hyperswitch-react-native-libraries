@@ -57,6 +57,7 @@ export default function App() {
       .then((data) => {
         if (data.sdk_authorization || data.sdkAuthorization) {
           setSdkAuthorization(data.sdk_authorization || data.sdkAuthorization);
+          setPaymentId(data.payment_id || data.paymentId);
           hyperPromise?.then(async (hyper) => {
             let session = await hyper.initPaymentSession({
               sdkAuthorization: data.sdk_authorization || data.sdkAuthorization,

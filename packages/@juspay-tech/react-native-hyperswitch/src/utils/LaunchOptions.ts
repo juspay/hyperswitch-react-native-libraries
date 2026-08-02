@@ -1,4 +1,4 @@
-import { PaymentSheetConfiguration } from '..';
+import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
 import type {
   HyperswitchConfiguration,
   NativePaymentSheetPayload,
@@ -12,8 +12,8 @@ function buildPresentPaymentSheetPayload(
 ): NativePaymentSheetPayload {
   // platformPublishableKey is internal to the RN bridge; it is not part of the
   // merchant-facing hyperswitchConfig payload.
-  const { platformPublishableKey: _platformPublishableKey, ...restConfig } =
-    hyperswitchConfig;
+  const restConfig = { ...hyperswitchConfig };
+  delete restConfig.platformPublishableKey;
   return {
     hyperswitchConfig: restConfig as Record<string, unknown>,
     paymentSessionConfig: paymentSessionConfig,

@@ -4,7 +4,10 @@ import type {
   PaymentElementHandle,
   PaymentSessionConfiguration,
 } from '../definitions';
-import { CustomerSavedPaymentMethodsSession } from '../savedPaymentMethods';
+import {
+  CustomerSavedPaymentMethodsSession,
+  SavedPaymentMethodsConfiguration,
+} from '../savedPaymentMethods';
 import { PaymentSheetConfiguration } from '../PaymentSheetConfiguration';
 
 export interface Elements {
@@ -20,10 +23,14 @@ export interface Elements {
     intentResolver: () => Promise<PaymentSessionConfiguration>
   ): Promise<void>;
   getCustomerSavedPaymentMethods(
-    options?: PaymentSheetConfiguration
+    options?: SavedPaymentMethodsConfiguration
   ): Promise<CustomerSavedPaymentMethodsSession>;
 }
 
+/**
+ * @deprecated Legacy alias for the action subset of {@link Elements}; not
+ *             consumed internally. Kept for source compatibility.
+ */
 export interface ElementsActions {
   confirmPayment: (
     paymentElementRef: { current: PaymentElementHandle | null } | string,

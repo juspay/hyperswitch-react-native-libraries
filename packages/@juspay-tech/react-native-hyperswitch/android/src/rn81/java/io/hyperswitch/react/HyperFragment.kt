@@ -79,9 +79,9 @@ class HyperFragment : ReactFragment() {
    */
   private val currentReactContext: ReactContext?
     get() = if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      getReactHost().currentReactContext
+      ReactNativeController.getReactHost().currentReactContext
     } else {
-      getReactNativeHost()
+      ReactNativeController.getReactNativeHost()
         .reactInstanceManager
         .currentReactContext
     }
