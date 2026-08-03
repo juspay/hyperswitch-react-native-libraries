@@ -1,17 +1,25 @@
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 import type { ViewProps } from 'react-native';
-import { DirectEventHandler } from 'react-native/Libraries/Types/CodegenTypes';
+import type {
+  DirectEventHandler,
+  UnsafeMixed,
+} from 'react-native/Libraries/Types/CodegenTypes';
 
 export interface NativeProps extends ViewProps {
   widgetType?: string;
   sdkAuthorization?: string;
-  options?: Readonly<{}>;
+  // Pass-through configuration object (matches Android's ReadableMap → setConfiguration).
+  // UnsafeMixed maps to folly::dynamic on iOS and ReadableMap on Android.
+  options?: UnsafeMixed;
+  // Both events carry the SAME envelope on iOS and Android:
+  //   { "eventName": "<type>", "payload": "<raw-json-string>" }
   onPaymentResult?: DirectEventHandler<{
-    result?: string;
+    eventName: string;
+    payload: string;
   }>;
   onPaymentEvent?: DirectEventHandler<{
     eventName: string;
-    payload?: Readonly<{}>;
+    payload: string;
   }>;
 }
 

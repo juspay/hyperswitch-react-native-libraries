@@ -1,11 +1,11 @@
 //
 //  NativePaymentElementView.h
 //
-//  Fabric (New Architecture) component for RCTNativePaymentElement.
-//  Matches Android's PaymentElementViewManager (view name "RCTNativePaymentElement").
+//  Fabric (New Architecture) component for RCTNativePaymentWidget.
+//  Matches Android's PaymentElementViewManager (view name "RCTNativePaymentWidget").
 //
 //  Old arch uses requireNativeComponent('NativePaymentWidget') →  NativePaymentWidget.swift
-//  New arch uses codegenNativeComponent('RCTNativePaymentElement') →  this file
+//  New arch uses codegenNativeComponent('RCTNativePaymentWidget') →  this file
 //
 
 #pragma once

@@ -146,14 +146,18 @@ public class HyperModuleImpl: NSObject {
     }
 
     @objc public func emitPaymentEvent(_ rootTag: NSNumber, eventType: String, payload: NSDictionary) {
+        // Copy the payload to prevent concurrent mutation during iteration
+        // (Fixes F14Set assertion crash in debug builds when embedded
+        // RN bundle's TextInput fires rapid focus/blur events)
         let map = (payload as? [String: Any]) ?? [:]
+        let safeMap = map.reduce(into: [:]) { $0[$1.key] = $1.value }
         resolveSubscribingTarget(rootTag) { target in
             if let widget = target as? PaymentWidget, widget.paymentEventListener != nil {
-                widget.dispatchPaymentEvent(type: eventType, payload: map)
+                widget.dispatchPaymentEvent(type: eventType, payload: safeMap)
             } else if let cvc = target as? CVCWidget, cvc.paymentEventListener != nil {
-                cvc.dispatchPaymentEvent(type: eventType, payload: map)
+                cvc.dispatchPaymentEvent(type: eventType, payload: safeMap)
             } else if let sheet = target as? PaymentSheet, sheet.paymentEventListener != nil {
-                sheet.dispatchPaymentEvent(type: eventType, payload: map)
+                sheet.dispatchPaymentEvent(type: eventType, payload: safeMap)
             }
         }
     }

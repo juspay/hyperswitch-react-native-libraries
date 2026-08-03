@@ -57,6 +57,14 @@ public class CVCWidget: UIControl {
         commonInit()
     }
 
+    private func dispatchToMain(_ block: @escaping () -> Void) {
+        if Thread.isMainThread {
+            block()
+        } else {
+            DispatchQueue.main.async(execute: block)
+        }
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -100,12 +108,27 @@ public class CVCWidget: UIControl {
             "paymentToken": paymentToken,
             "paymentMethodId": paymentMethodId as Any,
         ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["triggerWidgetAction", payload],
-            completion: nil
-        )
+        dispatchToMain {
+            // Bridge can be nil on New Architecture (bridgeless) hosts before the
+            // embedded runtime finishes initialising. Guard to avoid a hard crash.
+            guard let bridge = RNViewManager.sharedInstance.bridge else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                        "RCTDeviceEventEmitter",
+                        method: "emit",
+                        args: ["triggerWidgetAction", payload],
+                        completion: nil
+                    )
+                }
+                return
+            }
+            bridge.enqueueJSCall(
+                "RCTDeviceEventEmitter",
+                method: "emit",
+                args: ["triggerWidgetAction", payload],
+                completion: nil
+            )
+        }
     }
 
     internal func dispatchPaymentEvent(type: String, payload: [String: Any]) {

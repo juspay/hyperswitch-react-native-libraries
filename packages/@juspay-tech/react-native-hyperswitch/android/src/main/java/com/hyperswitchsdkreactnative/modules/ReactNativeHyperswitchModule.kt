@@ -242,7 +242,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
             confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             handler?.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
-              promise?.resolve(result)
+              promise?.resolve(result.toJSONString())
             }
           }
         },
@@ -259,7 +259,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
       )
     } else {
       handler?.confirmWithCustomerLastUsedPaymentMethod(null) { result ->
-        promise?.resolve(result)
+        promise?.resolve(result.toJSONString())
       }
     }
   }
@@ -283,7 +283,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
             confirmViaWidgetView(reactTag, pm.paymentToken, pm.paymentMethodId, promise)
           } else {
             handler?.confirmWithCustomerDefaultPaymentMethod(null) { result ->
-              promise?.resolve(result)
+              promise?.resolve(result.toJSONString())
             }
           }
         },
@@ -300,7 +300,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
       )
     } else {
       handler?.confirmWithCustomerDefaultPaymentMethod(null) { result ->
-        promise?.resolve(result)
+        promise?.resolve(result.toJSONString())
       }
     }
   }
@@ -331,7 +331,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
       return
     } else {
       handler?.confirmWithCustomerPaymentToken(token, null) { result ->
-        promise?.resolve(result)
+        promise?.resolve(result.toJSONString())
       }
     }
   }
@@ -364,7 +364,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
             StandardResult.Failed(
               code = "INVALID_VIEW",
               error = Throwable("View at reactTag $reactTag is not a CvcWidget")
-            )
+            ).toJSONString()
           )
         }
       } catch (e: Exception) {
@@ -372,7 +372,7 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
           StandardResult.Failed(
             code = "NO_WIDGET",
             error = Throwable("CvcWidget not found at reactTag $reactTag: ${e.message}")
-          )
+          ).toJSONString()
         )
       }
     }

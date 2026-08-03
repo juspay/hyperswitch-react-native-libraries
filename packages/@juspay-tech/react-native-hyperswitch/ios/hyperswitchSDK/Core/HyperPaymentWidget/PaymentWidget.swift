@@ -65,6 +65,14 @@ public class PaymentWidget: UIControl {
         commonInit()
     }
 
+    private func dispatchToMain(_ block: @escaping () -> Void) {
+        if Thread.isMainThread {
+            block()
+        } else {
+            DispatchQueue.main.async(execute: block)
+        }
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -137,12 +145,14 @@ public class PaymentWidget: UIControl {
             "rootTag": self.widgetReactTag ?? -1,
             "actionType": "CONFIRM_PAYMENT_ACTION",
         ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["triggerWidgetAction", payload],
-            completion: nil
-        )
+        dispatchToMain {
+            RNViewManager.sharedInstance.bridge?.enqueueJSCall(
+                "RCTDeviceEventEmitter",
+                method: "emit",
+                args: ["triggerWidgetAction", payload],
+                completion: nil
+            )
+        }
     }
 
     internal func setPaymentEventListener(_ listener: PaymentEventListener?) {

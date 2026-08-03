@@ -190,10 +190,20 @@ public class NativeHyperswitchModuleImpl: NSObject {
             configuration = nil
         }
 
+        // Guard against double-resolving the promise when Metro reload invalidates the
+        // old JS context and the session callback fires on the still-live old module.
+        var didResolve = false
+        let safeResolve: RCTPromiseResolveBlock = { value in
+            DispatchQueue.main.async {
+                guard !didResolve else { return }
+                didResolve = true
+                resolve(value)
+            }
+        }
+
         session.getCustomerSavedPaymentMethods({ [weak self] handler in
             self?.activePaymentSessionHandler = handler
-            // Matches Android: JSONObject { "code": "success", "message": "Saved payment methods is initialized" }.toString()
-            resolve("{\"code\":\"success\",\"message\":\"Saved payment methods is initialized\"}")
+            safeResolve("{\"code\":\"success\",\"message\":\"Saved payment methods is initialized\"}")
         }, configuration: configuration)
     }
 

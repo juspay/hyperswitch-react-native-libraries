@@ -208,58 +208,6 @@ public class NativePaymentWidgetView: UIView {
         responseSenderCallback = nil
     }
 
-    private func paymentResultPayload(_ result: PaymentResult) -> String {
-        switch result {
-        case .completed(let data), .canceled(let data):
-            // Pass raw JSON string from embedded bundle AS-IS (like Android)
-            return data
-        case .failed(let error as NSError):
-            // Check if the error contains the original raw JSON from embedded bundle
-            if let rawJSON = error.userInfo["rawJSON"] as? String {
-                return rawJSON
-            }
-            
-            // Fallback: construct JSON from error (for native errors)
-            let payload: [String: Any] = [
-                "status": "failed",
-                "code": error.domain.isEmpty ? "UNKNOWN_ERROR" : error.domain,
-                "message": error.userInfo["message"] as? String ?? error.localizedDescription,
-            ]
-            
-            guard let data = try? JSONSerialization.data(withJSONObject: payload),
-                let json = String(data: data, encoding: .utf8)
-            else {
-                return "{\"status\":\"failed\",\"message\":\"Invalid payment result\"}"
-            }
-            return json
-        }
-    }
-
-    private func paymentResultMap(_ result: PaymentResult) -> [String: Any] {
-        // Legacy method - kept for compatibility
-        // New code should use paymentResultPayload() for raw JSON string
-        switch result {
-        case .completed(let data):
-            return [
-                "status": "success",
-                "message": "Payment confirmed successfully",
-                "data": data,
-            ]
-        case .canceled(let data):
-            return [
-                "status": "cancelled",
-                "message": "Payment confirmation cancelled",
-                "data": data,
-            ]
-        case .failed(let error as NSError):
-            return [
-                "status": "failed",
-                "code": error.domain,
-                "message": error.userInfo["message"] as? String ?? error.localizedDescription,
-            ]
-        }
-    }
-
     // MARK: - Payment Result Handling
     
     /// Called from exitWidgetPaymentsheet - final result that triggers exit
@@ -292,31 +240,11 @@ public class NativePaymentWidgetView: UIView {
         onPaymentResult?(["result": rnMessage])
     }
     
-    /// Legacy method for PaymentWidget compatibility (still uses PaymentResult)
+    /// Adapter: the inner PaymentWidget still completes with the public PaymentResult type.
+    /// This is the single place where PaymentResult is converted to StandardResult;
+    /// everything downstream operates on StandardResult.rawJSON.
     private func handlePaymentResult(_ result: PaymentResult) {
-        // Convert to StandardResult (preserves raw JSON)
-        let standardResult = paymentResultToStandardResult(result)
-        handlePaymentResult(standardResult.rawJSON, triggerExit: false)
-    }
-    
-    private func paymentResultToStandardResult(_ result: PaymentResult) -> StandardResult {
-        switch result {
-        case .completed(let data), .canceled(let data):
-            // data is already raw JSON from embedded bundle - pass through directly
-            return StandardResult(rawJSON: data)
-        case .failed(let error as NSError):
-            // Check if error contains original raw JSON from embedded bundle
-            if let rawJSON = error.userInfo["rawJSON"] as? String {
-                return StandardResult(rawJSON: rawJSON)
-            }
-            
-            // Fallback: construct from NSError (for native errors)
-            return StandardResult.failed(
-                code: error.domain.isEmpty ? nil : error.domain,
-                message: error.userInfo["message"] as? String ?? error.localizedDescription,
-                error: error
-            )
-        }
+        handlePaymentResult(StandardResult(paymentResult: result).rawJSON, triggerExit: false)
     }
 
     @objc public func didSetProps() {

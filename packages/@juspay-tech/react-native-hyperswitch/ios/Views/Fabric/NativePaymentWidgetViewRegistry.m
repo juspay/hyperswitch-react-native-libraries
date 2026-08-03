@@ -38,8 +38,10 @@
     });
 }
 
-- (nullable UIView *)viewForTag:(NSNumber *)tag {
-    return [_map objectForKey:tag];
+- (nullable UIView *)viewForTag:(NSNumber * _Nonnull)tag {
+    @synchronized (self) {
+        return [_map objectForKey:tag];
+    }
 }
 
 @end

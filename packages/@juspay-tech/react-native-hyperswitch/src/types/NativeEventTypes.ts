@@ -67,7 +67,7 @@ export type cvcStatusEvent = CvcStatusEvent;
 /** Structured payload delivered via the widget's `onPaymentEvent` callback. */
 export type PaymentEventResult = {
   eventName: string;
-  payload: Record<string, unknown>;
+  payload: string;
 };
 /** @deprecated Use {@link PaymentEventResult}. */
 export type paymentEventResult = PaymentEventResult;
@@ -97,7 +97,11 @@ export type NativePaymentWidgetPropTypes = {
     paymentSessionConfig?: PaymentSessionConfiguration;
     configuration?: Record<string, unknown>;
   };
-  onPaymentResult?: (event: NativeEventEnvelope) => void;
+  onPaymentResult?: (event: NativeEventEnvelope & {nativeEvent: {
+  eventName: string;
+  payload: string;
+  target: number;
+}}) => void;
   style?: ViewStyle;
   onPaymentEvent?: (event: PaymentEventNative) => void;
 };

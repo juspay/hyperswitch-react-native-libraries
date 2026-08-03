@@ -84,8 +84,12 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
 
       if (event.nativeEvent.eventName === 'CVC_STATUS') {
         try {
-          const outerDict = event.nativeEvent.payload as
-            Record<string, unknown> | undefined;
+          const payloadString = event.nativeEvent.payload;
+          const outerDict = (
+            typeof payloadString === 'string'
+              ? JSON.parse(payloadString)
+              : payloadString
+          ) as Record<string, unknown> | undefined;
           if (!outerDict) {
             return;
           }

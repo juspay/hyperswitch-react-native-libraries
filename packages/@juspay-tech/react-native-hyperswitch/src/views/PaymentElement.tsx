@@ -11,7 +11,7 @@ import {
 import type {
   paymentEventResult,
   paymentEventNative,
-  nativeEvent,
+  NativeEventEnvelope,
 } from '../types/NativeEventTypes';
 import type { PaymentElementHandle } from '../types/definitions';
 import type { PaymentResult } from '../types/paymentresult';
@@ -102,16 +102,16 @@ export const PaymentElement = forwardRef<
       const warningPayload = makeUnknownEventWarningPayload(invalidEvents);
       onChange({
         eventName: 'UNKNOWN_EVENT_SUBSCRIBED',
-        payload: {
+        payload: JSON.stringify({
           message: warningPayload.message,
           invalidEvents: warningPayload.invalidEvents,
           validEvents: warningPayload.validEvents,
-        },
+        }),
       });
     }
   }, [options, onChange]);
 
-  const onPaymentResultInternal = (event: nativeEvent) => {
+  const onPaymentResultInternal = (event: NativeEventEnvelope) => {
     onPaymentResult(
       mapNativeResponseToPaymentResult(event.nativeEvent.result ?? '')
     );

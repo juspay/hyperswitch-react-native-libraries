@@ -107,7 +107,14 @@ export async function getCustomerSavedPaymentMethods(
   const payload = {
     hyperswitchConfig,
     paymentSessionConfig,
-    configuration,
+    configuration : {
+      ...configuration,
+      paymentMethodLayout : {
+        savedMethodCustomization : {
+          hiddenPaymentMethods : configuration?.hiddenPaymentMethods ?? [],
+        },
+      }
+    },
   };
   await NativeHyperswitchModule.getCustomerSavedPaymentMethods(payload);
   return createCustomerSavedPaymentMethodsSession();
