@@ -94,7 +94,7 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
 
     /// Detects the merchant app's React Native version and returns the appropriate bundle.
     /// Version selection:
-    ///   - RN 0.76 - 0.81: hyperswitch-rn76-81.bundle
+    ///   - RN 0.76 - 0.81: hyperswitch.bundle
     ///   - RN 0.82+:       hyperswitch-rn82plus.bundle
     ///   - Fallback:       hyperswitch.bundle (legacy)
     public override func bundleURL() -> URL? {
@@ -115,7 +115,7 @@ internal class RNViewManager: RCTDefaultReactNativeFactoryDelegate {
             if majorVersion == 0 {
                 // RN 0.x versions
                 if minorVersion >= 76 && minorVersion <= 81 {
-                    bundleName = "hyperswitch-rn76-81"
+                    bundleName = "hyperswitch"
                 } else if minorVersion >= 82 {
                     bundleName = "hyperswitch-rn82plus"
                 } else {

@@ -1,10 +1,11 @@
 package com.hyperswitchsdkreactnative.views
 
 import android.app.Activity
+import android.view.View.MeasureSpec
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContext
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
@@ -77,11 +78,12 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
   }
 
   @ReactProp(name = "options")
-  override fun setOptions(container: PaymentWidgetView, options: Dynamic?) {
-    options?.asMap()?.let {
+  override fun setOptions(container: PaymentWidgetView, options: ReadableMap?) {
+    options?.let {
       container.setConfiguration(it)
     }
   }
+
   private fun emitOnPaymentResult(
     container: PaymentWidgetView,
     result: String

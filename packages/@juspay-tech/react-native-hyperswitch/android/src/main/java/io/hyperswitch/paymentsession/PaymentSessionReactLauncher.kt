@@ -104,7 +104,8 @@ class PaymentSessionReactLauncher(
           )
           when (host.lifecycleState) {
             // Instance died (JS crash/invalidate) but host is still alive.
-            LifecycleState.READY -> host.reload("headless-session-recreate")
+            LifecycleState.RESUMED, LifecycleState.BEFORE_RESUME ->
+              host.reload("headless-session-recreate")
             // Fresh/recreated (or not-yet-started) host. start() is idempotent
             // while a ReactInstance creation is already in flight.
             else -> host.start()

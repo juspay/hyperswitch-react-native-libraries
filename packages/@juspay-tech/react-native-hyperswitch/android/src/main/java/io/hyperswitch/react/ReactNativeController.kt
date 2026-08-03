@@ -189,7 +189,7 @@ object ReactNativeController {
   fun getOrRecreateReactHost(application: Application): ReactHost {
     synchronized(this) {
       val existing = reactHost.get()
-      if (existing != null && existing.lifecycleState != LifecycleState.DESTROYED) {
+      if (existing != null && existing.lifecycleState != LifecycleState.BEFORE_CREATE) {
         return existing
       }
       return createReactHost(application).also { reactHost.set(it) }

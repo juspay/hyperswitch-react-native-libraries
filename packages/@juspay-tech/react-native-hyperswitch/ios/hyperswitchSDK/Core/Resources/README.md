@@ -4,7 +4,7 @@ This directory contains version-specific React Native bundles for the embedded H
 
 ## Bundle Files
 
-### `hyperswitch-rn76-81.bundle`
+### `hyperswitch.bundle`
 **Target:** React Native versions 0.76 through 0.81
 - Built from: `../hyperswitch-client-core` (NEW-ARCH-2026 or turbo branch)
 - Compatible with: RN 0.76, 0.79, 0.81
@@ -16,40 +16,18 @@ This directory contains version-specific React Native bundles for the embedded H
 - Compatible with: RN 0.82, 0.85, and future versions
 - Architecture: New Architecture (Turbo Modules)
 
-### `hyperswitch.bundle` (Legacy)
-**Target:** Fallback for any version detection issues
-- Kept for backward compatibility
-- Used when version-specific bundles are not found
-
 ## Version Selection Logic
 
 The SDK automatically detects the merchant app's React Native version at runtime using `RCTGetReactNativeVersion()` and loads the appropriate bundle:
 
 ```swift
-RN 0.76 - 0.81  →  hyperswitch-rn76-81.bundle
+RN 0.76 - 0.81  →  hyperswitch.bundle
 RN 0.82+        →  hyperswitch-rn82plus.bundle
 Fallback        →  hyperswitch.bundle
 ```
 
 See `RNViewManager.swift` `bundleURL()` method for implementation details.
 
-## Building Bundles
-
-To generate these bundles, run the following commands from the SDK root:
-
-```bash
-# For RN 0.76-0.81
-yarn bundle:ios:rn76-81
-
-# For RN 0.82+
-yarn bundle:ios:rn82plus
-```
-
-The build scripts should:
-1. Navigate to `../hyperswitch-client-core`
-2. Switch to the appropriate branch (NEW-ARCH-2026 or turbo)
-3. Run Metro bundler with correct RN version
-4. Copy the output to this directory
 
 ## File Size
 

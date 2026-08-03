@@ -32,7 +32,6 @@ Pod::Spec.new do |s|
   s.resources = [
     "ios/hyperswitchSDK/Core/Resources/HyperOTA.plist",
     "ios/hyperswitchSDK/Core/Resources/hyperswitch.bundle",
-    "ios/hyperswitchSDK/Core/Resources/hyperswitch-rn76-81.bundle",
     "ios/hyperswitchSDK/Core/Resources/hyperswitch-rn82plus.bundle",
   ]
   

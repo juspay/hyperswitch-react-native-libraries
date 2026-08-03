@@ -22,7 +22,7 @@ import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.UIManagerModule
 import com.facebook.react.uimanager.common.UIManagerType
 import com.hyperswitchsdkreactnative.BuildConfig
-import com.hyperswitchsdkreactnative.NativeHyperswitchSdkNativeSpec
+import com.hyperswitchsdkreactnative.NativeHyperModuleSpec
 import io.hyperswitch.payments.GooglePayCallbackManager
 import io.hyperswitch.paymentsession.LaunchOptions
 import io.hyperswitch.paymentsession.PaymentSheetCallbackManager
@@ -34,7 +34,7 @@ import org.json.JSONObject
 import io.hyperswitch.webview.utils.Callback as HSCallback
 
 class HyperModule internal constructor(private val rct: ReactApplicationContext) :
-  NativeHyperswitchSdkNativeSpec(rct) {
+  NativeHyperModuleSpec(rct) {
   companion object {
 
     const val NAME = "HyperModule"
