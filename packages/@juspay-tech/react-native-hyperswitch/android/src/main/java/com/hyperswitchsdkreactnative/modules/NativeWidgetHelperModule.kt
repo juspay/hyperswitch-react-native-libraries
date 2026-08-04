@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
-class NativeWidgetHelperModule(reactContext: ReactApplicationContext) :
+class NativeWidgetHelperModule(private val reactContext: ReactApplicationContext) :
   NativeWidgetHelperModuleSpec(reactContext) {
 
   private val moduleScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -42,7 +42,7 @@ class NativeWidgetHelperModule(reactContext: ReactApplicationContext) :
     UiThreadUtil.runOnUiThread {
       val uiManagerModule =
         UIManagerHelper.getUIManager(
-          reactApplicationContext,
+          reactContext,
           uiManagerType
         )
       try {
@@ -95,7 +95,7 @@ class NativeWidgetHelperModule(reactContext: ReactApplicationContext) :
     UiThreadUtil.runOnUiThread {
       val uiManagerModule =
         UIManagerHelper.getUIManager(
-          reactApplicationContext,
+          reactContext,
           uiManagerType
         )
       try {

@@ -5,7 +5,7 @@ import io.hyperswitch.paymentsheet.PaymentResult
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
-typealias ExitCallback = (PaymentResult) -> Unit
+typealias ExitCallback = (String) -> Unit
 
 object ExitHeadlessCallBackManager {
     private val callbacks = ConcurrentHashMap<Int, ExitCallback>()
@@ -22,8 +22,8 @@ object ExitHeadlessCallBackManager {
     fun executeCallback(rootTag: Int, data: String): Boolean {
         val cb = callbacks.remove(rootTag) ?: callbacks.remove(-1)
 
-        val result = parseResult(data)
-        cb?.invoke(result)
+//        val result = parseResult(data)
+        cb?.invoke(data)
         return true
     }
 
@@ -31,7 +31,7 @@ object ExitHeadlessCallBackManager {
         callbacks.remove(rootTag)
     }
 
-    private fun parseResult(data: String): PaymentResult {
+   fun parseResult(data: String): PaymentResult {
         val message = JSONObject(data)
         return when (val status = message.getString("status")) {
             "cancelled" -> PaymentResult.Canceled(status)

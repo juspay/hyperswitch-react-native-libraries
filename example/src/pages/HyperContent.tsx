@@ -132,7 +132,13 @@ export function HyperContent(props: SharedProps) {
           onPaymentResult={(data) => {
             props.onClose();
             setTimeout(() => {
-              Alert.alert(`Type: ${data?.type}`, `Message: ${data?.message}`);
+              if(data.status === "completed"){
+                Alert.alert(`Payment completed successfully`);
+              }else if(data.status === "canceled"){
+                Alert.alert(`Payment cancelled`);
+              }else{
+                Alert.alert(`Type: ${data?.type}`, `Message: ${data?.message}`);
+              }
             }, 0);
           }}
           onChange={(event) => {

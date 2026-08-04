@@ -59,7 +59,10 @@ internal class PaymentSessionHandlerImpl(
         paymentToken: String, cvc: String?, resultHandler: (PaymentResult) -> Unit
     ) {
         try {
-            val registered = ExitHeadlessCallBackManager.tryRegisterCallback(-1, resultHandler)
+            val resultToPaymentResultHandler = { result: String ->
+              resultHandler(ExitHeadlessCallBackManager.parseResult(result))
+            }
+            val registered = ExitHeadlessCallBackManager.tryRegisterCallback(-1, resultToPaymentResultHandler)
             if (!registered) {
                 resultHandler(PaymentResult.Failed(
                     Throwable("Payment confirmation already in progress for this handler").apply {

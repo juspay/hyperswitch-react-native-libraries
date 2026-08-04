@@ -390,7 +390,7 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
     UiThreadUtil.runOnUiThread {
       val uiManagerModule =
         UIManagerHelper.getUIManager(
-          reactApplicationContext,
+          rct,
           uiManagerType
         )
       try {

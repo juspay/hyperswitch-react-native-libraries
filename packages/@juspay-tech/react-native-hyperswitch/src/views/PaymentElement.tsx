@@ -116,7 +116,6 @@ export const PaymentElement = forwardRef<
   payload: string;
   target: number;
 }}) => {
-    console.log("native event received in PaymentElement onPaymentResultInternal", event.nativeEvent);
     onPaymentResult(
       mapNativeResponseToPaymentResult(
         Platform.OS === 'ios'

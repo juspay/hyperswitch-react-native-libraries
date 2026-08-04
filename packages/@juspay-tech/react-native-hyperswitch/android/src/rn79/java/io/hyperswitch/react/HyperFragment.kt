@@ -421,8 +421,8 @@ class HyperFragment : ReactFragment() {
       return
     }
 
-    val exitCallback: (PaymentResult) -> Unit = { result ->
-      callback(result.toJSONString())
+    val exitCallback: (String) -> Unit = { result ->
+      callback(result)
     }
 
     val registered =
