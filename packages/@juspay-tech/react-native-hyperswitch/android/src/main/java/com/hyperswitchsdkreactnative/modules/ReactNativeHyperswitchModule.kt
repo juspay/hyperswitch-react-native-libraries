@@ -357,7 +357,13 @@ class ReactNativeHyperswitchModule(reactContext: ReactApplicationContext) :
         val view = uiManagerModule?.resolveView(reactTag)
         if (view is PaymentWidgetView) {
           view.confirmCvcPayment(paymentToken, paymentMethodId) { result: String ->
-            promise?.resolve(result)
+            // guard: promise may be resolved after React context teardown — Arguments.fromJavaArgs
+            // throws RuntimeException when the bridge is gone. Catch and log instead of crashing.
+            try {
+              promise?.resolve(result)
+            } catch (e: RuntimeException) {
+              android.util.Log.w("HyperswitchModule", "Promise resolve failed (bridge torn down?): ${e.message}")
+            }
           }
         } else {
           promise?.resolve(

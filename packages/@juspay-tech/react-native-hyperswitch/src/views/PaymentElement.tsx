@@ -119,8 +119,8 @@ export const PaymentElement = forwardRef<
     onPaymentResult(
       mapNativeResponseToPaymentResult(
         Platform.OS === 'ios'
-          ? event.nativeEvent.result
-          : event.nativeEvent.payload ?? ''
+          ? event.nativeEvent.result ?? ""
+          : event.nativeEvent.payload ?? ""
       )
     );
   };
