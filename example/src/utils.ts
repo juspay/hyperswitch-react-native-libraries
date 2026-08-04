@@ -134,7 +134,7 @@ export const intentData = {
   order_details: [
     { product_name: "Apple iphone 15", quantity: 1, amount: 6500 },
   ],
-  currency: "EUR",
+  currency: "USD",
   confirm: false,
   capture_method: "automatic",
   authentication_type: "three_ds",
@@ -170,7 +170,7 @@ export const intentData = {
       city: "San Fransico",
       state: "California",
       zip: "94122",
-      country: "DE",
+      country: "US",
       first_name: "joseph",
       last_name: "Doe",
     },

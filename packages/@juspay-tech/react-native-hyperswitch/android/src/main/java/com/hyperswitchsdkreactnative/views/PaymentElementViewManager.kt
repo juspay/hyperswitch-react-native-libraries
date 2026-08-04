@@ -3,6 +3,7 @@ package com.hyperswitchsdkreactnative.views
 import android.app.Activity
 import android.view.View.MeasureSpec
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.bridge.ReadableMap
@@ -78,8 +79,8 @@ class PaymentElementViewManager : SimpleViewManager<PaymentWidgetView>(),
   }
 
   @ReactProp(name = "options")
-  override fun setOptions(container: PaymentWidgetView, options: ReadableMap?) {
-    options?.let {
+  override fun setOptions(container: PaymentWidgetView, options: Dynamic?) {
+    options?.asMap()?.let {
       container.setConfiguration(it)
     }
   }

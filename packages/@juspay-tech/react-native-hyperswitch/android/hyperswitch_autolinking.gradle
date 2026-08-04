@@ -364,7 +364,13 @@ ext.applyHyperswitchAutolinking = { Project project ->
     }
   }
 
-  project.preBuild.dependsOn project.generatePackageList
+  // Hook generatePackageList into preBuild — running it on the compile tasks
+  // (compileDebugJavaWithJavac / compileDebugKotlin) creates a circular
+  // dependency with bundleLibCompileToJarDebug in AGP 8.x, because the
+  // bundleLib* task depends on the compile output of the same variant.
+  project.tasks.named("preBuild").configure {
+    dependsOn project.tasks.named("generatePackageList")
+  }
 
   project.android {
     sourceSets {

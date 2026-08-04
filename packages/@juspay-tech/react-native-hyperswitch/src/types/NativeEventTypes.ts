@@ -97,7 +97,7 @@ export type NativePaymentWidgetPropTypes = {
     paymentSessionConfig?: PaymentSessionConfiguration;
     configuration?: Record<string, unknown>;
   };
-  onPaymentResult?: (event: NativeEventEnvelope & {nativeEvent: {
+  onPaymentResult?: (event: NativeEventEnvelope & { nativeEvent: {
   eventName: string;
   payload: string;
   target: number;

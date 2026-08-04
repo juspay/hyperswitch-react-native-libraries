@@ -164,7 +164,7 @@
       },
       "componentProvider": {
         "ApplePayView": "ApplePayView",
-        "RCTNativePaymentElement": "NativePaymentElementView"
+        "RCTNativePaymentWidget": "NativePaymentElementView"
       }
     }
   },

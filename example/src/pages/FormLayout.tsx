@@ -245,6 +245,8 @@ export function FormLayout({
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 16,
+    maxHeight: 600,
+    minHeight: 400,
   },
   header: {
     paddingTop: 24,
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   paymentSection: {
-    minHeight: 500,
+    minHeight: 400,
   },
   amountSection: {
     alignItems: "center",
