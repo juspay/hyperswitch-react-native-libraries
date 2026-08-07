@@ -228,6 +228,7 @@ open class PaymentWidgetView : FrameLayout {
       "widgetButtonSheet",
       "hostedCheckout",
       "google_pay",
+      "apple_pay",
       "paypal",
       "card",
       "paymentMethodsManagement",

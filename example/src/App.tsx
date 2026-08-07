@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import {
   Hyperswitch,
   type HyperswitchSession,
@@ -35,17 +41,18 @@ export default function App() {
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const initDemo = async () => {
+  const initDemo = async (openDemo: boolean) => {
     if (!hyperPromise) {
       setStatus("HYPERSWITCH_PUBLISHABLE_KEY is not set");
       return;
     }
     setStatus("Initializing demo...");
+
     const serverUrl = serverURL;
     const url = initialBaseUrl
       ? `${initialBaseUrl}/create-payment-intent`
       : undefined;
-    fetch(`${serverUrl !== '' ? serverUrl :  url}`, {
+    fetch(`${serverUrl !== "" ? serverUrl : url}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,6 +71,7 @@ export default function App() {
             });
             setSession(session);
           });
+          setOpenEmbeddedSheet(openDemo);
           setStatus("SDK initialized successfully");
         } else {
           setStatus("Failed to get sdkAuthorization from server");
@@ -81,13 +89,15 @@ export default function App() {
     }
     let result = await session.presentPaymentSheet({
       merchantDisplayName: "Hyperswitch Demo",
-      appearance :{
+      appearance: {
         theme: "Glass",
-      }
+      },
     });
     console.log("Payment result", result);
-    if (result.type === "completed") {
+    if (result.status === "completed") {
       setStatus("Payment completed successfully");
+    } else if (result.status === "canceled") {
+      setStatus("Payment canceled by user");
     } else {
       setStatus(`Payment ${result.type}: ${result.message}`);
     }
@@ -112,32 +122,35 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      {status && (
-        <View style={styles.statusBar}>
-          <Text style={styles.statusText}>Status: {status.toUpperCase()}</Text>
-        </View>
-      )}
-      <TouchableOpacity style={styles.button} onPress={() => initDemo()}>
-        <Text style={styles.buttonText}>Init session</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, { marginTop: 16 }]}
-        onPress={() => openSDK()}
-      >
-        <Text style={styles.buttonText}>Open Sheet</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, { marginTop: 16 }]}
-        onPress={() => {
-          initDemo();
-          setOpenEmbeddedSheet(true);
-        }}
-      >
-        <Text style={styles.buttonText}>Open Custom Sheet</Text>
-      </TouchableOpacity>
-      {openEmbeddedSheet && <DemoPopup {...props} />}
-    </View>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <View style={styles.container}>
+        {status && (
+          <View style={styles.statusBar}>
+            <Text style={styles.statusText}>
+              Status: {status.toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity style={styles.button} onPress={() => initDemo(false)}>
+          <Text style={styles.buttonText}>Init session</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 16 }]}
+          onPress={() => openSDK()}
+        >
+          <Text style={styles.buttonText}>Open Sheet</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 16 }]}
+          onPress={() => {
+            initDemo(true);
+          }}
+        >
+          <Text style={styles.buttonText}>Open Custom Sheet</Text>
+        </TouchableOpacity>
+        {openEmbeddedSheet && <DemoPopup {...props} />}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

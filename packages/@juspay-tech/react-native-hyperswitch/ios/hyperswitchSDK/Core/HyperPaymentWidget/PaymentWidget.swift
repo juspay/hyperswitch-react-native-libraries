@@ -113,12 +113,7 @@ public class PaymentWidget: UIControl {
             .sink { [weak self] in
                 guard let self = self else { return }
                 let payload: [String: Any] = ["rootTag": self.widgetReactTag ?? -1]
-                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                    "RCTDeviceEventEmitter",
-                    method: "emit",
-                    args: ["updateIntentInit", payload],
-                    completion: nil
-                )
+                HyperModuleImpl.shared.updateIntentInit(data: payload)
             }
             .store(in: &cancellables)
 
@@ -130,12 +125,7 @@ public class PaymentWidget: UIControl {
                     "rootTag": self.widgetReactTag ?? -1,
                     "sdkAuthorization": sdkAuthorization,
                 ]
-                RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                    "RCTDeviceEventEmitter",
-                    method: "emit",
-                    args: ["updateIntentComplete", payload],
-                    completion: nil
-                )
+                HyperModuleImpl.shared.updateIntentComplete(data: payload)
             }
             .store(in: &cancellables)
     }
@@ -146,12 +136,7 @@ public class PaymentWidget: UIControl {
             "actionType": "CONFIRM_PAYMENT_ACTION",
         ]
         dispatchToMain {
-            RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                "RCTDeviceEventEmitter",
-                method: "emit",
-                args: ["triggerWidgetAction", payload],
-                completion: nil
-            )
+            HyperModuleImpl.shared.triggerWidgetAction(data: payload)
         }
     }
 

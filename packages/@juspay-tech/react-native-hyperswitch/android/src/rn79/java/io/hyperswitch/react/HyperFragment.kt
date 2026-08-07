@@ -112,23 +112,43 @@ class HyperFragment : ReactFragment() {
     paymentEventListener = listener
   }
 
-  /**
-   * Emits a device event using whichever React architecture is enabled.
-   *
-   * Returns false when ReactContext is not available.
-   */
   private fun emitDeviceEvent(
     eventName: String,
     payload: Any?
   ): Boolean {
-    val reactContext = currentReactContext ?: return false
+    val module = HyperModule.getActiveInstance()
+    if (module != null && payload is ReadableMap) {
+      try {
+        when (eventName) {
+          "confirm" -> module.emitConfirmEvent(payload)
+          "widget" -> module.emitWidgetEvent(payload)
+          "confirmEC" -> module.emitConfirmECEvent(payload)
+          "triggerWidgetAction" -> module.emitTriggerWidgetActionEvent(payload)
+          "updateIntentInit" -> module.emitUpdateIntentInitEvent(payload)
+          "updateIntentComplete" -> module.emitUpdateIntentCompleteEvent(payload)
+          else -> {
+            // Unknown event — fall through to bridge path
+            val reactContext = currentReactContext ?: return false
+            reactContext
+              .getJSModule(
+                DeviceEventManagerModule.RCTDeviceEventEmitter::class.java
+              )
+              .emit(eventName, payload)
+            return true
+          }
+        }
+        return true
+      } catch (_: Exception) {
+        // Fall through to bridge path on failure
+      }
+    }
 
+    val reactContext = currentReactContext ?: return false
     reactContext
       .getJSModule(
         DeviceEventManagerModule.RCTDeviceEventEmitter::class.java
       )
       .emit(eventName, payload)
-
     return true
   }
 

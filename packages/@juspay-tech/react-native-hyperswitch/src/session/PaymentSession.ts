@@ -21,6 +21,7 @@ export async function updateIntent(
     newIntent = await intentResolver();
     await updateIntentCompleteForAllWidgets(newIntent.sdkAuthorization);
   } catch {
+    await updateIntentCompleteForAllWidgets('');
     return;
   }
 }

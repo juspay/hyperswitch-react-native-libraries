@@ -94,15 +94,45 @@ object HyperEventEmitter {
             }
         }
 
-        if (reactContext != null && reactContext!!.hasCatalystInstance()) {
+        // Prefer the codegen typed EventEmitter path when the HyperModule
+        // TurboModule is active — this works in bridgeless mode.
+        val module = HyperModule.getActiveInstance()
+        if (module != null) {
             try {
-                reactContext!!.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                when (tag) {
+                    "confirm" -> module.emitConfirmEvent(writableMap)
+                    "widget" -> module.emitWidgetEvent(writableMap)
+                    "confirmEC" -> module.emitConfirmECEvent(writableMap)
+                    else -> {
+                        // Unknown tag — fall through to bridge path
+                        emitViaDeviceEventEmitter(reactContext, tag, writableMap, map)
+                        return
+                    }
+                }
+                return
+            } catch (_: Exception) {
+                // Fall through to bridge path on failure
+            }
+        }
+
+        emitViaDeviceEventEmitter(reactContext, tag, writableMap, map)
+    }
+
+    private fun emitViaDeviceEventEmitter(
+        context: ReactApplicationContext?,
+        tag: String,
+        writableMap: com.facebook.react.bridge.WritableMap,
+        originalMap: MutableMap<String, String?>
+    ) {
+        if (context != null && context.hasCatalystInstance()) {
+            try {
+                context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                     ?.emit(tag, writableMap)
             } catch (e: Exception) {
-                pendingEvents.add(Pair(tag, map))
+                pendingEvents.add(Pair(tag, originalMap))
             }
         } else {
-            pendingEvents.add(Pair(tag, map))
+            pendingEvents.add(Pair(tag, originalMap))
         }
     }
 

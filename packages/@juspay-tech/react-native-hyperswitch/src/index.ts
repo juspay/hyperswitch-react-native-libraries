@@ -9,6 +9,7 @@ export type * from './types/definitions';
 export type * from './types/elements';
 export type * from './types/NativeEventTypes';
 export type * from './types/PaymentSheetConfiguration';
+export type * from './types/paymentresult';
 import NativeHyperswitchModule from './codegen/modules/NativeHyperswitchModule';
 import { createPaymentSession } from './session/PaymentSession';
 import { Elements } from './types/elements';
@@ -65,3 +66,7 @@ export {
 export { CVCElement as CardCVCElement } from './views/CVCElement';
 
 export { PaymentElement } from './views/PaymentElement';
+
+export { ApplePayButton } from './views/ApplePayButton';
+
+export { GooglePayButton } from './views/GooglePayButton';

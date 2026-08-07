@@ -4,30 +4,30 @@ import { useHyperElementsContext } from '../context/HyperElements';
 import type { CvcWidgetOptions } from '../types/definitions';
 import { registerWidget, unregisterWidget } from '../widget/WidgetRegistry';
 import type {
-  paymentEventResult,
-  paymentResult,
-  paymentEventNative,
+  PaymentEventNative,
+  PaymentEventResult,
 } from '../types/NativeEventTypes';
 import type { SavedMethodCustomization } from '../types/PaymentSheetConfiguration';
 import NativePaymentWidgetImpl from './PaymentWidgetBridge';
 import { useNativeViewTag } from './useNativeViewTag';
+import { PaymentResult } from '../types/paymentresult';
 
 type CVCElementProps = {
   id?: string;
   options?: CvcWidgetOptions;
-  onChange?: (event: paymentEventResult) => void;
+  onChange?: (event: PaymentEventResult) => void;
   onFocus?: () => void;
   onReady?: () => void;
   onBlur?: () => void;
-  onPaymentResult?: (result: paymentResult) => void;
+  onPaymentResult?: (result: PaymentResult) => void;
   style?: ViewStyle;
 };
 
 type CVCWidgetRef = {
-  confirmPayment: () => Promise<paymentResult>;
+  confirmPayment: () => Promise<PaymentResult>;
 };
 
-function parsePaymentResult(result: string): paymentResult {
+function parsePaymentResult(result: string): PaymentResult {
   return JSON.parse(result);
 }
 
@@ -79,7 +79,7 @@ export const CVCElement = forwardRef<CVCWidgetRef, CVCElementProps>(
       };
     }, [options]);
 
-    const onPaymentEventInternal = (event: paymentEventNative) => {
+    const onPaymentEventInternal = (event: PaymentEventNative) => {
       onChange?.(event.nativeEvent);
 
       if (event.nativeEvent.eventName === 'CVC_STATUS') {

@@ -2,11 +2,6 @@
 //  NativeHyperswitchModuleImpl.swift
 //  HyperswitchSdkReactNative
 //
-//  Mirrors the Android ReactNativeHyperswitchModule (NativeHyperswitchModule) API exactly.
-//  Method signatures must stay in sync with:
-//    - src/specs/NativeHyperswitchModule.ts
-//    - android/src/main/java/com/hyperswitchsdkreactnative/modules/ReactNativeHyperswitchModule.kt
-//
 
 import Foundation
 import React
@@ -21,9 +16,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     private var activePaymentSessionHandler: PaymentSessionHandler?
 
     // MARK: - initialise
-    // Flat params — matches Android's:
-    //   initialise(publishableKey, platformPublishableKey, profileId, environment, customEndpoints, promise)
-
     @objc(initialiseWithPublishableKey:platformPublishableKey:profileId:environment:customEndpoints:resolve:reject:)
     public func initialise(
         publishableKey: String,
@@ -72,8 +64,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - presentPaymentSheet
-    // params: { hyperswitchConfig, paymentSessionConfig: { sdkAuthorization }, configuration }
-    // Mirrors Android: presentPaymentSheet(params: ReadableMap?, promise: Promise?)
 
     @objc(presentPaymentSheet:resolve:reject:)
     public func presentPaymentSheet(
@@ -120,10 +110,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
                 return
             }
 
-            // The SDK's getRootViewWithParams wraps the whole `props` dictionary
-            // under the `configuration` key, so we must pass the contents that
-            // belong inside `configuration`: the merchant-supplied configuration
-            // plus the session/hyperswitch metadata.
             var sheetProps = params["configuration"] as? [String: Any] ?? [:]
             sheetProps["hyperswitchConfig"] = params["hyperswitchConfig"]
             sheetProps["paymentSessionConfig"] = params["paymentSessionConfig"]
@@ -150,8 +136,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - getCustomerSavedPaymentMethods
-    // params: { hyperswitchConfig, paymentSessionConfig: { sdkAuthorization }, configuration }
-    // Mirrors Android: getCustomerSavedPaymentMethods(params: ReadableMap?, promise: Promise)
 
     @objc(getCustomerSavedPaymentMethods:resolve:reject:)
     public func getCustomerSavedPaymentMethods(
@@ -208,8 +192,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - getCustomerLastUsedPaymentMethodData
-    // Mirrors Android: getCustomerLastUsedPaymentMethodData(promise: Promise)
-    // Returns: JSON string of the PaymentMethod (snake_case keys via CodingKeys)
 
     @objc(getCustomerLastUsedPaymentMethodDataWithResolve:reject:)
     public func getCustomerLastUsedPaymentMethodData(
@@ -237,7 +219,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - getCustomerDefaultSavedPaymentMethodData
-    // Mirrors Android: getCustomerDefaultSavedPaymentMethodData(promise: Promise)
 
     @objc(getCustomerDefaultSavedPaymentMethodDataWithResolve:reject:)
     public func getCustomerDefaultSavedPaymentMethodData(
@@ -265,8 +246,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - getCustomerSavedPaymentMethodData  ← NEW (not in prior iOS module)
-    // Mirrors Android: getCustomerSavedPaymentMethodData(promise: Promise)
-    // Returns: JSON array string of all saved PaymentMethod objects
 
     @objc(getCustomerSavedPaymentMethodDataWithResolve:reject:)
     public func getCustomerSavedPaymentMethodData(
@@ -295,7 +274,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - confirmWithCustomerLastUsedPaymentMethod
-    // JS / Android: confirmWithCustomerLastUsedPaymentMethod(reactTag: Double, promise: Promise?)
 
     @objc(confirmWithCustomerLastUsedPaymentMethod:resolve:reject:)
     public func confirmWithCustomerLastUsedPaymentMethod(
@@ -359,7 +337,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
 
     // MARK: - confirmWithCustomerDefaultPaymentMethod
-    // JS / Android: confirmWithCustomerDefaultPaymentMethod(reactTag: Double, promise: Promise?)
 
     @objc(confirmWithCustomerDefaultPaymentMethod:resolve:reject:)
     public func confirmWithCustomerDefaultPaymentMethod(
@@ -423,7 +400,6 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
     
     // MARK: - confirmWithCustomerPaymentToken
-    // JS / Android: confirmWithCustomerPaymentToken(reactTag: Double, token: String): Promise<string>
     
     @objc(confirmWithCustomerPaymentToken:token:resolve:reject:)
     public func confirmWithCustomerPaymentToken(
@@ -467,9 +443,7 @@ public class NativeHyperswitchModuleImpl: NSObject {
     }
     
     // MARK: - Private Helper: confirmViaWidgetView
-    // Mirrors Android: confirmViaWidgetView(reactTag, paymentToken, paymentMethodId, promise)
-    // Supports both old-arch (bridge) and new-arch (Fabric) via registry
-    
+   
     private func confirmViaWidgetView(
         reactTag: NSNumber,
         paymentToken: String,
@@ -481,44 +455,20 @@ public class NativeHyperswitchModuleImpl: NSObject {
             return
         }
         
-        // Try registry first (works for both old-arch and Fabric/new-arch)
-        if let view = NativePaymentWidgetRegistry.shared.view(forTag: reactTag) {
-            guard let cvcWidget = view.cvcWidgetRef else {
-                resolve(StandardResult.failed(code: "NO_CVC_WIDGET", message: "CVCWidget instance not found in view").rawJSON)
-                return
-            }
-            
-            // Call the handler's method with the CVCWidget instance
-            // Handler will call cvcWidget.confirm() → embedded bundle → exitHeadless → resultHandler callback
-            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { paymentResult in
-                resolve(self.paymentResultToString(paymentResult))
-            }
+        // Registry lookup (Fabric / New Architecture).
+        guard let view = NativePaymentWidgetRegistry.shared.view(forTag: reactTag) else {
+            resolve(StandardResult.failed(code: "NO_WIDGET", message: "CvcWidget not found at reactTag \(reactTag)").rawJSON)
             return
         }
-        
-        // Fall back to bridge-based lookup for old-arch if registry didn't find it
-        guard let bridge = RNViewManager.sharedInstance.bridge else {
-            resolve(StandardResult.failed(code: "NO_VIEW", message: "CvcWidget not found in registry and bridge not available").rawJSON)
+
+        guard let cvcWidget = view.cvcWidgetRef else {
+            resolve(StandardResult.failed(code: "NO_CVC_WIDGET", message: "CVCWidget instance not found in view").rawJSON)
             return
         }
-        
-        // addUIBlock must be called on the caller's thread (module method queue), NOT main queue
-        bridge.uiManager.addUIBlock { _, viewRegistry in
-            guard let view = viewRegistry?[reactTag] as? NativePaymentWidgetView else {
-                resolve(StandardResult.failed(code: "NO_WIDGET", message: "CvcWidget not found at reactTag \(reactTag)").rawJSON)
-                return
-            }
-            
-            guard let cvcWidget = view.cvcWidgetRef else {
-                resolve(StandardResult.failed(code: "NO_CVC_WIDGET", message: "CVCWidget instance not found in view").rawJSON)
-                return
-            }
-            
-            // Call the handler's method with the CVCWidget instance
-            // Handler will call cvcWidget.confirm() → embedded bundle → exitHeadless → resultHandler callback
-            handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { paymentResult in
-                resolve(self.paymentResultToString(paymentResult))
-            }
+
+        // Handler calls cvcWidget.confirm() → embedded bundle → exitHeadless → resultHandler callback.
+        handler.confirmWithCustomerLastUsedPaymentMethod(cvcWidget) { paymentResult in
+            resolve(self.paymentResultToString(paymentResult))
         }
     }
 }

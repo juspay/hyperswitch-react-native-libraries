@@ -1,5 +1,4 @@
 import type { PaymentResult } from './paymentresult';
-
 export interface OverrideEndpointConfiguration {
   customBackendEndpoint?: string;
   customLoggingEndpoint?: string;
@@ -68,7 +67,7 @@ export interface PaymentSession {
     options?: SavedPaymentMethodsConfiguration
   ): Promise<CustomerSavedPaymentMethodsSession>;
   updateIntent(
-    intentResolver: () => Promise<PaymentSessionConfiguration>
+    intentResolver: () => Promise<PaymentSessionConfiguration | null>
   ): Promise<void>;
 }
 
@@ -77,6 +76,10 @@ export interface PaymentElementHandle {
     confirmParams?: Record<string, any>;
   }): Promise<PaymentResult>;
 }
+
+export interface GooglePayElementHandle {}
+
+export interface ApplePayElementHandle {}
 
 export interface HyperswitchSession {
   publishableKey: string;

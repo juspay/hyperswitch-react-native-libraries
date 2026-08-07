@@ -160,7 +160,8 @@
       "modulesProvider": {
         "NativeHyperswitchModule": "NativeHyperswitchModule",
         "NativeWidgetHelperModule": "NativeWidgetHelperModule",
-        "HyperHeadless": "HyperHeadlessModule"
+        "HyperHeadless": "HyperHeadlessModule",
+        "HyperModule": "HyperModule"
       },
       "componentProvider": {
         "ApplePayView": "ApplePayView",

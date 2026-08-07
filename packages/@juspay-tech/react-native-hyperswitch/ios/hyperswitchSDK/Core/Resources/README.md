@@ -26,7 +26,7 @@ RN 0.82+        →  hyperswitch-rn82plus.bundle
 Fallback        →  hyperswitch.bundle
 ```
 
-See `RNViewManager.swift` `bundleURL()` method for implementation details.
+See `HyperBundleResolver.swift` `bundleURL(for:)` for the shared implementation, used by both `RNViewManager` (payment sheet) and `RNHeadlessManager` (headless).
 
 
 ## File Size

@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { UIManager, findNodeHandle, type ViewStyle, Platform } from 'react-native';
+import { forwardRef, useEffect, useRef } from 'react';
+import { UIManager, type ViewStyle, Platform } from 'react-native';
 import NativePaymentWidgetImpl from './PaymentWidgetBridge';
 import { registerWidget, unregisterWidget } from '../widget/WidgetRegistry';
 import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
@@ -9,17 +9,16 @@ import {
   validateSubscribedEventStrings,
 } from '../utils/EventValidator';
 import type {
-  PaymentEventNative,
   NativeEventEnvelope,
-  PaymentEventResult,
+  PaymentEventNative,
+  PaymentEventResult
 } from '../types/NativeEventTypes';
-import type { PaymentElementHandle } from '../types/definitions';
+import type { ApplePayElementHandle } from '../types/definitions';
 import type { PaymentResult } from '../types/paymentresult';
 import { mapNativeResponseToPaymentResult } from '../native/NativeResponseMapper';
-import NativeWidgetHelperModule from '../codegen/modules/NativeWidgetHelperModule';
 import { useNativeViewTag } from './useNativeViewTag';
 
-type PaymentElementProps = {
+type ApplePayProps = {
   widgetId: string;
   options?: PaymentSheetConfiguration;
   onPaymentResult: (result: PaymentResult) => void;
@@ -28,10 +27,10 @@ type PaymentElementProps = {
   style?: ViewStyle;
 };
 
-export const PaymentElement = forwardRef<
-  PaymentElementHandle,
-  PaymentElementProps
->((props, ref) => {
+export const ApplePayButton = forwardRef<
+  ApplePayElementHandle,
+  ApplePayProps
+>((props: ApplePayProps, _: React.Ref<ApplePayElementHandle>) => {
   const { widgetId, options, onPaymentResult, onChange, onReady, style } =
     props;
   const { paymentSessionConfig, hyperswitchConfig } = useHyperElementsContext();
@@ -52,41 +51,6 @@ export const PaymentElement = forwardRef<
       UIManager.dispatchViewManagerCommand(viewTag, 1, []);
     }
   }, [viewTag]);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      confirmPayment: (_options?: {
-        confirmParams?: Record<string, any>;
-      }): Promise<PaymentResult> => {
-        if (viewRef.current == null) {
-          return Promise.resolve({
-            status: 'failed',
-            type: 'widget_not_ready',
-            message: 'Widget not ready',
-          });
-        }
-        const id =
-          findNodeHandle(
-            viewRef.current as Parameters<typeof findNodeHandle>[0]
-          ) ?? -1;
-        if (id === -1) {
-          return Promise.resolve({
-            status: 'failed',
-            type: 'widget_not_ready',
-            message: 'Unable to find native view handle',
-          });
-        }
-        return new Promise<PaymentResult>((resolve) => {
-          NativeWidgetHelperModule.confirmPayment(id, (raw) => {
-            resolve(mapNativeResponseToPaymentResult(raw));
-          });
-        });
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewTag]
-  );
 
   const warningEmitted = useRef(false);
 
@@ -126,14 +90,14 @@ export const PaymentElement = forwardRef<
   };
 
   const onPaymentEventInternal = (event: PaymentEventNative) => {
-    onChange?.(event.nativeEvent);
+    onChange?.(event.nativeEvent as PaymentEventResult);
   };
 
   return (
     <NativePaymentWidgetImpl
       ref={viewRef}
       sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
-      widgetType="widgetPaymentSheet"
+      widgetType="apple_pay"
       onPaymentEvent={onPaymentEventInternal}
       onPaymentResult={onPaymentResultInternal}
       options={{

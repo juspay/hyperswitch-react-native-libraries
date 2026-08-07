@@ -168,7 +168,7 @@ public class NativePaymentWidgetView: UIView {
     }
 
     private func isSupportedWidgetType() -> Bool {
-        return widgetType == "cvcWidget" || widgetType == "paymentElement" || widgetType == "widgetPaymentSheet"
+        return widgetType == "cvcWidget" || widgetType == "paymentElement" || widgetType == "widgetPaymentSheet" || widgetType == "hostedCheckout" || widgetType == "google_pay" || widgetType == "apple_pay" || widgetType == "paypal" || widgetType == "card" || widgetType == "paymentMethodsManagement"
     }
 
     private func activeOrNewHyperswitch() -> Hyperswitch? {
@@ -409,12 +409,8 @@ public class NativePaymentWidgetView: UIView {
         updateIntentInitCallback = resolve
 
         let eventData: [String: Any] = ["rootTag": tag]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["updateIntentInit", eventData],
-            completion: nil
-        )
+        // Bridgeless: route to the embedded bundle via the codegen typed emitter.
+        HyperModuleImpl.shared.updateIntentInit(data: eventData)
     }
 
     @objc public func updateIntentComplete(sdkAuthorization: String, resolve: @escaping RCTResponseSenderBlock) {
@@ -436,12 +432,8 @@ public class NativePaymentWidgetView: UIView {
             "rootTag": tag,
             "sdkAuthorization": sdkAuthorization,
         ]
-        RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-            "RCTDeviceEventEmitter",
-            method: "emit",
-            args: ["updateIntentComplete", eventData],
-            completion: nil
-        )
+        // Bridgeless: route to the embedded bundle via the codegen typed emitter.
+        HyperModuleImpl.shared.updateIntentComplete(data: eventData)
     }
     
     // Called by PaymentWidget when embedded bundle responds

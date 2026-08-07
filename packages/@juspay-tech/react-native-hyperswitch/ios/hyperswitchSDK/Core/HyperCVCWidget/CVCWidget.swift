@@ -109,25 +109,10 @@ public class CVCWidget: UIControl {
             "paymentMethodId": paymentMethodId as Any,
         ]
         dispatchToMain {
-            // Bridge can be nil on New Architecture (bridgeless) hosts before the
-            // embedded runtime finishes initialising. Guard to avoid a hard crash.
-            guard let bridge = RNViewManager.sharedInstance.bridge else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    RNViewManager.sharedInstance.bridge?.enqueueJSCall(
-                        "RCTDeviceEventEmitter",
-                        method: "emit",
-                        args: ["triggerWidgetAction", payload],
-                        completion: nil
-                    )
-                }
-                return
-            }
-            bridge.enqueueJSCall(
-                "RCTDeviceEventEmitter",
-                method: "emit",
-                args: ["triggerWidgetAction", payload],
-                completion: nil
-            )
+            // Route through the codegen typed EventEmitter (bridgeless-compatible).
+            // HyperModule.emitEvent falls back to the RCTEventEmitter device event
+            // when the codegen callback isn't wired yet (old arch / early runtime).
+            HyperModuleImpl.shared.triggerWidgetAction(data: payload)
         }
     }
 

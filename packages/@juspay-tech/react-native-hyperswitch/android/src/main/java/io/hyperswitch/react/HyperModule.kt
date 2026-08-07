@@ -39,6 +39,16 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
 
     const val NAME = "HyperModule"
 
+    /**
+     * Active HyperModule instance, registered when the module is constructed.
+     * The fragment and EventEmitter route events through it so they flow via
+     * the codegen typed EventEmitters, which work in bridgeless mode.
+     */
+    @Volatile
+    private var activeInstance: HyperModule? = null
+
+    fun getActiveInstance(): HyperModule? = activeInstance
+
     // Static methods with unique signatures for reflection access from lite SDK
     @JvmStatic
     fun confirmStatic(tag: String, map: MutableMap<String, String?>) {
@@ -56,6 +66,10 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
     }
   }
 
+  init {
+    activeInstance = this
+  }
+
   private val uiManagerType = if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
     UIManagerType.FABRIC
   } else {
@@ -70,8 +84,26 @@ class HyperModule internal constructor(private val rct: ReactApplicationContext)
   // Using invalidate instead of deprecated onCatalystInstanceDestroy
   override fun invalidate() {
     super.invalidate()
+    if (activeInstance === this) {
+      activeInstance = null
+    }
     HyperEventEmitter.deinitialize()
   }
+
+  // --- Public wrappers around the codegen-protected emit methods ---
+  // Used by HyperFragment / HyperEventEmitter to route events through the
+  // codegen typed EventEmitters (bridgeless-compatible).
+  fun emitConfirmEvent(payload: ReadableMap) = emitConfirm(payload)
+
+  fun emitWidgetEvent(payload: ReadableMap) = emitWidget(payload)
+
+  fun emitConfirmECEvent(payload: ReadableMap) = emitConfirmEC(payload)
+
+  fun emitTriggerWidgetActionEvent(payload: ReadableMap) = emitTriggerWidgetAction(payload)
+
+  fun emitUpdateIntentInitEvent(payload: ReadableMap) = emitUpdateIntentInit(payload)
+
+  fun emitUpdateIntentCompleteEvent(payload: ReadableMap) = emitUpdateIntentComplete(payload)
 
   @ReactMethod
   override fun updateWidgetHeight(height: Double) {

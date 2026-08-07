@@ -23,9 +23,7 @@ export default function DemoPopup({
   sdkAuthorization,
   setSdkAuthorization,
   paymentId,
-  setPaymentId,
   loadError,
-  setLoadError,
   onClose,
 }: DemoPopupProps) {
   const [isAmountScreen, setIsAmountScreen] = useState(true);
@@ -52,6 +50,7 @@ export default function DemoPopup({
     paymentId,
     sdkAuthorization,
     setSdkAuthorization,
+    loading: isTransitioning,
   };
 
   return (
@@ -68,6 +67,11 @@ export default function DemoPopup({
         {!sdkAuthorization ? (
           <FormLayout
             {...sharedProps}
+            message={""}
+            setMessage={() => {}}
+            loading={false}
+            loadingSaved={true}
+            requiresCvc={false}
             cvcSlot={
               <View style={styles.cvcPlaceholder}>
                 <Text style={styles.placeholderText}>CVC</Text>
@@ -80,13 +84,20 @@ export default function DemoPopup({
                 </Text>
               </View>
             }
+            buttonSlot={
+              <View style={styles.paymentPlaceholder}>
+                <Text style={styles.placeholderText}>Loading button…</Text>
+              </View>
+            }
             lastUsed={null}
             methodsSession={null}
-            loadingSaved={true}
             canSubmit={false}
             amount={amount}
             updateAmount={null}
             widgets={null}
+            paymentElementReady={false}
+            cvcReady={false}
+            walletReady={false}
           />
         ) : (
           <HyperElements hyper={hyperPromise} options={{ sdkAuthorization }}>
@@ -100,7 +111,11 @@ export default function DemoPopup({
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
     alignItems: "center",
@@ -116,7 +131,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   spinnerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "rgba(255,255,255,0.6)",
     justifyContent: "center",
     alignItems: "center",

@@ -9,14 +9,41 @@ import Foundation
 import React
 import React_RCTAppDelegate
 
+/// Contract implemented by the ObjC++ `HyperModule` TurboModule (HyperModule.mm).
+/// Mirrors the reference shim (juspay/hyperswitch-sdk-ios#110): the impl emits JS
+/// events and resolves native views through this shim without touching the bridge.
+@objc(HyperModuleShim)
+public protocol HyperModuleShim: NSObjectProtocol {
+    @objc(attachImpl:)
+    func attach(impl: HyperModuleImpl)
+    @objc(emitEventWithName:payload:)
+    func emitEvent(name: String, payload: [String: Any])
+    @objc(viewForRootTag:)
+    func view(forRootTag rootTag: NSNumber) -> UIView?
+}
+
 @objc(HyperModuleImpl)
 public class HyperModuleImpl: NSObject {
 
+    /// The shared logic instance bound to the "hyperSwitch" host's HyperModule
+    /// TurboModule by RNViewManager's `getModuleInstanceFromClass:`. All
+    /// widget/sheet event emitters (`confirm`/`widget`/`triggerWidgetAction`/
+    /// `updateIntent*`) are called through this singleton.
     @objc public static let shared = HyperModuleImpl()
 
-    /// The RN-registered event emitter (the ObjC++ `HyperModule` TurboModule) through
-    /// which JS-facing events are dispatched and the bridge / uiManager is reached.
-    @objc public weak var eventEmitter: RCTEventEmitter?
+    /// The ObjC++ HyperModule TurboModule this impl is bound to (the "hyperSwitch"
+    /// host's instance, attached by RNViewManager's `getModuleInstanceFromClass:`).
+    /// Weak to avoid a retain cycle with the TurboModule.
+    private weak var shim: HyperModuleShim?
+
+    /// Called by the host's TurboModuleManagerDelegate when the ObjC++ HyperModule
+    /// is created. Attaches the bidirectional link: module -> impl, impl -> module.
+    @objc public func attach(to shim: HyperModuleShim) {
+        shim.attach(impl: self)
+        DispatchQueue.main.async {
+            self.shim = shim
+        }
+    }
 
     private let applePayPaymentHandler = ApplePayHandler()
     private let expressCheckoutHandler = ExpressCheckoutLauncher()
@@ -28,7 +55,7 @@ public class HyperModuleImpl: NSObject {
     private var activePaymentSheet: PaymentSheet?
     private weak var activePaymentSheetVC: HyperUIViewController?
 
-    private override init() {
+    internal override init() {
         super.init()
     }
 
@@ -39,18 +66,50 @@ public class HyperModuleImpl: NSObject {
         activePaymentSheetVC = vc
     }
 
-    // Bridge-backed widget helpers available when bridge is re-exposed.
-    private var bridge: RCTBridge? { eventEmitter?.bridge }
+    private func onMain(_ work: @escaping () -> Void) {
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
+    }
 
     // MARK: - Events
+    //
+    // Route through the attached shim (the ObjC++ HyperModule) which forwards to the
+    // codegen typed EventEmitters — bridgeless-only. The rn82+ bundle subscribes to
+    // these events exclusively via the codegen emitters.
+
+    @objc public func emit(_ name: String, _ payload: [String: Any]) {
+        onMain {
+            self.shim?.emitEvent(name: name, payload: payload)
+        }
+    }
 
     @objc public func confirm(data: [String: Any]) {
-        eventEmitter?.sendEvent(withName: "confirm", body: data)
+        emit("confirm", data)
     }
+
+    @objc public func widget(data: [String: Any]) {
+        emit("widget", data)
+    }
+
     // MARK: WIP
-    //    @objc public func confirmEC(data: [String: Any]) {
-    //        eventEmitter?.sendEvent(withName: "confirmEC", body: data)
-    //    }
+    @objc public func confirmEC(data: [String: Any]) {
+        emit("confirmEC", data)
+    }
+
+    @objc public func triggerWidgetAction(data: [String: Any]) {
+        emit("triggerWidgetAction", data)
+    }
+
+    @objc public func updateIntentInit(data: [String: Any]) {
+        emit("updateIntentInit", data)
+    }
+
+    @objc public func updateIntentComplete(data: [String: Any]) {
+        emit("updateIntentComplete", data)
+    }
 
     // MARK: - Generic message passing
 
@@ -68,6 +127,22 @@ public class HyperModuleImpl: NSObject {
 
     @objc public func presentApplePay(_ rnMessage: String, callback: @escaping RCTResponseSenderBlock) {
         self.presentCallback = callback
+    }
+
+    // MARK: - Google Pay (Android only — no-op on iOS)
+
+    @objc public func launchGPay(_ requestObj: String, callback: @escaping RCTResponseSenderBlock) {
+        callback(["Google Pay is not available on iOS"])
+    }
+
+    // MARK: - Widget (Android-oriented no-ops on iOS)
+
+    @objc public func exitWidget(_ result: String, widgetType: String) {
+        // No dedicated iOS implementation (Android-oriented); no-op.
+    }
+
+    @objc public func updateWidgetHeight(_ height: NSNumber) {
+        // Height is driven by the native widget view on iOS; no-op.
     }
 
     // MARK: - Widget (commented out — relies on RCTBridge/uiManager)
@@ -334,36 +409,39 @@ public class HyperModuleImpl: NSObject {
         }
     }
 
-    // MARK: - Bridge-backed view lookup helpers (support both old-arch and Fabric)
+    // MARK: - View lookup helpers (surface-based, New Architecture)
+    //
+    // Views are resolved through the attached shim's `view(forRootTag:)` — which uses
+    // the Fabric surface presenter — instead of the bridge's `uiManager`.
 
     private func withWidget(_ rootTag: NSNumber, _ block: @escaping (PaymentWidget) -> Void) {
-        // rootTag here is the EMBEDDED widget's tag (from hyperswitch.bundle)
-        // Use registry to find the outer view, then access its paymentWidget
         DispatchQueue.main.async {
+            // Prefer the registry (embedded widget tag -> outer NativePaymentWidgetView).
             if let view = NativePaymentWidgetRegistry.shared.view(forEmbeddedTag: rootTag),
                let widget = view.paymentWidget {
+                block(widget)
+                return
+            }
+            // Fall back to surface-based lookup.
+            if let widget = self.shim?.view(forRootTag: rootTag)?
+                .nearestAncestor(ofType: PaymentWidget.self) {
                 block(widget)
             }
         }
     }
-    
+
     private func withNativePaymentWidgetView(_ rootTag: NSNumber, _ block: @escaping (NativePaymentWidgetView) -> Void) {
-        // rootTag here is the EMBEDDED widget's tag (from hyperswitch.bundle)
-        // Use registry to find the outer view by embedded tag
         DispatchQueue.main.async {
             if let view = NativePaymentWidgetRegistry.shared.view(forEmbeddedTag: rootTag) {
                 block(view)
             }
         }
     }
-    
+
     private func resolveSubscribingTarget(_ rootTag: NSNumber, _ block: @escaping (AnyObject?) -> Void) {
-        // rootTag here is the EMBEDDED widget's tag (from hyperswitch.bundle)
-        // Use registry-based lookup for widgets, fall back to bridge for payment sheets
         DispatchQueue.main.async {
-            // First try widget registry (using embedded tag lookup)
+            // First try widget registry (embedded tag -> outer view).
             if let view = NativePaymentWidgetRegistry.shared.view(forEmbeddedTag: rootTag) {
-                // Check for PaymentWidget or CVCWidget inside the view
                 if let widget = view.paymentWidget {
                     block(widget)
                     return
@@ -373,32 +451,26 @@ public class HyperModuleImpl: NSObject {
                     return
                 }
             }
-            
-            // Fall back to bridge lookup for payment sheets (modal presentations)
-            // For sheets, rootTag IS the actual view tag (not embedded)
-            guard let bridge = self.bridge else {
+
+            // Surface-based lookup (payment sheets / modal presentations).
+            guard let view = self.shim?.view(forRootTag: rootTag) else {
                 block(nil)
                 return
             }
-            RCTGetUIManagerQueue().async {
-                bridge.uiManager.addUIBlock { _, viewRegistry in
-                    let view = viewRegistry?[rootTag]
-                    let sheet = (view?.reactViewController() as? HyperUIViewController)?.paymentSheet
-                    DispatchQueue.main.async { block(sheet) }
-                }
+            if let widget = view.nearestAncestor(where: { $0 is PaymentWidget || $0 is CVCWidget }) {
+                block(widget)
+                return
             }
+            block((view.reactViewController() as? HyperUIViewController)?.paymentSheet)
         }
     }
-    
+
     private func withPaymentSheet(_ rootTag: NSNumber, _ block: @escaping (UIViewController?, PaymentSheet?) -> Void) {
-        guard let bridge = self.bridge else { return }
-        RCTGetUIManagerQueue().async {
-            bridge.uiManager.addUIBlock { _, viewRegistry in
-                let view = viewRegistry?[rootTag]
-                let vc = view?.reactViewController() as? HyperUIViewController
-                let sheet = vc?.paymentSheet
-                DispatchQueue.main.async { block(vc, sheet) }
-            }
+        DispatchQueue.main.async {
+            let view = self.shim?.view(forRootTag: rootTag)
+            let vc = view?.reactViewController() as? HyperUIViewController
+            let sheet = vc?.paymentSheet
+            block(vc, sheet)
         }
     }
 }

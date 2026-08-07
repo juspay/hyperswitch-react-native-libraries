@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { UIManager, findNodeHandle, type ViewStyle, Platform } from 'react-native';
+import { forwardRef, useEffect, useRef } from 'react';
+import { UIManager, type ViewStyle, Platform } from 'react-native';
 import NativePaymentWidgetImpl from './PaymentWidgetBridge';
 import { registerWidget, unregisterWidget } from '../widget/WidgetRegistry';
 import type { PaymentSheetConfiguration } from '../types/PaymentSheetConfiguration';
@@ -9,17 +9,16 @@ import {
   validateSubscribedEventStrings,
 } from '../utils/EventValidator';
 import type {
-  PaymentEventNative,
   NativeEventEnvelope,
-  PaymentEventResult,
+  PaymentEventNative,
+  PaymentEventResult
 } from '../types/NativeEventTypes';
-import type { PaymentElementHandle } from '../types/definitions';
+import type { GooglePayElementHandle } from '../types/definitions';
 import type { PaymentResult } from '../types/paymentresult';
 import { mapNativeResponseToPaymentResult } from '../native/NativeResponseMapper';
-import NativeWidgetHelperModule from '../codegen/modules/NativeWidgetHelperModule';
 import { useNativeViewTag } from './useNativeViewTag';
 
-type PaymentElementProps = {
+type GooglePayProps = {
   widgetId: string;
   options?: PaymentSheetConfiguration;
   onPaymentResult: (result: PaymentResult) => void;
@@ -28,10 +27,10 @@ type PaymentElementProps = {
   style?: ViewStyle;
 };
 
-export const PaymentElement = forwardRef<
-  PaymentElementHandle,
-  PaymentElementProps
->((props, ref) => {
+export const GooglePayButton = forwardRef<
+  GooglePayElementHandle,
+  GooglePayProps
+>((props: GooglePayProps, _: React.Ref<GooglePayElementHandle>) => {
   const { widgetId, options, onPaymentResult, onChange, onReady, style } =
     props;
   const { paymentSessionConfig, hyperswitchConfig } = useHyperElementsContext();
@@ -53,40 +52,6 @@ export const PaymentElement = forwardRef<
     }
   }, [viewTag]);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      confirmPayment: (_options?: {
-        confirmParams?: Record<string, any>;
-      }): Promise<PaymentResult> => {
-        if (viewRef.current == null) {
-          return Promise.resolve({
-            status: 'failed',
-            type: 'widget_not_ready',
-            message: 'Widget not ready',
-          });
-        }
-        const id =
-          findNodeHandle(
-            viewRef.current as Parameters<typeof findNodeHandle>[0]
-          ) ?? -1;
-        if (id === -1) {
-          return Promise.resolve({
-            status: 'failed',
-            type: 'widget_not_ready',
-            message: 'Unable to find native view handle',
-          });
-        }
-        return new Promise<PaymentResult>((resolve) => {
-          NativeWidgetHelperModule.confirmPayment(id, (raw) => {
-            resolve(mapNativeResponseToPaymentResult(raw));
-          });
-        });
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewTag]
-  );
 
   const warningEmitted = useRef(false);
 
@@ -116,7 +81,7 @@ export const PaymentElement = forwardRef<
   payload: string;
   target: number;
 }}) => {
-    onPaymentResult(
+   onPaymentResult && onPaymentResult(
       mapNativeResponseToPaymentResult(
         Platform.OS === 'ios'
           ? event.nativeEvent.result ?? ""
@@ -126,14 +91,13 @@ export const PaymentElement = forwardRef<
   };
 
   const onPaymentEventInternal = (event: PaymentEventNative) => {
-    onChange?.(event.nativeEvent);
+    onChange && onChange?.(event.nativeEvent as PaymentEventResult);
   };
-
   return (
     <NativePaymentWidgetImpl
       ref={viewRef}
       sdkAuthorization={paymentSessionConfig?.sdkAuthorization ?? ''}
-      widgetType="widgetPaymentSheet"
+      widgetType="google_pay"
       onPaymentEvent={onPaymentEventInternal}
       onPaymentResult={onPaymentResultInternal}
       options={{
@@ -141,7 +105,7 @@ export const PaymentElement = forwardRef<
         paymentSessionConfig: paymentSessionConfig || undefined,
         configuration: options as Record<string, unknown> | undefined,
       }}
-      style={{ ...style, flex: 1 }}
+      style={{ ...style, flex: 1, height: '100%' }}
     />
   );
 });

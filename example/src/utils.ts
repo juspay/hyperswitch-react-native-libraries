@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import {
   LayoutType,
+  PaymentSheetConfiguration,
   SubscriptionEvent,
 } from "@juspay-tech/react-native-hyperswitch";
 
@@ -15,12 +16,13 @@ export const secretKey =
   process.env.HYPERSWITCH_SECRET_KEY ?? "";
 
 export const serverURL = process.env.SERVER_URL ?? "";
-export const getCustomisationOptions = (layout: LayoutType = "tabs") => ({
+export const getCustomisationOptions = (layout: LayoutType = "tabs") : PaymentSheetConfiguration => ({
   subscribedEvents: [
     "PAYMENT_METHOD_INFO_CARD",
     "PAYMENT_METHOD_STATUS",
     "FORM_STATUS",
   ] as SubscriptionEvent[],
+  merchantDisplayName: "Hyperswitch Example",
   displayDefaultSavedPaymentIcon: false,
   paymentMethodLayout: {
     type: layout,
@@ -167,7 +169,7 @@ export const intentData = {
       line1: "1467",
       line2: "Harrison Street",
       line3: "Harrison Street",
-      city: "San Fransico",
+      city: "San Francisco",
       state: "California",
       zip: "94122",
       country: "US",
