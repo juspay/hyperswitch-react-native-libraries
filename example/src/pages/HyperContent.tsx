@@ -189,14 +189,6 @@ export function HyperContent(props: SharedProps) {
   const [methodsSession, setMethodsSession] =
     useState<CustomerSavedPaymentMethodsSession | null>(null);
 
-  /**
-   * Common payment result handler.
-   *
-   * Used by:
-   * - PaymentElement
-   * - ApplePayButton
-   * - GooglePayButton
-   */
   const handlePaymentResult = useCallback(
     (data: PaymentResult) => {
       console.log("[Example] Payment result:", data);
@@ -221,22 +213,12 @@ export function HyperContent(props: SharedProps) {
     [onClose],
   );
 
-  /**
-   * Reset SDK widget readiness whenever the
-   * payment session itself changes.
-   *
-   * This prevents a previous session's readiness
-   * from enabling UI for a new payment session.
-   */
   useEffect(() => {
     setPaymentElementReady(false);
     setWalletReady(false);
     setCvcReady(false);
   }, [paymentSession]);
 
-  /**
-   * Fetch customer saved payment methods.
-   */
   useEffect(() => {
     if (!paymentSession) {
       setLoadingSaved(false);
@@ -294,20 +276,10 @@ export function HyperContent(props: SharedProps) {
     };
   }, [paymentSession]);
 
-  /**
-   * If the saved payment method changes,
-   * CVC needs to become ready again.
-   */
   useEffect(() => {
     setCvcReady(false);
   }, [lastUsed]);
 
-  /**
-   * PaymentElement readiness.
-   *
-   * We consider PaymentElement rendered/usable
-   * after PAYMENT_METHOD_STATUS is emitted.
-   */
   const handlePaymentElementChange = useCallback(
     (event: PaymentEventResult) => {
       console.log("[Example] PaymentElement onChange:", JSON.stringify(event));
@@ -326,12 +298,6 @@ export function HyperContent(props: SharedProps) {
     [],
   );
 
-  /**
-   * Wallet readiness.
-   *
-   * Apple Pay / Google Pay remain behind their
-   * skeleton until PAYMENT_METHOD_STATUS arrives.
-   */
   const handleWalletChange = useCallback((event: PaymentEventResult) => {
     console.log(
       `[Example] ${
@@ -352,19 +318,12 @@ export function HyperContent(props: SharedProps) {
     setWalletReady(true);
   }, []);
 
-  /**
-   * CVC uses onReady instead of
-   * PAYMENT_METHOD_STATUS.
-   */
   const handleCvcReady = useCallback(() => {
     console.log("[Example] CvcWidget ready");
 
     setCvcReady(true);
   }, []);
 
-  /**
-   * Update payment intent.
-   */
   const updateAmount = useCallback(async () => {
     if (!paymentSession || !paymentId) {
       console.log(
@@ -431,16 +390,6 @@ export function HyperContent(props: SharedProps) {
     }
   }, [paymentSession, paymentId, amount, setSdkAuthorization]);
 
-  /**
-   * Platform-specific wallet.
-   *
-   * Important:
-   * The real wallet component always remains mounted.
-   *
-   * FormLayout only visually hides it behind a skeleton.
-   * If we conditionally removed the component itself,
-   * it could never emit PAYMENT_METHOD_STATUS.
-   */
   const walletButton =
     Platform.OS === "ios" ? (
       <ApplePayButton
@@ -470,10 +419,6 @@ export function HyperContent(props: SharedProps) {
       />
     );
 
-  /**
-   * CVC is needed only when the last-used
-   * payment method is a card.
-   */
   const requiresCvc = lastUsed?.payment_method === "card";
 
   const cvcElement = requiresCvc ? (

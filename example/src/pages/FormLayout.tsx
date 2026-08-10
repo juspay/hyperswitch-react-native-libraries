@@ -55,9 +55,6 @@ export type FormLayoutProps = {
 
   setMessage: (message: string) => void;
 
-  /**
-   * SDK widget readiness.
-   */
   paymentElementReady: boolean;
 
   walletReady: boolean;
@@ -168,9 +165,6 @@ export function FormLayout({
         }
       }
 
-      /**
-       * PaymentElement flow.
-       */
       if (!widgets) {
         return;
       }
@@ -226,9 +220,6 @@ export function FormLayout({
     }
   };
 
-  /**
-   * Keep local amount synchronized.
-   */
   useEffect(() => {
     if (amountVal !== amount) {
       setAmountVal(amount);
@@ -239,14 +230,10 @@ export function FormLayout({
     void updateAmount?.();
   };
 
-  /**
-   * One source of truth for button disabled state.
-   */
   const buttonDisabled = !canSubmit || isLoading || loading;
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         {!isAmountScreen && (
           <TouchableOpacity
@@ -272,7 +259,6 @@ export function FormLayout({
         )}
       </View>
 
-      {/* CONTENT */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#059669" />
@@ -281,10 +267,8 @@ export function FormLayout({
         </View>
       ) : (
         <>
-          {/* AMOUNT / SAVED METHOD SCREEN */}
           {isAmountScreen && (
             <View style={styles.savedSection}>
-              {/* WALLET BUTTON */}
               {buttonSlot ? (
                 <View style={styles.walletContainer}>
                   <View
@@ -296,10 +280,6 @@ export function FormLayout({
                     {buttonSlot}
                   </View>
 
-                  {/*
-                   * Skeleton stays on top until wallet
-                   * PAYMENT_METHOD_STATUS arrives.
-                   */}
                   {!walletReady && (
                     <View pointerEvents="none" style={styles.walletSkeleton} />
                   )}
@@ -307,13 +287,6 @@ export function FormLayout({
               ) : null}
 
               {loadingSaved ? (
-                /**
-                 * Loading saved method data.
-                 *
-                 * Two skeletons:
-                 * 1. saved method/card
-                 * 2. CVC
-                 */
                 <View style={styles.savedRow}>
                   <View style={[styles.skeleton, styles.savedMethodSkeleton]} />
 
@@ -321,7 +294,6 @@ export function FormLayout({
                 </View>
               ) : lastUsed ? (
                 <View style={styles.savedRow}>
-                  {/* SAVED CARD */}
                   <TouchableOpacity
                     onPress={() => setIsAmountScreen(false)}
                     style={styles.savedMethod}
@@ -343,7 +315,6 @@ export function FormLayout({
             </View>
           )}
 
-          {/* PAYMENT ELEMENT SCREEN */}
           {!isAmountScreen && (
             <View style={styles.paymentSection}>
               {paymentSlot}
@@ -359,7 +330,6 @@ export function FormLayout({
             </View>
           )}
 
-          {/* AMOUNT */}
           {isAmountScreen && (
             <>
               <View style={styles.amountSection}>
@@ -410,7 +380,6 @@ export function FormLayout({
         </>
       )}
 
-      {/* FOOTER */}
       <View style={styles.footer}>
         {message ? <Text style={styles.error}>{message}</Text> : null}
 
@@ -506,9 +475,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
 
-  /**
-   * Shared skeleton.
-   */
   skeleton: {
     backgroundColor: "#e5e7eb",
 
@@ -537,9 +503,6 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
 
-  /**
-   * SAVED METHOD
-   */
   savedRow: {
     flexDirection: "row",
     gap: 12,
@@ -595,9 +558,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
 
-  /**
-   * CVC
-   */
   cvcContainer: {
     width: 96,
 
@@ -648,9 +608,6 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 
-  /**
-   * PAYMENT ELEMENT
-   */
   paymentSection: {
     minHeight: 400,
 
@@ -686,9 +643,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
 
-  /**
-   * AMOUNT
-   */
   amountSection: {
     alignItems: "center",
 
@@ -792,9 +746,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  /**
-   * FOOTER
-   */
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -867,9 +818,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  /**
-   * OVERLAY LOADING
-   */
   loadingContainer: {
     flex: 1,
 
