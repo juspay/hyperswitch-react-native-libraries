@@ -50,6 +50,16 @@ const loaders: Partial<Record<VaultType, AdapterLoader>> = {
     if (!m.evervaultSdkAvailable) throw missingSdk('@evervault/react-native');
     return m.evervaultAdapter;
   },
+  hyperswitch_vault: () => {
+    const m = require('./hyperswitch/adapter') as {
+      hyperswitchVaultAdapter: ProviderAdapter;
+      hyperswitchVaultSdkAvailable: boolean;
+    };
+    if (!m.hyperswitchVaultSdkAvailable) {
+      throw missingSdk('@juspay-tech/react-native-hyperswitch-vault');
+    }
+    return m.hyperswitchVaultAdapter;
+  },
 };
 
 export function registerAdapter(adapter: ProviderAdapter): () => void {

@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
-import HeadlessScreen from './HeadlessScreen';
-import PaymentScreenWithHook from './PaymentScreen';
-import CVCScreen from './CVCScreen';
+// import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
+// import HeadlessScreen from './HeadlessScreen';
+// import PaymentScreenWithHook from './PaymentScreen';
+// import CVCScreen from './CVCScreen';
+import VaultScreen from './VaultScreen';
 
-type TabType = 'ui' | 'cvc' | 'headless';
+type TabType = 'ui' | 'cvc' | 'headless' | 'vault';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('ui');
+  const [activeTab, setActiveTab] = useState<TabType>('vault');
 
   const publishableKey = process.env.HYPERSWITCH_PUBLISHABLE_KEY;
   const profileId = process.env.PROFILE_ID;
 
   const hyperPromise =
-    publishableKey && profileId ? HyperInit(publishableKey, profileId, {}) : null;
+    publishableKey && profileId ? null : null;
 
   if (!publishableKey || !profileId) {
     return (
@@ -24,18 +25,18 @@ export default function App() {
     );
   }
 
-  if (!hyperPromise) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Initializing...</Text>
-      </View>
-    );
-  }
+  // if (!hyperPromise) {
+  //   return (
+  //     <View style={styles.centerContainer}>
+  //       <Text>Initializing...</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.tab, activeTab === 'ui' && styles.activeTab]}
           onPress={() => setActiveTab('ui')}
         >
@@ -70,17 +71,31 @@ export default function App() {
           >
             Headless Mode
           </Text>
+        </TouchableOpacity> */}
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'vault' && styles.activeTab]}
+          onPress={() => setActiveTab('vault')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'vault' && styles.activeTabText,
+            ]}
+          >
+            Vault
+          </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        {activeTab === 'ui' && (
+        {/* {activeTab === 'ui' && (
           <PaymentScreenWithHook hyperPromise={hyperPromise} />
         )}
         {activeTab === 'cvc' && <CVCScreen hyperPromise={hyperPromise} />}
         {activeTab === 'headless' && (
           <HeadlessScreen hyperPromise={hyperPromise} />
-        )}
+        )} */}
+        {activeTab === 'vault' && <VaultScreen />}
       </View>
     </View>
   );

@@ -4,6 +4,7 @@
   "description": "Provider-agnostic React Native card collection widgets (VGS, Skyflow, Basis Theory, Evervault + request-builder) behind one widget interface.",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
+  "react-native": "./src/index.tsx",
   "types": "./lib/typescript/commonjs/src/index.d.ts",
   "exports": {
     ".": {
@@ -110,6 +111,7 @@
   "peerDependencies": {
     "@basis-theory/react-native-elements": "*",
     "@evervault/react-native": "*",
+    "@juspay-tech/react-native-hyperswitch-vault": "*",
     "@vgs/collect-react-native": "*",
     "react": "*",
     "react-native": "*",

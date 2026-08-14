@@ -1,14 +1,14 @@
 import { Platform } from 'react-native';
-import {
-  type PresentPaymentSheetParams,
-  type PaymentEventName,
-  type CvcAppearance,
-} from '@juspay-tech/react-native-hyperswitch';
+// import {
+//   type PresentPaymentSheetParams,
+//   type PaymentEventName,
+//   type CvcAppearance,
+// } from '@juspay-tech/react-native-hyperswitch';
 
 export const initialBaseUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5252' : 'http://localhost:5252';
 
-export const getCustomisationOptions = (layout = 'tabs'): PresentPaymentSheetParams => ({
+export const getCustomisationOptions = (layout = 'tabs'): any => ({
   appearance: {
     theme: 'Light',
     layout,
@@ -49,11 +49,11 @@ export const getCustomisationOptions = (layout = 'tabs'): PresentPaymentSheetPar
     'PAYMENT_METHOD_STATUS',
     'FORM_STATUS',
     'CVC_STATUS',
-  ] as PaymentEventName[],
+  ] as any[], 
   hideConfirmButton: true,
 });
 
-export const getCvcInputOptions = (): { appearance: CvcAppearance } => ({
+export const getCvcInputOptions = (): any => ({
   appearance: {
     colors: {
       light: {

@@ -1,17 +1,15 @@
 export type FormId = string;
 
-export type VaultType = 'vgs' | 'skyflow' | 'basis_theory' | 'evervault';
+export type VaultType =
+  'vgs' | 'skyflow' | 'basis_theory' | 'evervault' | 'hyperswitch_vault';
 
 export type FieldKind =
-  | 'card_number'
-  | 'card_expiry'
-  | 'card_cvc'
-  | 'card_holder';
+  'card_number' | 'card_expiry' | 'card_cvc' | 'card_holder';
 
 export interface ProviderConfig {
   vault_type: VaultType;
 
-  vault_data: unknown;
+  vault_data: any;
 }
 
 export interface FieldState {
@@ -26,10 +24,7 @@ export interface FieldState {
 }
 
 export type SubmitStatus =
-  | 'success'
-  | 'error'
-  | 'not_ready'
-  | 'validation_error';
+  'success' | 'error' | 'not_ready' | 'validation_error';
 
 export interface SubmitError {
   field?: FieldKind;
