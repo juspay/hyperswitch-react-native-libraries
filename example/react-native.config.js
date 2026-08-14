@@ -22,5 +22,8 @@ module.exports = {
     '@juspay-tech/react-native-hyperswitch-payment-methods': {
       root: path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-payment-methods'),
     },
+    '@juspay-tech/react-native-hyperswitch-vault': {
+      root: path.join(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-vault'),
+    },
   },
 };

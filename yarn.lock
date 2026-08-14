@@ -143,6 +143,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/eslint-parser@npm:^7.20.0":
+  version: 7.29.7
+  resolution: "@babel/eslint-parser@npm:7.29.7"
+  dependencies:
+    "@nicolo-ribaudo/eslint-scope-5-internals": 5.1.1-v1
+    eslint-visitor-keys: ^2.1.0
+    semver: ^6.3.1
+  peerDependencies:
+    "@babel/core": ^7.11.0
+    eslint: ^7.5.0 || ^8.0.0 || ^9.0.0
+  checksum: def39180054d2bdf2ab6e119d50e2746a60531a410496e973c08f5f16daa167722d7c8be96d759837a79b3a763d3bf9b188a0c55671e08d0c1e73a81617e9aa1
+  languageName: node
+  linkType: hard
+
 "@babel/generator@npm:^7.14.0, @babel/generator@npm:^7.20.0, @babel/generator@npm:^7.25.0, @babel/generator@npm:^7.29.0, @babel/generator@npm:^7.29.1, @babel/generator@npm:^7.7.2":
   version: 7.29.1
   resolution: "@babel/generator@npm:7.29.1"
@@ -5020,6 +5034,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@juspay-tech/react-native-hyperswitch-payment-methods@link:../packages/@juspay-tech/react-native-hyperswitch-payment-methods::locator=react-native-hyperswitch-example%40workspace%3Aexample":
+  version: 0.0.0-use.local
+  resolution: "@juspay-tech/react-native-hyperswitch-payment-methods@link:../packages/@juspay-tech/react-native-hyperswitch-payment-methods::locator=react-native-hyperswitch-example%40workspace%3Aexample"
+  languageName: node
+  linkType: soft
+
 "@juspay-tech/react-native-hyperswitch-payment-methods@workspace:packages/@juspay-tech/react-native-hyperswitch-payment-methods":
   version: 0.0.0-use.local
   resolution: "@juspay-tech/react-native-hyperswitch-payment-methods@workspace:packages/@juspay-tech/react-native-hyperswitch-payment-methods"
@@ -5055,6 +5075,7 @@ __metadata:
   peerDependencies:
     "@basis-theory/react-native-elements": "*"
     "@evervault/react-native": "*"
+    "@juspay-tech/react-native-hyperswitch-vault": "*"
     "@vgs/collect-react-native": "*"
     react: "*"
     react-native: "*"
@@ -5193,6 +5214,42 @@ __metadata:
     react-native: 0.78.2
     react-native-builder-bob: ^0.39.1
     release-it: ^19.0.5
+    turbo: ^1.10.7
+    typescript: ^5.2.2
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
+"@juspay-tech/react-native-hyperswitch-vault@link:../packages/@juspay-tech/react-native-hyperswitch-vault::locator=react-native-hyperswitch-example%40workspace%3Aexample":
+  version: 0.0.0-use.local
+  resolution: "@juspay-tech/react-native-hyperswitch-vault@link:../packages/@juspay-tech/react-native-hyperswitch-vault::locator=react-native-hyperswitch-example%40workspace%3Aexample"
+  languageName: node
+  linkType: soft
+
+"@juspay-tech/react-native-hyperswitch-vault@workspace:packages/@juspay-tech/react-native-hyperswitch-vault":
+  version: 0.0.0-use.local
+  resolution: "@juspay-tech/react-native-hyperswitch-vault@workspace:packages/@juspay-tech/react-native-hyperswitch-vault"
+  dependencies:
+    "@commitlint/config-conventional": ^17.0.2
+    "@evilmartians/lefthook": ^1.5.0
+    "@react-native-community/cli": 18.0.0
+    "@react-native/eslint-config": ^0.73.1
+    "@release-it/conventional-changelog": ^9.0.2
+    "@types/jest": ^29.5.5
+    "@types/react": ^18.2.44
+    commitlint: ^17.0.2
+    del-cli: ^5.1.0
+    eslint: ^8.51.0
+    eslint-config-prettier: ^9.0.0
+    eslint-plugin-prettier: ^5.0.1
+    jest: ^29.7.0
+    prettier: ^3.0.3
+    react: 19.0.0
+    react-native: 0.79.2
+    react-native-builder-bob: ^0.42.0
+    release-it: ^17.10.0
     turbo: ^1.10.7
     typescript: ^5.2.2
   peerDependencies:
@@ -7489,6 +7546,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native/eslint-config@npm:^0.73.1":
+  version: 0.73.2
+  resolution: "@react-native/eslint-config@npm:0.73.2"
+  dependencies:
+    "@babel/core": ^7.20.0
+    "@babel/eslint-parser": ^7.20.0
+    "@react-native/eslint-plugin": 0.73.1
+    "@typescript-eslint/eslint-plugin": ^5.57.1
+    "@typescript-eslint/parser": ^5.57.1
+    eslint-config-prettier: ^8.5.0
+    eslint-plugin-eslint-comments: ^3.2.0
+    eslint-plugin-ft-flow: ^2.0.1
+    eslint-plugin-jest: ^26.5.3
+    eslint-plugin-prettier: ^4.2.1
+    eslint-plugin-react: ^7.30.1
+    eslint-plugin-react-hooks: ^4.6.0
+    eslint-plugin-react-native: ^4.0.0
+  peerDependencies:
+    eslint: ">=8"
+    prettier: ">=2"
+  checksum: 6d9de3267d80f1ee4f046a54a86bb906448dbc2a1a708fa7b7cb92f7611dec666b5908451501cd39b8b67eda4c8cfac6b2707a0ea65eb0228c79dcd47fc9b4c5
+  languageName: node
+  linkType: hard
+
 "@react-native/eslint-config@npm:^0.78.0":
   version: 0.78.3
   resolution: "@react-native/eslint-config@npm:0.78.3"
@@ -7555,6 +7636,13 @@ __metadata:
     eslint: ">=8"
     prettier: ">=2"
   checksum: 6b898112940149d61747952962e192659d7487697111099cc05c6ad9728191f1294f8f0c0c16077fd0b87eb5f6f736cfffd4ec3ede2b33536e3b219675669712
+  languageName: node
+  linkType: hard
+
+"@react-native/eslint-plugin@npm:0.73.1":
+  version: 0.73.1
+  resolution: "@react-native/eslint-plugin@npm:0.73.1"
+  checksum: 82a9bd30ada10ec4e926021967d1ffeb7c82eaaba6f7171cc655daf3339d2e2c15897bc3cd0f529e83ef2958c3b9b0365590a6b672a1a0efe7c781bd3e854473
   languageName: node
   linkType: hard
 
@@ -8986,6 +9074,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react@npm:^18.2.44":
+  version: 18.3.31
+  resolution: "@types/react@npm:18.3.31"
+  dependencies:
+    "@types/prop-types": "*"
+    csstype: ^3.2.2
+  checksum: fe17985f3debdc83e1804102b51e0a59ba64295c2f10de92ba8c7c8276b70ac3b11bf19870d31279feaa20b00e8d77fa7a17852137a2beba8fad45350bc66d76
+  languageName: node
+  linkType: hard
+
 "@types/react@npm:^18.2.6":
   version: 18.3.28
   resolution: "@types/react@npm:18.3.28"
@@ -9078,7 +9176,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^5.30.5":
+"@typescript-eslint/eslint-plugin@npm:^5.30.5, @typescript-eslint/eslint-plugin@npm:^5.57.1":
   version: 5.62.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.62.0"
   dependencies:
@@ -9145,7 +9243,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^5.30.5":
+"@typescript-eslint/parser@npm:^5.30.5, @typescript-eslint/parser@npm:^5.57.1":
   version: 5.62.0
   resolution: "@typescript-eslint/parser@npm:5.62.0"
   dependencies:
@@ -13304,6 +13402,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-config-prettier@npm:^9.0.0":
+  version: 9.1.2
+  resolution: "eslint-config-prettier@npm:9.1.2"
+  peerDependencies:
+    eslint: ">=7.0.0"
+  bin:
+    eslint-config-prettier: bin/cli.js
+  checksum: e786b767331094fd024cb1b0899964a9da0602eaf4ebd617d6d9794752ccd04dbe997e3c14c17f256c97af20bee1c83c9273f69b74cb2081b6f514580d62408f
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-eslint-comments@npm:^3.2.0":
   version: 3.2.0
   resolution: "eslint-plugin-eslint-comments@npm:3.2.0"
@@ -13413,6 +13522,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-plugin-prettier@npm:^5.0.1, eslint-plugin-prettier@npm:^5.5.6":
+  version: 5.5.6
+  resolution: "eslint-plugin-prettier@npm:5.5.6"
+  dependencies:
+    prettier-linter-helpers: ^1.0.1
+    synckit: ^0.11.13
+  peerDependencies:
+    "@types/eslint": ">=8.0.0"
+    eslint: ">=8.0.0"
+    eslint-config-prettier: ">= 7.0.0 <10.0.0 || >=10.1.0"
+    prettier: ">=3.0.0"
+  peerDependenciesMeta:
+    "@types/eslint":
+      optional: true
+    eslint-config-prettier:
+      optional: true
+  checksum: 9e2d94d6631af110966733d19aea15699ef684b543de23d1812423b35a02203ac87ef2d8784f236950ecc4026828e98f00e7c2b41879ee9c974a0a0563f1c754
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-prettier@npm:^5.2.3, eslint-plugin-prettier@npm:^5.5.4":
   version: 5.5.5
   resolution: "eslint-plugin-prettier@npm:5.5.5"
@@ -13430,26 +13559,6 @@ __metadata:
     eslint-config-prettier:
       optional: true
   checksum: 49b1c25d75ded255a8707d5f06288ae86e8ab4f8e273d4aabdabf73cd0903848916d5a3598ba8be82f2c8dd06769c5e6c172503b3b9cfb2636b6fc23b9c024fb
-  languageName: node
-  linkType: hard
-
-"eslint-plugin-prettier@npm:^5.5.6":
-  version: 5.5.6
-  resolution: "eslint-plugin-prettier@npm:5.5.6"
-  dependencies:
-    prettier-linter-helpers: ^1.0.1
-    synckit: ^0.11.13
-  peerDependencies:
-    "@types/eslint": ">=8.0.0"
-    eslint: ">=8.0.0"
-    eslint-config-prettier: ">= 7.0.0 <10.0.0 || >=10.1.0"
-    prettier: ">=3.0.0"
-  peerDependenciesMeta:
-    "@types/eslint":
-      optional: true
-    eslint-config-prettier:
-      optional: true
-  checksum: 9e2d94d6631af110966733d19aea15699ef684b543de23d1812423b35a02203ac87ef2d8784f236950ecc4026828e98f00e7c2b41879ee9c974a0a0563f1c754
   languageName: node
   linkType: hard
 
@@ -13601,7 +13710,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:^8.4.1":
+"eslint@npm:^8.4.1, eslint@npm:^8.51.0":
   version: 8.57.1
   resolution: "eslint@npm:8.57.1"
   dependencies:
@@ -23190,6 +23299,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-builder-bob@npm:^0.42.0":
+  version: 0.42.1
+  resolution: "react-native-builder-bob@npm:0.42.1"
+  dependencies:
+    "@babel/core": ^7.29.0
+    "@babel/plugin-transform-flow-strip-types": ^7.27.1
+    "@babel/plugin-transform-strict-mode": ^7.27.1
+    "@babel/preset-env": ^7.29.2
+    "@babel/preset-react": ^7.28.5
+    "@babel/preset-typescript": ^7.28.5
+    "@jridgewell/sourcemap-codec": ^1.5.5
+    arktype: ^2.2.0
+    babel-plugin-syntax-hermes-parser: ^0.34.0
+    browserslist: ^4.28.2
+    cross-spawn: ^7.0.6
+    dedent: ^1.7.2
+    del: ^8.0.1
+    escape-string-regexp: ^5.0.0
+    fs-extra: ^11.3.4
+    glob: ^13.0.6
+    json5: ^2.2.3
+    kleur: ^4.1.5
+    prompts: ^2.4.2
+    react-native-monorepo-config: ^0.3.3
+    typescript: ^6.0.3
+    which: ^6.0.1
+    yargs: ^18.0.0
+  bin:
+    bob: bin/bob
+  checksum: 642cbe3ad2279f540b6766a8b35b3450a3d7f65e886229eb34b41d569b6109f779ea77185f041ada1836f3d5f4c72174ced0f2e891f9fe23021b5309a5fea67a
+  languageName: node
+  linkType: hard
+
 "react-native-builder-bob@npm:^0.43.0":
   version: 0.43.0
   resolution: "react-native-builder-bob@npm:0.43.0"
@@ -23259,6 +23401,8 @@ __metadata:
     "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.25.3
     "@babel/runtime": ^7.25.0
+    "@juspay-tech/react-native-hyperswitch-payment-methods": "link:../packages/@juspay-tech/react-native-hyperswitch-payment-methods"
+    "@juspay-tech/react-native-hyperswitch-vault": "link:../packages/@juspay-tech/react-native-hyperswitch-vault"
     "@react-native-community/cli": 18.0.0
     "@react-native-community/cli-platform-android": 18.0.0
     "@react-native-community/cli-platform-ios": 18.0.0
@@ -23297,6 +23441,25 @@ __metadata:
     lerna: ^8.2.2
     prettier: ^2.0.5
     release-it: ^19.0.5
+  languageName: unknown
+  linkType: soft
+
+"react-native-hyperswitch-vault-example@workspace:packages/@juspay-tech/react-native-hyperswitch-vault/example":
+  version: 0.0.0-use.local
+  resolution: "react-native-hyperswitch-vault-example@workspace:packages/@juspay-tech/react-native-hyperswitch-vault/example"
+  dependencies:
+    "@babel/core": ^7.25.2
+    "@babel/preset-env": ^7.25.3
+    "@babel/runtime": ^7.25.0
+    "@react-native-community/cli": 18.0.0
+    "@react-native-community/cli-platform-android": 18.0.0
+    "@react-native-community/cli-platform-ios": 18.0.0
+    "@react-native/babel-preset": 0.79.2
+    "@react-native/metro-config": 0.79.2
+    "@react-native/typescript-config": 0.79.2
+    react: 19.0.0
+    react-native: 0.79.2
+    react-native-builder-bob: ^0.42.0
   languageName: unknown
   linkType: soft
 

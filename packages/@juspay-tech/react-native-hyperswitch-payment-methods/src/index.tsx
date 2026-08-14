@@ -39,3 +39,4 @@ export type { VgsVaultData } from './providers/vgs/types';
 export type { SkyflowVaultData } from './providers/skyflow/types';
 export type { BasisTheoryVaultData } from './providers/basisTheory/types';
 export type { EvervaultVaultData } from './providers/evervault/types';
+export type { HyperswitchVaultData } from './providers/hyperswitch/types';

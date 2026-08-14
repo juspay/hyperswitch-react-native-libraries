@@ -12,6 +12,8 @@
     "adb": "adb reverse tcp:8081 tcp:8081"
   },
   "dependencies": {
+    "@juspay-tech/react-native-hyperswitch-payment-methods": "link:../packages/@juspay-tech/react-native-hyperswitch-payment-methods",
+    "@juspay-tech/react-native-hyperswitch-vault": "link:../packages/@juspay-tech/react-native-hyperswitch-vault",
     "@sentry/react-native": "^6.20.0",
     "@vgs/collect-react-native": "^1.1.5",
     "react": "19.0.0",

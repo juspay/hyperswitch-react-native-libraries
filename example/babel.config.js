@@ -5,12 +5,14 @@ const pkg2 = require('../packages/@juspay-tech/react-native-hyperswitch-click-to
 const pkg3 = require('../packages/@juspay-tech/react-native-hyperswitch-netcetera-3ds/package.json');
 const pkg4 = require('../packages/@juspay-tech/react-native-hyperswitch-scancard/package.json');
 const pkg5 = require('../packages/@juspay-tech/react-native-hyperswitch-payment-methods/package.json');
+const pkg6 = require('../packages/@juspay-tech/react-native-hyperswitch-vault/package.json');
 
 const root1 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch');
 const root2 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-click-to-pay');
 const root3 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-netcetera-3ds');
 const root4 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-scancard');
 const root5 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-payment-methods');
+const root6 = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch-vault');
 
 module.exports = getConfig(
   {
@@ -22,4 +24,5 @@ module.exports = getConfig(
   { root: root3, pkg: pkg3 },
   { root: root4, pkg: pkg4 },
   { root: root5, pkg: pkg5 },
+  { root: root6, pkg: pkg6 },
 );

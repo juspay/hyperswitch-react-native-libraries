@@ -2,7 +2,10 @@ const path = require('path');
 const { getDefaultConfig } = require('@react-native/metro-config');
 const { withMetroConfig } = require('react-native-monorepo-config');
 
-const root = path.resolve(__dirname, '..', 'packages', '@juspay-tech', 'react-native-hyperswitch');
+// Monorepo root: withMetroConfig reads workspaces from this package.json and
+// makes all packages (e.g. @juspay-tech/react-native-hyperswitch-vault)
+// resolvable by Metro.
+const root = path.resolve(__dirname, '..');
 
 /**
  * Metro configuration

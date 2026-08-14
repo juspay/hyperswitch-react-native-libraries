@@ -11,7 +11,7 @@ branches on the provider.
 <CardHolderWidget />
 ```
 
-Supported providers: **VGS, Skyflow, Basis Theory, Evervault** (vault/tokenizing).
+Supported providers: **VGS, Skyflow, Basis Theory, Evervault, Hyperswitch Vault** (vault/tokenizing).
 
 ## Installation
 
@@ -28,6 +28,7 @@ dependencies, so you only pay for — and natively link — what you configure):
 | `skyflow`      | `skyflow-react-native`                              |
 | `basis_theory` | `@basis-theory/react-native-elements` (v3+)         |
 | `evervault`    | `@evervault/react-native` (+ `react-native-webview`)|
+| `hyperswitch_vault` | `@juspay-tech/react-native-hyperswitch-vault`  |
 
 If a `vault_type` is configured without its SDK installed, the form surfaces an
 actionable "install X" error via `onError`.
