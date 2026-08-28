@@ -92,6 +92,10 @@ export default function App() {
       appearance: {
         theme: "Glass",
       },
+      paymentMethodLayout:{
+        separatorText: "or pay with",
+      },
+      hideCardNicknameField : true
     });
     console.log("Payment result", result);
     if (result.status === "completed") {

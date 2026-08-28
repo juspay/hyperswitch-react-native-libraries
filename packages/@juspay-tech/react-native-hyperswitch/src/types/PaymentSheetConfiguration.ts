@@ -115,6 +115,7 @@ export interface PaymentMethodLayout {
   cvcIcon?: CvcIconDisplay;
   cardBrandIcon?: CardBrandIconDisplay;
   showCheckedIconForSelection?: boolean;
+  separatorText?: string;
   savedMethodCustomization?: SavedMethodCustomization;
 }
 
@@ -347,6 +348,7 @@ export interface PaymentSheetConfiguration {
   paymentMethodOrder?: string[];
   paymentMethodLayout?: PaymentMethodLayout;
   splitCardFields?: boolean;
+  hideCardNicknameField?: boolean;
 }
 
 export interface options {
