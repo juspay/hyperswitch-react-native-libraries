@@ -2,8 +2,10 @@ import { createRef, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { fieldChange } from '../../core/fieldChange';
 import type { ProviderAdapter } from '../../core/ProviderAdapter';
-import type { FieldKind, FieldState, SubmitResult } from '../../core/types';
+import { errorResult, messageOf } from '../../core/results';
+import type { TokenizeResult } from '../../core/types';
 import type { BasisTheoryVaultData } from './types';
 
 declare const require: (moduleId: string) => unknown;
@@ -32,10 +34,10 @@ const {
 const VAULT_TYPE = 'basis_theory' as const;
 
 interface BtRefs {
-  card_number: RefObject<any | null>;
-  card_expiry: RefObject<any | null>;
-  card_cvc: RefObject<any | null>;
-  card_holder: RefObject<any | null>;
+  cardNumber: RefObject<any | null>;
+  cardExpiry: RefObject<any | null>;
+  cardCvc: RefObject<any | null>;
+  cardholderName: RefObject<any | null>;
 }
 
 interface BtInstance {
@@ -57,9 +59,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateVaultData(raw: unknown): BasisTheoryVaultData {
-  if (!isRecord(raw) || typeof raw.api_key !== 'string' || !raw.api_key) {
+  if (!isRecord(raw) || typeof raw.apiKey !== 'string' || !raw.apiKey) {
     throw new Error(
-      'Basis Theory vault_data requires a non-empty string "api_key". Received: ' +
+      'Basis Theory vaultData requires a non-empty string "apiKey". Received: ' +
         JSON.stringify(raw)
     );
   }
@@ -74,17 +76,17 @@ const Host: ProviderAdapter['Host'] = ({
 }) => {
   const data = vaultData as BasisTheoryVaultData;
   const { bt, error } = useBasisTheory(
-    data.api_key,
-    data.base_url ? { apiBaseUrl: data.base_url } : undefined
+    data.apiKey,
+    data.baseUrl ? { apiBaseUrl: data.baseUrl } : undefined
   );
 
   const refsRef = useRef<BtRefs | null>(null);
   if (refsRef.current === null) {
     refsRef.current = {
-      card_number: createRef<any>(),
-      card_expiry: createRef<any>(),
-      card_cvc: createRef<any>(),
-      card_holder: createRef<any>(),
+      cardNumber: createRef<any>(),
+      cardExpiry: createRef<any>(),
+      cardCvc: createRef<any>(),
+      cardholderName: createRef<any>(),
     };
   }
   const refs = refsRef.current;
@@ -102,90 +104,88 @@ const Host: ProviderAdapter['Host'] = ({
   return <BasisTheoryProvider bt={bt}>{children}</BasisTheoryProvider>;
 };
 
-function toFieldState(kind: FieldKind, event: unknown): FieldState {
-  const e = (event ?? {}) as {
-    empty?: boolean;
-    valid?: boolean;
-    errors?: Array<{ type: string }>;
-    brand?: string;
-  };
-  return {
-    kind,
-    isValid: Boolean(e.valid),
-    isEmpty: Boolean(e.empty),
-    isFocused: false,
-    isDirty: !(e.empty ?? true),
-    validationErrors: (e.errors ?? []).map((err) => err.type),
-    brand: e.brand,
-  };
+interface BtChangeEvent {
+  empty?: boolean;
+  valid?: boolean;
+  errors?: Array<{ type: string }>;
+  brand?: string;
 }
 
 const Field: ProviderAdapter['Field'] = ({
-  kind,
+  elementType,
   collector,
   placeholder,
-  style,
-  textStyle,
-  onStateChange,
+  styles,
+  onChange,
 }) => {
   const { refs } = collector as BtCollector;
 
-  const mergedStyle = StyleSheet.flatten([style, textStyle]);
-  const onChange = onStateChange
-    ? (event: unknown) => onStateChange(toFieldState(kind, event))
+  const mergedStyle = StyleSheet.flatten([styles?.container, styles?.input]);
+  const handleChange = onChange
+    ? (event: unknown) => {
+        const e = (event ?? {}) as BtChangeEvent;
+        onChange(
+          fieldChange(elementType, {
+            empty: e.empty ?? true,
+            valid: Boolean(e.valid),
+            brand: e.brand,
+            error: e.errors?.[0]?.type,
+          })
+        );
+      }
     : undefined;
-  switch (kind) {
-    case 'card_number':
+  switch (elementType) {
+    case 'cardNumber':
       return (
         <CardNumberElement
-          btRef={refs.card_number}
+          btRef={refs.cardNumber}
           placeholder={placeholder}
           style={mergedStyle}
-          onChange={onChange}
+          onChange={handleChange}
         />
       );
-    case 'card_expiry':
+    case 'cardExpiry':
       return (
         <CardExpirationDateElement
-          btRef={refs.card_expiry}
+          btRef={refs.cardExpiry}
           placeholder={placeholder}
           style={mergedStyle}
-          onChange={onChange}
+          onChange={handleChange}
         />
       );
-    case 'card_cvc':
+    case 'cardCvc':
       return (
         <CardVerificationCodeElement
-          btRef={refs.card_cvc}
+          btRef={refs.cardCvc}
           placeholder={placeholder}
           style={mergedStyle}
-          onChange={onChange}
+          onChange={handleChange}
         />
       );
-    case 'card_holder':
+    case 'cardholderName':
       return (
         <TextElement
-          btRef={refs.card_holder}
+          btRef={refs.cardholderName}
           placeholder={placeholder}
           style={mergedStyle}
-          onChange={onChange}
+          onChange={handleChange}
         />
       );
   }
 };
 
-const submit: ProviderAdapter['submit'] = async (
+const tokenize: ProviderAdapter['tokenize'] = async (
   collector,
   providerData
-): Promise<SubmitResult> => {
+): Promise<TokenizeResult> => {
   const { bt, refs } = collector as BtCollector;
-  const expiry = refs.card_expiry.current;
+  const expiry = refs.cardExpiry.current;
   const data: Record<string, unknown> = {
-    number: refs.card_number.current,
+    number: refs.cardNumber.current,
     expiration_month: expiry ? expiry.month() : undefined,
     expiration_year: expiry ? expiry.year() : undefined,
-    cvc: refs.card_cvc.current,
-    cardholder_name: refs.card_holder.current,
+    cvc: refs.cardCvc.current,
+    cardholder_name: refs.cardholderName.current,
   };
 
   try {
@@ -194,13 +194,11 @@ const submit: ProviderAdapter['submit'] = async (
       undefined
     );
     if (!token) {
-      return {
-        status: 'error',
-        vaultType: VAULT_TYPE,
-        errors: [
-          { code: 'no_token', message: 'Basis Theory returned no token.' },
-        ],
-      };
+      return errorResult(
+        VAULT_TYPE,
+        'tokenization_failed',
+        'Basis Theory returned no token.'
+      );
     }
     const id = isRecord(token) ? token.id : undefined;
     return {
@@ -209,16 +207,7 @@ const submit: ProviderAdapter['submit'] = async (
       data: { raw: token, tokens: id ? { id } : undefined },
     };
   } catch (error) {
-    return {
-      status: 'error',
-      vaultType: VAULT_TYPE,
-      errors: [
-        {
-          code: 'token_create_failed',
-          message: error instanceof Error ? error.message : String(error),
-        },
-      ],
-    };
+    return errorResult(VAULT_TYPE, 'tokenization_failed', messageOf(error));
   }
 };
 
@@ -227,5 +216,5 @@ export const basisTheoryAdapter: ProviderAdapter = {
   validateVaultData,
   Host,
   Field,
-  submit,
+  tokenize,
 };

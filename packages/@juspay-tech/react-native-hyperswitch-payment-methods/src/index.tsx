@@ -1,32 +1,38 @@
 export { HyperswitchPaymentMethods } from './HyperswitchPaymentMethods';
 export { registerAdapter } from './providers/registry';
 
-export { HyperswitchForm } from './core/HyperswitchForm';
-export type { HyperswitchFormProps } from './core/HyperswitchForm';
-export { useHyperswitchForm } from './core/useHyperswitchForm';
-export type { UseHyperswitchForm } from './core/useHyperswitchForm';
+export { CardForm } from './core/CardForm';
+export type { CardFormProps } from './core/CardForm';
+export { useCardForm } from './core/useCardForm';
+export type { UseCardForm } from './core/useCardForm';
 
 export {
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-} from './widgets';
-export type { WidgetProps } from './widgets';
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+} from './fields';
+export type { FieldProps, FieldStyles } from './fields';
 
 export type {
   FormId,
   VaultType,
-  FieldKind,
-  ProviderConfig,
-  SubmitStatus,
-  SubmitError,
-  SubmitData,
-  SubmitResult,
+  VaultDetails,
+  ElementType,
+  FieldEvent,
+  FieldChange,
+  CardDetails,
+  CardFormEvent,
+  CardFormChange,
+  TokenizeStatus,
+  TokenizeErrorType,
+  TokenizeErrorCode,
+  TokenizeError,
+  TokenizeData,
+  TokenizeResult,
   FormStatus,
-  FieldState,
-  HyperswitchFormHandle,
-  WidgetHandle,
+  CardFormHandle,
+  FieldHandle,
 } from './core/types';
 
 export type {
@@ -35,7 +41,10 @@ export type {
   ProviderFieldProps,
 } from './core/ProviderAdapter';
 
-export type { VgsVaultData } from './providers/vgs/types';
-export type { SkyflowVaultData } from './providers/skyflow/types';
+export type { VgsVaultData, VgsTokenizeOptions } from './providers/vgs/types';
+export type {
+  SkyflowVaultData,
+  SkyflowTokenizeOptions,
+} from './providers/skyflow/types';
 export type { BasisTheoryVaultData } from './providers/basisTheory/types';
 export type { EvervaultVaultData } from './providers/evervault/types';

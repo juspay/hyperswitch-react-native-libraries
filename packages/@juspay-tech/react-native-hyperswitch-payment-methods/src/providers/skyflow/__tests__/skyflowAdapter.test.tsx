@@ -17,14 +17,20 @@ jest.mock(
     const useCollectContainer = () => container;
     const element =
       (name: string) =>
-      (props: { column: string; onChange?: (state: unknown) => void }) => {
+      (props: {
+        column: string;
+        onChange?: (state: unknown) => void;
+        onBlur?: (state: unknown) => void;
+      }) => {
         React.useEffect(() => {
-          props.onChange?.({
+          const state = {
             isValid: true,
             isEmpty: false,
             isFocused: false,
             selectedCardScheme: 'VISA',
-          });
+          };
+          props.onChange?.(state);
+          props.onBlur?.(state);
         }, [props]);
         return React.createElement(
           Text,
@@ -46,37 +52,41 @@ jest.mock(
   { virtual: true }
 );
 
-import { HyperswitchForm } from '../../../core/HyperswitchForm';
+import { CardForm } from '../../../core/CardForm';
 import {
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-} from '../../../widgets';
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+} from '../../../fields';
 import { skyflowAdapter } from '../adapter';
 import type {
-  FieldKind,
-  HyperswitchFormHandle,
-  ProviderConfig,
-  SubmitResult,
+  CardFormHandle,
+  ElementType,
+  FieldChange,
+  TokenizeResult,
+  VaultDetails,
 } from '../../../core/types';
 
-const skyflowConfig: ProviderConfig = {
-  vault_type: 'skyflow',
-  vault_data: {
-    vault_id: 'v123',
-    vault_url: 'https://vault.skyflow.test',
+const skyflowDetails: VaultDetails = {
+  vaultType: 'skyflow',
+  vaultData: {
+    vaultId: 'v123',
+    vaultUrl: 'https://vault.skyflow.test',
     table: 'cards',
-    bearer_token: 'tok_bearer',
+    bearerToken: 'tok_bearer',
   },
 };
 
-const columns: Record<FieldKind, string> = {
-  card_number: 'card_number',
-  card_expiry: 'card_expiration',
-  card_cvc: 'cvv',
-  card_holder: 'cardholder_name',
+const columns: Record<ElementType, string> = {
+  cardNumber: 'card_number',
+  cardExpiry: 'card_expiration',
+  cardCvc: 'cvv',
+  cardholderName: 'cardholder_name',
 };
+
+const errorOf = (result: TokenizeResult) =>
+  result.status === 'success' ? undefined : result.error;
 
 function fakeCollector(collectImpl: () => Promise<unknown>): {
   collector: unknown;
@@ -94,15 +104,15 @@ afterEach(() => {
 });
 
 describe('skyflowAdapter', () => {
-  it('renders a Skyflow element per widget (via the hook bridge) and submits', async () => {
-    const ref = createRef<HyperswitchFormHandle>();
+  it('renders a Skyflow element per field (via the hook bridge) and tokenizes', async () => {
+    const ref = createRef<CardFormHandle>();
     render(
-      <HyperswitchForm ref={ref} config={skyflowConfig}>
-        <CardNumberWidget />
-        <CardExpiryWidget />
-        <CardCVCWidget />
-        <CardHolderWidget />
-      </HyperswitchForm>
+      <CardForm ref={ref} vaultDetails={skyflowDetails}>
+        <CardNumberField />
+        <CardExpiryField />
+        <CardCVCField />
+        <CardholderNameField />
+      </CardForm>
     );
 
     await waitFor(() =>
@@ -112,9 +122,9 @@ describe('skyflowAdapter', () => {
     expect(screen.getByTestId('skyflow-cvv-cvv')).toBeTruthy();
     expect(screen.getByTestId('skyflow-holder-cardholder_name')).toBeTruthy();
 
-    let result: SubmitResult | undefined;
+    let result: TokenizeResult | undefined;
     await act(async () => {
-      result = await ref.current!.submit();
+      result = await ref.current!.tokenize();
     });
     expect(result?.status).toBe('success');
     expect(result?.vaultType).toBe('skyflow');
@@ -123,63 +133,69 @@ describe('skyflowAdapter', () => {
     expect(skyflow.__container.collect).toHaveBeenCalledWith({ tokens: true });
   });
 
-  it('maps Skyflow element state to the widget onStateChange', async () => {
-    const onStateChange = jest.fn();
+  it('maps Skyflow element state to the web change, and its blur to onBlur', async () => {
+    const onChange = jest.fn();
+    const onBlur = jest.fn();
     render(
-      <HyperswitchForm config={skyflowConfig}>
-        <CardNumberWidget onStateChange={onStateChange} />
-      </HyperswitchForm>
+      <CardForm vaultDetails={skyflowDetails}>
+        <CardNumberField onChange={onChange} onBlur={onBlur} />
+      </CardForm>
     );
     await waitFor(() =>
       expect(screen.getByTestId('skyflow-number-card_number')).toBeTruthy()
     );
 
-    const state = onStateChange.mock.calls.at(-1)?.[0] as {
-      kind: string;
-      isValid: boolean;
-      brand?: string;
-    };
-    expect(state.kind).toBe('card_number');
-    expect(state.isValid).toBe(true);
-    expect(state.brand).toBe('VISA');
+    const change = onChange.mock.calls.at(-1)?.[0] as FieldChange;
+    expect(change).toEqual({
+      elementType: 'cardNumber',
+      empty: false,
+      complete: true,
+      valid: true,
+      brand: 'Visa',
+      touched: true,
+    });
+    expect(onBlur).toHaveBeenCalledWith({ elementType: 'cardNumber' });
   });
 
   describe('validateVaultData', () => {
-    it('accepts a complete config', () => {
+    it('accepts complete vaultData', () => {
       expect(() =>
         skyflowAdapter.validateVaultData({
-          vault_id: 'v',
-          vault_url: 'https://x',
+          vaultId: 'v',
+          vaultUrl: 'https://x',
           table: 'cards',
         })
       ).not.toThrow();
     });
 
-    it('throws when vault_url is missing', () => {
+    it('throws when vaultUrl is missing', () => {
       expect(() =>
-        skyflowAdapter.validateVaultData({ vault_id: 'v', table: 'cards' })
-      ).toThrow(/vault_url/i);
+        skyflowAdapter.validateVaultData({ vaultId: 'v', table: 'cards' })
+      ).toThrow(/vaultUrl/i);
     });
   });
 
-  describe('submit', () => {
+  describe('tokenize', () => {
     it('collects with tokens and extracts tokens from records', async () => {
       const { collector, collect } = fakeCollector(async () => ({
         records: [{ table: 'cards', fields: { card_number: 'tok_1' } }],
       }));
-      const result = await skyflowAdapter.submit(collector);
+      const result = await skyflowAdapter.tokenize(collector);
       expect(collect).toHaveBeenCalledWith({ tokens: true });
       expect(result.status).toBe('success');
-      expect(result.data?.tokens).toEqual({ card_number: 'tok_1' });
+      expect(result.status === 'success' && result.data?.tokens).toEqual({
+        card_number: 'tok_1',
+      });
     });
 
-    it('maps a rejected collect to an error result', async () => {
+    it('maps a rejected collect to tokenization_failed', async () => {
       const { collector } = fakeCollector(async () => {
         throw new Error('collect failed');
       });
-      const result = await skyflowAdapter.submit(collector);
+      const result = await skyflowAdapter.tokenize(collector);
       expect(result.status).toBe('error');
-      expect(result.errors?.[0]?.message).toMatch(/collect failed/);
+      expect(errorOf(result)?.code).toBe('tokenization_failed');
+      expect(errorOf(result)?.message).toMatch(/collect failed/);
     });
   });
 });

@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { fieldChange } from '../../core/fieldChange';
 import type { ProviderAdapter } from '../../core/ProviderAdapter';
-import type { FieldKind, FieldState, SubmitResult } from '../../core/types';
-import type { VgsSubmitOptions, VgsVaultData } from './types';
+import { errorResult, messageOf } from '../../core/results';
+import type { ElementType, TokenizeResult } from '../../core/types';
+import type { VgsTokenizeOptions, VgsVaultData } from './types';
 
 declare const require: (moduleId: string) => unknown;
 
@@ -26,18 +28,18 @@ type VGSCollect = InstanceType<VgsSdk['VGSCollect']>;
 const VAULT_TYPE = 'vgs' as const;
 
 const FIELD_CONFIG: Record<
-  FieldKind,
+  ElementType,
   { fieldName: string; type: 'card' | 'expDate' | 'cvc' | 'cardHolderName' }
 > = {
-  card_number: { fieldName: 'card_number', type: 'card' },
-  card_expiry: { fieldName: 'expiration_date', type: 'expDate' },
-  card_cvc: { fieldName: 'card_cvc', type: 'cvc' },
-  card_holder: { fieldName: 'card_holder', type: 'cardHolderName' },
+  cardNumber: { fieldName: 'card_number', type: 'card' },
+  cardExpiry: { fieldName: 'expiration_date', type: 'expDate' },
+  cardCvc: { fieldName: 'card_cvc', type: 'cvc' },
+  cardholderName: { fieldName: 'card_holder', type: 'cardHolderName' },
 };
 
-const FIELD_COMPONENT: Partial<Record<FieldKind, typeof VGSTextInput>> = {
-  card_number: VGSCardInput,
-  card_cvc: VGSCVCInput,
+const FIELD_COMPONENT: Partial<Record<ElementType, typeof VGSTextInput>> = {
+  cardNumber: VGSCardInput,
+  cardCvc: VGSCVCInput,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -45,9 +47,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateVaultData(raw: unknown): VgsVaultData {
-  if (!isRecord(raw) || typeof raw.vault_id !== 'string' || !raw.vault_id) {
+  if (!isRecord(raw) || typeof raw.vaultId !== 'string' || !raw.vaultId) {
     throw new Error(
-      'VGS vault_data requires a non-empty string "vault_id". Received: ' +
+      'VGS vaultData requires a non-empty string "vaultId". Received: ' +
         JSON.stringify(raw)
     );
   }
@@ -65,8 +67,8 @@ const Host: ProviderAdapter['Host'] = ({
 
   useEffect(() => {
     try {
-      const collector = new VGSCollect(data.vault_id, data.environment);
-      if (data.route_id) collector.setRouteId(data.route_id);
+      const collector = new VGSCollect(data.vaultId, data.environment);
+      if (data.routeId) collector.setRouteId(data.routeId);
       collectorRef.current = collector;
 
       if (data.cname) {
@@ -81,9 +83,9 @@ const Host: ProviderAdapter['Host'] = ({
       onError(error);
     }
   }, [
-    data.vault_id,
+    data.vaultId,
     data.environment,
-    data.route_id,
+    data.routeId,
     data.cname,
     onReady,
     onError,
@@ -92,53 +94,60 @@ const Host: ProviderAdapter['Host'] = ({
   return <Fragment>{children}</Fragment>;
 };
 
-function toFieldState(kind: FieldKind, state: unknown): FieldState {
-  const s = (state ?? {}) as {
-    isValid?: boolean;
-    isEmpty?: boolean;
-    isFocused?: boolean;
-    isDirty?: boolean;
-    validationErrors?: string[];
-    cardBrand?: string;
-  };
-  return {
-    kind,
-    isValid: Boolean(s.isValid),
-    isEmpty: Boolean(s.isEmpty),
-    isFocused: Boolean(s.isFocused),
-    isDirty: Boolean(s.isDirty),
-    validationErrors: s.validationErrors ?? [],
-    brand: s.cardBrand,
-  };
+interface VgsFieldState {
+  isValid?: boolean;
+  isEmpty?: boolean;
+  isFocused?: boolean;
+  isDirty?: boolean;
+  validationErrors?: string[];
+  cardBrand?: string;
 }
 
 const Field: ProviderAdapter['Field'] = ({
-  kind,
+  elementType,
   collector,
   placeholder,
-  style,
-  textStyle,
-  onStateChange,
+  styles,
+  onChange,
+  onFocus,
+  onBlur,
 }) => {
-  const config = FIELD_CONFIG[kind];
+  const config = FIELD_CONFIG[elementType];
+  const focusedRef = useRef(false);
 
-  const flatStyle = StyleSheet.flatten(style) as
-    | { height?: number }
-    | undefined;
+  const flatStyle = StyleSheet.flatten(styles?.container) as
+    { height?: number } | undefined;
   const containerHeight =
     typeof flatStyle?.height === 'number' ? flatStyle.height : undefined;
+
+  /* VGS reports focus inside the same state object; focus and blur are its transitions. */
+  const handleState = (state: unknown) => {
+    const s = (state ?? {}) as VgsFieldState;
+    onChange?.(
+      fieldChange(elementType, {
+        empty: Boolean(s.isEmpty),
+        valid: Boolean(s.isValid),
+        touched: Boolean(s.isDirty),
+        brand: s.cardBrand,
+        error: s.validationErrors?.[0],
+      })
+    );
+    const focused = Boolean(s.isFocused);
+    if (focused !== focusedRef.current) {
+      focusedRef.current = focused;
+      (focused ? onFocus : onBlur)?.({ elementType });
+    }
+  };
+
   const common = {
     collector: collector as VGSCollect,
     fieldName: config.fieldName,
     placeholder,
-    containerStyle: style as object,
-
-    textStyle: textStyle as object | undefined,
-    onStateChange: onStateChange
-      ? (state: unknown) => onStateChange(toFieldState(kind, state))
-      : undefined,
+    containerStyle: styles?.container as object | undefined,
+    textStyle: styles?.input as object | undefined,
+    onStateChange: handleState,
   };
-  const Specialized = FIELD_COMPONENT[kind];
+  const Specialized = FIELD_COMPONENT[elementType];
   return Specialized ? (
     <Specialized {...common} containerHeight={containerHeight} />
   ) : (
@@ -164,11 +173,11 @@ async function readResponseBody(response: any): Promise<unknown> {
   return response;
 }
 
-const submit: ProviderAdapter['submit'] = async (
+const tokenize: ProviderAdapter['tokenize'] = async (
   collector,
   providerData
-): Promise<SubmitResult> => {
-  const options = (providerData ?? {}) as VgsSubmitOptions;
+): Promise<TokenizeResult> => {
+  const options = (providerData ?? {}) as VgsTokenizeOptions;
   const vgs = collector as VGSCollect;
   try {
     const { status, response } = await vgs.submit(
@@ -189,27 +198,13 @@ const submit: ProviderAdapter['submit'] = async (
       };
     }
 
-    return {
-      status: 'error',
-      vaultType: VAULT_TYPE,
-      errors: [
-        {
-          code: `http_${status}`,
-          message: `VGS submit returned status ${status}.`,
-        },
-      ],
-    };
+    return errorResult(
+      VAULT_TYPE,
+      'tokenization_failed',
+      `VGS returned status ${status}.`
+    );
   } catch (error) {
-    return {
-      status: 'error',
-      vaultType: VAULT_TYPE,
-      errors: [
-        {
-          code: 'submit_failed',
-          message: error instanceof Error ? error.message : String(error),
-        },
-      ],
-    };
+    return errorResult(VAULT_TYPE, 'tokenization_failed', messageOf(error));
   }
 };
 
@@ -218,5 +213,5 @@ export const vgsAdapter: ProviderAdapter = {
   validateVaultData,
   Host,
   Field,
-  submit,
+  tokenize,
 };

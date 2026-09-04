@@ -1,18 +1,20 @@
-import type { FormId, SubmitResult } from './types';
+import type { FormId, TokenizeResult } from './types';
 
-export type FormSubmitFn = (providerData?: unknown) => Promise<SubmitResult>;
+export type FormTokenizeFn = (
+  providerData?: unknown
+) => Promise<TokenizeResult>;
 
-const forms = new Map<FormId, FormSubmitFn>();
+const forms = new Map<FormId, FormTokenizeFn>();
 
-export function registerForm(id: FormId, submit: FormSubmitFn): () => void {
-  forms.set(id, submit);
+export function registerForm(id: FormId, tokenize: FormTokenizeFn): () => void {
+  forms.set(id, tokenize);
   return () => {
-    if (forms.get(id) === submit) {
+    if (forms.get(id) === tokenize) {
       forms.delete(id);
     }
   };
 }
 
-export function getFormSubmit(id: FormId): FormSubmitFn | undefined {
+export function getFormTokenize(id: FormId): FormTokenizeFn | undefined {
   return forms.get(id);
 }
