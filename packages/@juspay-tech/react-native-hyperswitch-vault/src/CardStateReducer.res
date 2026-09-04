@@ -1,4 +1,4 @@
-type field = [#cardNumber | #expiry | #cvc | #cardholderName | #network]
+type field = [#cardNumber | #cardExpiry | #cardCvc | #cardholderName | #network]
 
 type fieldMeta = {touched: bool, active: bool}
 
@@ -15,6 +15,13 @@ type eligibility =
   | Pending
   | Allowed
   | Denied
+
+/*
+ * A card the merchant has ALREADY saved, whose CVC is being re-collected. Present exactly when the
+ * CVC field was mounted with `savedCard`. The token names the card on the wire; the network — already
+ * canonicalised, or "" for "unknown, accept three or four digits" — selects the CVC length rule.
+ */
+type savedCard = {token: string, network: string}
 
 type state = {
   cardNumber: string,
@@ -47,6 +54,7 @@ type state = {
    * keeping any card-derived fingerprint around to answer the same question.
    */
   cardVersion: int,
+  savedCard: option<savedCard>,
 }
 
 let initial = {
@@ -67,6 +75,7 @@ let initial = {
   networkMeta: untouched,
   submitAttempted: false,
   cardVersion: 0,
+  savedCard: None,
 }
 
 type action =
@@ -76,23 +85,31 @@ type action =
   | CardholderNameChanged(string)
   | NetworkSelected(string)
   | EligibilityChanged(eligibility)
+  | SavedCardChanged(option<savedCard>)
   | Focused(field)
   | Blurred(field)
+  /* One field's value and interaction state, back to mount — the field handle's `clear()`. */
+  | Cleared(field)
   | SubmitAttempted
   | Reset
 
 /*
- * The network actually used for CVC length rules, the brand icon and the wire — the customer's
- * pick when they made one that the current number still supports, the detected brand otherwise.
+ * The network actually used for CVC length rules, the brand icon and the wire. A saved card's
+ * network is the merchant's hint; otherwise the customer's pick when they made one that the
+ * current number still supports, the detected brand otherwise.
  *
  * The containment check is what makes re-typing safe: pick RuPay on a co-badged card, then edit the
  * number to a Visa-only PAN, and the stale pick is dropped rather than sent.
  */
 let effectiveNetwork = (state: state) =>
-  switch state.selectedNetwork {
-  | "" => state.brand
-  | picked =>
-    state.matchedSchemes->Array.some(scheme => scheme === picked) ? picked : state.brand
+  switch state.savedCard {
+  | Some(saved) => saved.network
+  | None =>
+    switch state.selectedNetwork {
+    | "" => state.brand
+    | picked =>
+      state.matchedSchemes->Array.some(scheme => scheme === picked) ? picked : state.brand
+    }
   }
 
 /*
@@ -103,14 +120,15 @@ let effectiveNetwork = (state: state) =>
 let coBadgeThreshold = 16
 
 let isCoBadged = (state: state) =>
+  state.savedCard->Option.isNone &&
   state.matchedSchemes->Array.length > 1 &&
-    state.cardNumber->Validation.clearSpaces->String.length >= coBadgeThreshold
+  state.cardNumber->Validation.clearSpaces->String.length >= coBadgeThreshold
 
 let withMeta = (state, field, update) =>
   switch field {
   | #cardNumber => {...state, numberMeta: update(state.numberMeta)}
-  | #expiry => {...state, expiryMeta: update(state.expiryMeta)}
-  | #cvc => {...state, cvcMeta: update(state.cvcMeta)}
+  | #cardExpiry => {...state, expiryMeta: update(state.expiryMeta)}
+  | #cardCvc => {...state, cvcMeta: update(state.cvcMeta)}
   | #cardholderName => {...state, cardholderMeta: update(state.cardholderMeta)}
   | #network => {...state, networkMeta: update(state.networkMeta)}
   }
@@ -162,8 +180,54 @@ let reduce = (state: state, action: action): state =>
     }
   /* Not a card-value change: the verdict is ABOUT the current values, so it must not retire them. */
   | EligibilityChanged(verdict) => {...state, eligibility: verdict}
+  /*
+   * A different saved card is a different request: the CVC typed for the previous one is dropped,
+   * exactly as the standalone saved-card form did when its token changed.
+   */
+  | SavedCardChanged(saved) =>
+    let sameCard = switch (state.savedCard, saved) {
+    | (None, None) => true
+    | (Some(a), Some(b)) => a.token === b.token
+    | _ => false
+    }
+    switch (state.savedCard, saved) {
+    | (None, None) => state
+    | _ =>
+      sameCard
+        ? {...state, savedCard: saved}
+        : {...state, savedCard: saved, cvc: "", cvcMeta: untouched, cardVersion: state.cardVersion + 1}
+    }
   | Focused(field) => state->withMeta(field, meta => {...meta, active: true})
-  | Blurred(field) => state->withMeta(field, meta => {touched: true, active: false})
+  | Blurred(field) => state->withMeta(field, _ => {touched: true, active: false})
+  | Cleared(field) =>
+    switch field {
+    | #cardNumber => {
+        ...state,
+        cardNumber: "",
+        brand: "",
+        matchedSchemes: [],
+        selectedNetwork: "",
+        eligibility: Unknown,
+        numberMeta: untouched,
+        cardVersion: state.cardVersion + 1,
+      }
+    | #cardExpiry => {
+        ...state,
+        expiryDisplay: "",
+        expiryMonth: "",
+        expiryYear: "",
+        expiryMeta: untouched,
+        cardVersion: state.cardVersion + 1,
+      }
+    | #cardCvc => {...state, cvc: "", cvcMeta: untouched, cardVersion: state.cardVersion + 1}
+    | #cardholderName => {
+        ...state,
+        cardholderName: "",
+        cardholderMeta: untouched,
+        cardVersion: state.cardVersion + 1,
+      }
+    | #network => {...state, selectedNetwork: "", networkMeta: untouched}
+    }
   | SubmitAttempted => {
       ...state,
       submitAttempted: true,
@@ -173,8 +237,8 @@ let reduce = (state: state, action: action): state =>
       cardholderMeta: {...state.cardholderMeta, touched: true},
       networkMeta: {...state.networkMeta, touched: true},
     }
-  /* Reset counts as a card-value change: a minted token must not survive it. */
-  | Reset => {...initial, cardVersion: state.cardVersion + 1}
+  /* Reset counts as a card-value change: a minted token must not survive it. The saved card stays: it is a prop. */
+  | Reset => {...initial, savedCard: state.savedCard, cardVersion: state.cardVersion + 1}
   }
 
 type validators = {
@@ -194,20 +258,28 @@ type errors = {
   eligibility: option<string>,
 }
 
+/*
+ * In saved-card mode only the CVC is collected, so only the CVC is judged: the number and expiry
+ * belong to a card the merchant already holds, and a rule that demanded them would block a form
+ * that cannot show them.
+ */
 let errorsFor = (state: state, ~validators: validators): errors => {
-  cardNumber: validators.cardNumber(Some(state.cardNumber)),
-  expiry: validators.expiry(state.expiryDisplay)(Some(state.expiryYear)),
-  /* CVC length depends on the network in force, so a co-badge pick changes this rule. */
-  cvc: validators.cvc(state->effectiveNetwork)(Some(state.cvc)),
-  network: validators.network->Option.flatMap(validate =>
-    validate(Some(state->effectiveNetwork))
-  ),
-  eligibility: switch state.eligibility {
-  | Denied => validators.notEligible
-  | Unknown
-  | Pending
-  | Allowed => None
-  },
+  let savedMode = state.savedCard->Option.isSome
+  {
+    cardNumber: savedMode ? None : validators.cardNumber(Some(state.cardNumber)),
+    expiry: savedMode ? None : validators.expiry(state.expiryDisplay)(Some(state.expiryYear)),
+    /* CVC length depends on the network in force, so a co-badge pick changes this rule. */
+    cvc: validators.cvc(state->effectiveNetwork)(Some(state.cvc)),
+    network: savedMode
+      ? None
+      : validators.network->Option.flatMap(validate => validate(Some(state->effectiveNetwork))),
+    eligibility: switch state.eligibility {
+    | Denied => validators.notEligible
+    | Unknown
+    | Pending
+    | Allowed => None
+    },
+  }
 }
 
 /*
@@ -215,7 +287,7 @@ let errorsFor = (state: state, ~validators: validators): errors => {
  *
  * Validity means "the values are well-formed" — something the customer can fix by typing. An
  * eligibility denial is the backend's verdict on a correctly-typed card, and folding it in here
- * would report it as `validation_error`, telling the customer to check details that are already
+ * would report it as a validation failure, telling the customer to check details that are already
  * correct. It is enforced instead by the coordinator's own gate, which answers `card_not_eligible`.
  *
  * The message still renders: the denial is worth showing, it just is not a field error.
@@ -226,33 +298,34 @@ let isValid = (errors: errors) =>
   errors.cvc->Option.isNone &&
   errors.network->Option.isNone
 
-let numberError = (state, errors: errors) =>
-  switch (errors.cardNumber, state.numberMeta.touched) {
-  | (Some(message), true) => Some(message)
-  | _ => None
-  }
+/*
+ * ── ONE TIMING RULE FOR EVERY FIELD ──────────────────────────────────────────────────────────
+ *
+ * A message is shown, and a box is tinted, once the customer has LEFT the field with a problem in
+ * it, and neither is shown while the cursor is back inside it. This is the rule hyperswitch-web's
+ * separate card fields apply to all three inputs (focus resets validity; blur re-judges), and it
+ * is the rule the CVC always had here.
+ *
+ * It used to differ per field, reproducing client-core's original element: the number and the
+ * expiry kept their message while refocused, and a complete but invalid expiry stayed tinted while
+ * the customer was correcting it. Because the same functions feed the merchant's `change` event,
+ * that per-field difference was a difference in the public contract, and merchants drawing their
+ * own chrome from `error` got a stuck red number box next to a CVC box that cleared. One rule ends
+ * that.
+ */
+let shownFor = (meta: fieldMeta, error: option<string>) =>
+  meta.touched && !meta.active ? error : None
 
-let expiryError = (state, errors: errors) =>
-  switch (
-    errors.expiry,
-    (state.expiryDisplay->String.length > 0 || !state.expiryMeta.touched) &&
-      (state.expiryDisplay->String.length < 7 || Validation.checkCardExpiry(state.expiryDisplay)),
-  ) {
-  | (Some(message), false) => Some(message)
-  | _ => None
-  }
+let okFor = (meta: fieldMeta, error: option<string>) =>
+  error->Option.isNone || !meta.touched || meta.active
 
-let cvcError = (state, errors: errors) =>
-  switch (errors.cvc, state.cvcMeta.touched, state.cvcMeta.active) {
-  | (Some(message), true, false) => Some(message)
-  | _ => None
-  }
+let numberError = (state, errors: errors) => shownFor(state.numberMeta, errors.cardNumber)
+let expiryError = (state, errors: errors) => shownFor(state.expiryMeta, errors.expiry)
+let cvcError = (state, errors: errors) => shownFor(state.cvcMeta, errors.cvc)
 
+/* The network chooser is not a text field; its message waits only on the pick having been made. */
 let networkError = (state, errors: errors) =>
-  switch (errors.network, state.networkMeta.touched) {
-  | (Some(message), true) => Some(message)
-  | _ => None
-  }
+  state.networkMeta.touched ? errors.network : None
 
 /*
  * Unconditional: a denial is a fact about the card that has already been reported, not a
@@ -262,13 +335,6 @@ let networkError = (state, errors: errors) =>
  */
 let eligibilityError = (_state, errors: errors) => errors.eligibility
 
-let numberFieldOk = (state, errors: errors) =>
-  errors.cardNumber->Option.isNone || !state.numberMeta.touched || state.numberMeta.active
-
-let expiryFieldOk = (state, errors: errors) =>
-  ((errors.expiry->Option.isNone || !state.expiryMeta.touched || state.expiryMeta.active) &&
-    state.expiryDisplay->String.length < 7) ||
-    (state.expiryDisplay->String.length === 7 && Validation.checkCardExpiry(state.expiryDisplay))
-
-let cvcFieldOk = (state, errors: errors) =>
-  errors.cvc->Option.isNone || !state.cvcMeta.touched || state.cvcMeta.active
+let numberFieldOk = (state, errors: errors) => okFor(state.numberMeta, errors.cardNumber)
+let expiryFieldOk = (state, errors: errors) => okFor(state.expiryMeta, errors.expiry)
+let cvcFieldOk = (state, errors: errors) => okFor(state.cvcMeta, errors.cvc)

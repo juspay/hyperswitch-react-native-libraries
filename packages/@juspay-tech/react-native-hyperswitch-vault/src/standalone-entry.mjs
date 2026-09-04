@@ -1,4 +1,3 @@
-
 /*
  * Runtime entry for the package root. The ONLY source of runtime values for `.`.
  *
@@ -6,49 +5,35 @@
  * there executes). The two must agree; `scripts/verify-public-surface.mjs` fails the build if they
  * drift.
  *
- * Everything below is a binding or a plain object over the five ReScript components. No wrapper
- * component: a wrapper would break `===` identity, add a render frame, and give React.memo and
- * devtools a second name for the same thing.
+ * Everything below is a binding over the ReScript components. No wrapper component: a wrapper
+ * would break `===` identity, add a render frame, and give React.memo and devtools a second name
+ * for the same thing.
  *
- * The namespace is a plain object literal rather than `Object.assign(...)` so an unreferenced
- * namespace tree-shakes away with the references it holds — `scripts/verify-treeshaking.mjs`
- * proves it. It has no `useForm`: that is a later phase.
+ * The names are the web SDK's: `cardNumber`, `cardExpiry`, `cardCvc` become `CardNumberField`,
+ * `CardExpiryField`, `CardCVCField`. The legacy `*Widget` spellings, the `HyperswitchVault`
+ * namespace and the standalone saved-card form were removed with that alignment; a saved card is
+ * now `<CardCVCField savedCard={...} />` inside `<CardForm>`, as it is on the web.
  */
 
 import { make as HyperswitchVaultFormImpl } from './HyperswitchVaultForm.bs.js';
 import { make as CardFormImpl } from './CardForm.bs.js';
-import { make as CardNumberWidgetImpl } from './CardNumberWidget.bs.js';
-import { make as CardExpiryWidgetImpl } from './CardExpiryWidget.bs.js';
-import { make as CardCVCWidgetImpl } from './CardCVCWidget.bs.js';
-import { make as CardholderNameWidgetImpl } from './CardholderNameWidget.bs.js';
-import { make as HyperswitchVaultSavedCardFormImpl } from './HyperswitchVaultSavedCardForm.bs.js';
+import { make as CardNumberFieldImpl } from './CardNumberField.bs.js';
+import { make as CardExpiryFieldImpl } from './CardExpiryField.bs.js';
+import { make as CardCVCFieldImpl } from './CardCVCField.bs.js';
+import { make as CardholderNameFieldImpl } from './CardholderNameField.bs.js';
+import { createCardForm as createCardFormImpl } from './createCardForm.mjs';
 
-/* Existing published names — unchanged, not deprecated. */
-export const HyperswitchVaultForm = HyperswitchVaultFormImpl;
 export const CardForm = CardFormImpl;
-export const CardNumberWidget = CardNumberWidgetImpl;
-export const CardExpiryWidget = CardExpiryWidgetImpl;
-export const CardCVCWidget = CardCVCWidgetImpl;
-export const CardholderNameWidget = CardholderNameWidgetImpl;
+export const CardNumberField = CardNumberFieldImpl;
+export const CardExpiryField = CardExpiryFieldImpl;
+export const CardCVCField = CardCVCFieldImpl;
+export const CardholderNameField = CardholderNameFieldImpl;
 
-/* Canonical field names (ADR-0002 §1) — the same component objects. */
-export const CardNumberField = CardNumberWidgetImpl;
-export const CardExpiryField = CardExpiryWidgetImpl;
-export const CardCVCField = CardCVCWidgetImpl;
-export const CardholderNameField = CardholderNameWidgetImpl;
+/* The ready-made form: the same provider with the four fields laid out by the library. */
+export const HyperswitchVaultForm = HyperswitchVaultFormImpl;
 
 /*
- * The saved-card CVC component (ADR-0008). A component of its own, not a namespace member: it
- * takes no children and renders its own field, so there is nothing to compose it with.
+ * The imperative spelling of <CardForm>, for callers who want to hold the form in a variable and
+ * drive it with method calls the way the web's `cardForm()` object is driven.
  */
-export const HyperswitchVaultSavedCardForm = HyperswitchVaultSavedCardFormImpl;
-
-/* Convenience namespace (ADR-0002 §2). */
-export const HyperswitchVault = {
-  CardForm: HyperswitchVaultFormImpl,
-  Form: CardFormImpl,
-  CardNumber: CardNumberWidgetImpl,
-  Expiry: CardExpiryWidgetImpl,
-  CVC: CardCVCWidgetImpl,
-  CardholderName: CardholderNameWidgetImpl,
-};
+export const createCardForm = createCardFormImpl;

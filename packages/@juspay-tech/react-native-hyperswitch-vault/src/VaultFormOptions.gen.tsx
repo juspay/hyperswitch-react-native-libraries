@@ -7,6 +7,10 @@ import type {MerchantSession as $$vaultSession} from './merchantTypes';
 
 import type {brandIconMode as CardIcons_brandIconMode} from './CardIcons.gen';
 
+import type {elementType as VaultPublicState_elementType} from './VaultPublicState.gen';
+
+import type {labelBehavior as CardFieldOptions_labelBehavior} from './CardFieldOptions.gen';
+
 import type {paymentConfirmInput as VaultFormCoordinator_paymentConfirmInput} from './VaultFormCoordinator.gen';
 
 import type {safeVaultErrorCode as VaultResult_safeVaultErrorCode} from './VaultResult.gen';
@@ -19,30 +23,32 @@ import type {vaultPaymentResult as VaultResult_vaultPaymentResult} from './Vault
 
 import type {vaultTokenizeResult as VaultResult_vaultTokenizeResult} from './VaultResult.gen';
 
-export type vaultEnvironment = "production" | "sandbox" | "integration";
+export type vaultEnvironment = "production" | "sandbox" | "integ";
 
 export type vaultSession = $$vaultSession;
 
 export type brandIconMode = CardIcons_brandIconMode;
 
-export type appearance = {
-  readonly primaryColor?: string; 
-  readonly textColor?: string; 
-  readonly errorColor?: string; 
-  readonly placeholderColor?: string; 
-  readonly backgroundColor?: string; 
+export type appearanceVariables = {
+  readonly colorPrimary?: string; 
+  readonly colorText?: string; 
+  readonly colorDanger?: string; 
+  readonly colorTextPlaceholder?: string; 
+  readonly colorBackground?: string; 
   readonly borderColor?: string; 
   readonly borderRadius?: number; 
-  readonly borderWidth?: number; 
   readonly fontFamily?: string; 
-  readonly inputHeight?: number; 
+  readonly inputFieldHeight?: number; 
+  readonly borderWidth?: number; 
   readonly gap?: number; 
   readonly fontScale?: number; 
   readonly placeholderTextSizeAdjust?: number; 
   readonly errorTextSizeAdjust?: number; 
   readonly errorMessageSpacing?: number; 
-  readonly brandIconMode?: brandIconMode
+  readonly cardBrandIcon?: brandIconMode
 };
+
+export type appearance = { readonly variables?: appearanceVariables; readonly labels?: CardFieldOptions_labelBehavior };
 
 export type localisationLabels = {
   readonly cardNumberPlaceholder?: string; 
@@ -83,11 +89,7 @@ export type vaultTokenizeResult = VaultResult_vaultTokenizeResult;
 
 export type paymentConfirmInput = VaultFormCoordinator_paymentConfirmInput;
 
-export type vaultField = 
-    "cardNumber"
-  | "expiry"
-  | "cvc"
-  | "cardholderName";
+export type vaultField = VaultPublicState_elementType;
 
 export type eligibilityConfig = {
   readonly paymentId: string; 

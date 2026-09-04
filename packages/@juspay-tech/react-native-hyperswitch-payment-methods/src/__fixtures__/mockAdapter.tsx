@@ -1,11 +1,13 @@
 import { Fragment, useEffect } from 'react';
 import { Text } from 'react-native';
+import { fieldChange } from '../core/fieldChange';
+import type { FieldChangeInput } from '../core/fieldChange';
 import type {
   ProviderAdapter,
   ProviderFieldProps,
   ProviderHostProps,
 } from '../core/ProviderAdapter';
-import type { SubmitResult, VaultType } from '../core/types';
+import type { TokenizeResult, VaultType } from '../core/types';
 
 export interface MockAdapterOptions {
   vaultType?: VaultType;
@@ -16,7 +18,10 @@ export interface MockAdapterOptions {
 
   failOnInit?: unknown;
 
-  submitResult?: SubmitResult;
+  tokenizeResult?: TokenizeResult;
+
+  /** What every mock field reports on mount, through `onChange`. */
+  fieldState?: FieldChangeInput;
 }
 
 export function createMockAdapter(
@@ -40,8 +45,14 @@ export function createMockAdapter(
     return <Fragment>{children}</Fragment>;
   }
 
-  function Field({ kind }: ProviderFieldProps) {
-    return <Text testID={`mock-field-${kind}`}>{`mock:${kind}`}</Text>;
+  function Field({ elementType, onChange }: ProviderFieldProps) {
+    const state = options.fieldState;
+    useEffect(() => {
+      if (state) onChange?.(fieldChange(elementType, state));
+    }, [elementType, onChange, state]);
+    return (
+      <Text testID={`mock-field-${elementType}`}>{`mock:${elementType}`}</Text>
+    );
   }
 
   return {
@@ -49,8 +60,8 @@ export function createMockAdapter(
     validateVaultData: (raw) => raw,
     Host,
     Field,
-    submit: async () =>
-      options.submitResult ?? {
+    tokenize: async () =>
+      options.tokenizeResult ?? {
         status: 'success',
         vaultType,
         data: { tokens: { card_number: 'tok_mock' } },

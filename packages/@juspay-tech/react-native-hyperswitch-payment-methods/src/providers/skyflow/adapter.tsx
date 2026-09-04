@@ -1,8 +1,10 @@
 import { Fragment, useEffect, useMemo } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 
+import { fieldChange } from '../../core/fieldChange';
 import type { ProviderAdapter } from '../../core/ProviderAdapter';
-import type { FieldKind, FieldState, SubmitResult } from '../../core/types';
+import { errorResult, messageOf } from '../../core/results';
+import type { ElementType, TokenizeResult } from '../../core/types';
 import type { SkyflowVaultData } from './types';
 
 declare const require: (moduleId: string) => unknown;
@@ -35,21 +37,21 @@ type CollectOptions = Parameters<SkyflowContainer['collect']>[0];
 interface SkyflowCollector {
   container: SkyflowContainer;
   table: string;
-  columns: Record<FieldKind, string>;
+  columns: Record<ElementType, string>;
 }
 
-const ELEMENTS: Record<FieldKind, typeof CardNumberElement> = {
-  card_number: CardNumberElement,
-  card_expiry: ExpirationDateElement,
-  card_cvc: CvvElement,
-  card_holder: CardHolderNameElement,
+const ELEMENTS: Record<ElementType, typeof CardNumberElement> = {
+  cardNumber: CardNumberElement,
+  cardExpiry: ExpirationDateElement,
+  cardCvc: CvvElement,
+  cardholderName: CardHolderNameElement,
 };
 
-const DEFAULT_COLUMNS: Record<FieldKind, string> = {
-  card_number: 'card_number',
-  card_expiry: 'card_expiration',
-  card_cvc: 'cvv',
-  card_holder: 'cardholder_name',
+const DEFAULT_COLUMNS: Record<ElementType, string> = {
+  cardNumber: 'card_number',
+  cardExpiry: 'card_expiration',
+  cardCvc: 'cvv',
+  cardholderName: 'cardholder_name',
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,15 +61,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function validateVaultData(raw: unknown): SkyflowVaultData {
   if (
     !isRecord(raw) ||
-    typeof raw.vault_id !== 'string' ||
-    !raw.vault_id ||
-    typeof raw.vault_url !== 'string' ||
-    !raw.vault_url ||
+    typeof raw.vaultId !== 'string' ||
+    !raw.vaultId ||
+    typeof raw.vaultUrl !== 'string' ||
+    !raw.vaultUrl ||
     typeof raw.table !== 'string' ||
     !raw.table
   ) {
     throw new Error(
-      'Skyflow vault_data requires non-empty string "vault_id", "vault_url" and "table". ' +
+      'Skyflow vaultData requires non-empty string "vaultId", "vaultUrl" and "table". ' +
         'Received: ' +
         JSON.stringify(raw)
     );
@@ -75,7 +77,7 @@ function validateVaultData(raw: unknown): SkyflowVaultData {
   return raw as unknown as SkyflowVaultData;
 }
 
-function resolveColumns(data: SkyflowVaultData): Record<FieldKind, string> {
+function resolveColumns(data: SkyflowVaultData): Record<ElementType, string> {
   return { ...DEFAULT_COLUMNS, ...data.columns };
 }
 
@@ -98,7 +100,7 @@ function SkyflowBridge({
   children,
 }: {
   table: string;
-  columns: Record<FieldKind, string>;
+  columns: Record<ElementType, string>;
   onReady: (collector: SkyflowCollector) => void;
   onError: (error: unknown) => void;
   children: ReactNode;
@@ -123,12 +125,12 @@ const Host: ProviderAdapter['Host'] = ({
   const data = vaultData as SkyflowVaultData;
   const config = useMemo<any>(
     () => ({
-      vaultID: data.vault_id,
-      vaultURL: data.vault_url,
-      getBearerToken: () => Promise.resolve(data.bearer_token ?? ''),
+      vaultID: data.vaultId,
+      vaultURL: data.vaultUrl,
+      getBearerToken: () => Promise.resolve(data.bearerToken ?? ''),
       options: data.options,
     }),
-    [data.vault_id, data.vault_url, data.bearer_token, data.options]
+    [data.vaultId, data.vaultUrl, data.bearerToken, data.options]
   );
   const columns = useMemo(() => resolveColumns(data), [data]);
 
@@ -146,52 +148,60 @@ const Host: ProviderAdapter['Host'] = ({
   );
 };
 
-function toFieldState(kind: FieldKind, state: unknown): FieldState {
-  const s = (state ?? {}) as {
-    isValid?: boolean;
-    isEmpty?: boolean;
-    isFocused?: boolean;
-    selectedCardScheme?: string;
-  };
-  return {
-    kind,
-    isValid: Boolean(s.isValid),
-    isEmpty: Boolean(s.isEmpty),
-    isFocused: Boolean(s.isFocused),
-    isDirty: !(s.isEmpty ?? true),
-    validationErrors: s.isValid ? [] : ['invalid'],
-    brand: s.selectedCardScheme,
-  };
+interface SkyflowElementState {
+  isValid?: boolean;
+  isEmpty?: boolean;
+  isFocused?: boolean;
+  selectedCardScheme?: string;
 }
 
 const Field: ProviderAdapter['Field'] = ({
-  kind,
+  elementType,
   collector,
   placeholder,
-  onStateChange,
+  onChange,
+  onFocus,
+  onBlur,
 }) => {
   const { container, table, columns } = collector as SkyflowCollector;
-  const Element = ELEMENTS[kind];
-  const handler = onStateChange
-    ? (state: unknown) => onStateChange(toFieldState(kind, state))
-    : undefined;
+  const Element = ELEMENTS[elementType];
+  const report = (state: unknown, touched?: boolean) => {
+    const s = (state ?? {}) as SkyflowElementState;
+    const empty = s.isEmpty ?? true;
+    const valid = Boolean(s.isValid);
+    onChange?.(
+      fieldChange(elementType, {
+        empty,
+        valid,
+        touched: touched ?? !empty,
+        brand: s.selectedCardScheme,
+        error: !empty && !valid ? 'invalid' : undefined,
+      })
+    );
+  };
   return (
     <Element
       container={container}
       table={table}
-      column={columns[kind]}
+      column={columns[elementType]}
       placeholder={placeholder}
-      onChange={handler}
-      onFocus={handler}
-      onBlur={handler}
+      onChange={(state: unknown) => report(state)}
+      onFocus={(state: unknown) => {
+        onFocus?.({ elementType });
+        report(state);
+      }}
+      onBlur={(state: unknown) => {
+        report(state, true);
+        onBlur?.({ elementType });
+      }}
     />
   );
 };
 
-const submit: ProviderAdapter['submit'] = async (
+const tokenize: ProviderAdapter['tokenize'] = async (
   collector,
   providerData
-): Promise<SubmitResult> => {
+): Promise<TokenizeResult> => {
   const { container } = collector as SkyflowCollector;
   const overrides = isRecord(providerData) ? providerData : {};
   const options = { tokens: true, ...overrides } as CollectOptions;
@@ -203,16 +213,7 @@ const submit: ProviderAdapter['submit'] = async (
       data: { raw: response, tokens: extractTokens(response) },
     };
   } catch (error) {
-    return {
-      status: 'error',
-      vaultType: VAULT_TYPE,
-      errors: [
-        {
-          code: 'collect_failed',
-          message: error instanceof Error ? error.message : String(error),
-        },
-      ],
-    };
+    return errorResult(VAULT_TYPE, 'tokenization_failed', messageOf(error));
   }
 };
 
@@ -221,5 +222,5 @@ export const skyflowAdapter: ProviderAdapter = {
   validateVaultData,
   Host,
   Field,
-  submit,
+  tokenize,
 };

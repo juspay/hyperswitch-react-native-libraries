@@ -39,24 +39,28 @@ jest.mock(
   { virtual: true }
 );
 
-import { HyperswitchForm } from '../../../core/HyperswitchForm';
+import { CardForm } from '../../../core/CardForm';
 import {
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-} from '../../../widgets';
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+} from '../../../fields';
 import { basisTheoryAdapter } from '../adapter';
 import type {
-  HyperswitchFormHandle,
-  ProviderConfig,
-  SubmitResult,
+  CardFormHandle,
+  FieldChange,
+  TokenizeResult,
+  VaultDetails,
 } from '../../../core/types';
 
-const btConfig: ProviderConfig = {
-  vault_type: 'basis_theory',
-  vault_data: { api_key: 'key_test' },
+const btDetails: VaultDetails = {
+  vaultType: 'basis_theory',
+  vaultData: { apiKey: 'key_test' },
 };
+
+const errorOf = (result: TokenizeResult) =>
+  result.status === 'success' ? undefined : result.error;
 
 function fakeCollector(createImpl: () => Promise<unknown>): {
   collector: unknown;
@@ -64,15 +68,15 @@ function fakeCollector(createImpl: () => Promise<unknown>): {
 } {
   const create = jest.fn(createImpl);
   const refs = {
-    card_number: { current: { id: 'n' } },
-    card_expiry: {
+    cardNumber: { current: { id: 'n' } },
+    cardExpiry: {
       current: {
         month: () => ({ datepart: 'month' }),
         year: () => ({ datepart: 'year' }),
       },
     },
-    card_cvc: { current: { id: 'c' } },
-    card_holder: { current: { id: 'h' } },
+    cardCvc: { current: { id: 'c' } },
+    cardholderName: { current: { id: 'h' } },
   };
   return { collector: { bt: { tokens: { create } }, refs }, create };
 }
@@ -82,15 +86,15 @@ afterEach(() => {
 });
 
 describe('basisTheoryAdapter', () => {
-  it('renders a BT element per widget and creates a card token on submit', async () => {
-    const ref = createRef<HyperswitchFormHandle>();
+  it('renders a BT element per field and creates a card token on tokenize', async () => {
+    const ref = createRef<CardFormHandle>();
     render(
-      <HyperswitchForm ref={ref} config={btConfig}>
-        <CardNumberWidget />
-        <CardExpiryWidget />
-        <CardCVCWidget />
-        <CardHolderWidget />
-      </HyperswitchForm>
+      <CardForm ref={ref} vaultDetails={btDetails}>
+        <CardNumberField />
+        <CardExpiryField />
+        <CardCVCField />
+        <CardholderNameField />
+      </CardForm>
     );
 
     await waitFor(() => expect(screen.getByTestId('bt-number')).toBeTruthy());
@@ -98,9 +102,9 @@ describe('basisTheoryAdapter', () => {
     expect(screen.getByTestId('bt-cvc')).toBeTruthy();
     expect(screen.getByTestId('bt-holder')).toBeTruthy();
 
-    let result: SubmitResult | undefined;
+    let result: TokenizeResult | undefined;
     await act(async () => {
-      result = await ref.current!.submit();
+      result = await ref.current!.tokenize();
     });
     expect(result?.status).toBe('success');
     expect(result?.vaultType).toBe('basis_theory');
@@ -112,64 +116,66 @@ describe('basisTheoryAdapter', () => {
     );
   });
 
-  it('maps Basis Theory element events to the widget onStateChange', async () => {
-    const onStateChange = jest.fn();
+  it('maps Basis Theory element events to the web change', async () => {
+    const onChange = jest.fn();
     render(
-      <HyperswitchForm config={btConfig}>
-        <CardNumberWidget onStateChange={onStateChange} />
-      </HyperswitchForm>
+      <CardForm vaultDetails={btDetails}>
+        <CardNumberField onChange={onChange} />
+      </CardForm>
     );
     await waitFor(() => expect(screen.getByTestId('bt-number')).toBeTruthy());
 
-    const state = onStateChange.mock.calls.at(-1)?.[0] as {
-      kind: string;
-      isValid: boolean;
-      brand?: string;
-    };
-    expect(state.kind).toBe('card_number');
-    expect(state.isValid).toBe(true);
-    expect(state.brand).toBe('visa');
+    const change = onChange.mock.calls.at(-1)?.[0] as FieldChange;
+    expect(change).toEqual({
+      elementType: 'cardNumber',
+      empty: false,
+      complete: true,
+      valid: true,
+      brand: 'Visa',
+      touched: true,
+    });
   });
 
   describe('validateVaultData', () => {
-    it('accepts a config with an api_key', () => {
+    it('accepts vaultData with an apiKey', () => {
       expect(() =>
-        basisTheoryAdapter.validateVaultData({ api_key: 'key' })
+        basisTheoryAdapter.validateVaultData({ apiKey: 'key' })
       ).not.toThrow();
     });
 
-    it('throws when api_key is missing', () => {
-      expect(() => basisTheoryAdapter.validateVaultData({})).toThrow(
-        /api_key/i
-      );
+    it('throws when apiKey is missing', () => {
+      expect(() => basisTheoryAdapter.validateVaultData({})).toThrow(/apiKey/i);
     });
   });
 
-  describe('submit', () => {
+  describe('tokenize', () => {
     it('builds a card token from the field refs and returns the token id', async () => {
       const { collector, create } = fakeCollector(async () => ({
         id: 'tok_bt_999',
       }));
-      const result = await basisTheoryAdapter.submit(collector);
+      const result = await basisTheoryAdapter.tokenize(collector);
 
       expect(create).toHaveBeenCalledTimes(1);
       const [payload] = create.mock.calls[0] as [
-        { type: string; data: Record<string, unknown> }
+        { type: string; data: Record<string, unknown> },
       ];
       expect(payload.type).toBe('card');
       expect(payload.data.number).toEqual({ id: 'n' });
       expect(payload.data.expiration_month).toEqual({ datepart: 'month' });
       expect(result.status).toBe('success');
-      expect(result.data?.raw).toEqual({ id: 'tok_bt_999' });
+      expect(result.status === 'success' && result.data?.raw).toEqual({
+        id: 'tok_bt_999',
+      });
     });
 
-    it('maps a rejected token create to an error result', async () => {
+    it('maps a rejected token create to tokenization_failed', async () => {
       const { collector } = fakeCollector(async () => {
         throw new Error('tokenization failed');
       });
-      const result = await basisTheoryAdapter.submit(collector);
+      const result = await basisTheoryAdapter.tokenize(collector);
       expect(result.status).toBe('error');
-      expect(result.errors?.[0]?.message).toMatch(/tokenization failed/);
+      expect(errorOf(result)?.code).toBe('tokenization_failed');
+      expect(errorOf(result)?.message).toMatch(/tokenization failed/);
     });
   });
 });

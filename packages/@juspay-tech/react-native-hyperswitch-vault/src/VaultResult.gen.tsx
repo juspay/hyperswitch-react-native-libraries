@@ -14,16 +14,30 @@ import type {safeSessionToken as VaultNavigation_safeSessionToken} from './Vault
 import type {safeThreeDs as VaultNavigation_safeThreeDs} from './VaultNavigation.gen';
 
 export type safeVaultErrorCode = 
-    "invalid_session"
-  | "invalid_card_data"
-  | "not_ready"
-  | "forbidden_card_data"
+    "validation_error"
+  | "incomplete_field_set"
+  | "session_expired"
+  | "session_consumed"
+  | "tokenization_in_progress"
+  | "confirm_in_progress"
+  | "tokenization_failed"
+  | "invalid_session"
   | "unsupported_configuration"
-  | "card_not_eligible"
-  | "server_error"
-  | "unknown_outcome";
+  | "unknown_outcome"
+  | "payment_failed"
+  | "forbidden_card_data"
+  | "card_not_eligible";
 
-export type safeVaultError = { readonly code: safeVaultErrorCode; readonly message: string };
+export type safeVaultErrorType = 
+    "validation_error"
+  | "api_error"
+  | "card_error";
+
+export type safeVaultError = {
+  readonly code: safeVaultErrorCode; 
+  readonly message: string; 
+  readonly type: safeVaultErrorType
+};
 
 export type nextActionType = VaultNavigation_nextActionType;
 
@@ -40,14 +54,9 @@ export type vaultPaymentStatus =
   | "processing"
   | "requires_customer_action"
   | "failed"
-  | "validation_error"
-  | "not_ready";
+  | "validation_error";
 
-export type vaultTokenizeStatus = 
-    "success"
-  | "validation_error"
-  | "not_ready"
-  | "error";
+export type vaultTokenizeStatus = "success" | "validation_error" | "error";
 
 export type vaultPaymentResult = {
   readonly status: vaultPaymentStatus; 

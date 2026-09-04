@@ -54,6 +54,7 @@ export type {
   VaultPaymentStatus,
   SafeVaultError,
   SafeVaultErrorCode,
+  SafeVaultErrorType,
   VaultEnvironment,
   VaultEndpointConfig,
   VaultHostPaymentMethodData,

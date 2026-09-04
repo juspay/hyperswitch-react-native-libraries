@@ -10,10 +10,10 @@ type widgetKind = CardNumberKind | ExpiryKind | CvcKind | CardholderNameKind
 
 let kindLabel = kind =>
   switch kind {
-  | CardNumberKind => "CardNumberWidget"
-  | ExpiryKind => "CardExpiryWidget"
-  | CvcKind => "CardCVCWidget"
-  | CardholderNameKind => "CardholderNameWidget"
+  | CardNumberKind => "CardNumberField"
+  | ExpiryKind => "CardExpiryField"
+  | CvcKind => "CardCVCField"
+  | CardholderNameKind => "CardholderNameField"
   }
 
 type controller = {
@@ -58,7 +58,12 @@ type controller = {
   onCardholderNameChange: string => unit,
   markSubmitAttempted: unit => unit,
   reset: unit => unit,
-  focusField: [#cardNumber | #expiry | #cvc | #cardholderName] => unit,
+  /* The field handle's `clear()`: one field back to mount. */
+  clearField: CardStateReducer.field => unit,
+  /* The CVC field's `savedCard` prop, mirrored into the reducer while the field is mounted. */
+  setSavedCard: option<CardStateReducer.savedCard> => unit,
+  savedCard: unit => option<CardStateReducer.savedCard>,
+  focusField: VaultPublicState.elementType => unit,
   register: widgetKind => unit => unit,
   countOf: widgetKind => int,
   registryVersion: int,
@@ -164,6 +169,9 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
   | Denied => #denied
   }
 
+  let networkInForce = state->CardStateReducer.effectiveNetwork
+  let isCoBadged = state->CardStateReducer.isCoBadged && eligibleSchemes->Array.length > 1
+
   /*
    * `accepted` is the RAW validator verdict and `visibleError` is the already-filtered message the
    * UI is rendering. Publishing both keeps "is this field done?" and "is the customer being shown a
@@ -171,54 +179,65 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
    * the library's.
    */
   let publicSnapshot = (): VaultPublicState.controllerSnapshot => {
-    cardNumber: VaultPublicState.cardNumberStateOf(
-      {
-        value: state.cardNumber,
-        accepted: errors.cardNumber->Option.isNone,
-        touched: state.numberMeta.touched,
-        focused: state.numberMeta.active,
-        visibleError: CardStateReducer.numberError(state, errors),
-      },
-      ~brand=state->CardStateReducer.effectiveNetwork,
-      ~isCoBadged=state->CardStateReducer.isCoBadged && eligibleSchemes->Array.length > 1,
-      ~eligibility=eligibilityStatus,
-    ),
-    expiry: VaultPublicState.expiryStateOf({
-      value: state.expiryDisplay,
-      accepted: errors.expiry->Option.isNone,
-      touched: state.expiryMeta.touched,
-      focused: state.expiryMeta.active,
-      visibleError: CardStateReducer.expiryError(state, errors),
-    }),
-    cvc: VaultPublicState.cvcStateOf({
-      value: state.cvc,
-      accepted: errors.cvc->Option.isNone,
-      touched: state.cvcMeta.touched,
-      focused: state.cvcMeta.active,
-      visibleError: CardStateReducer.cvcError(state, errors),
-    }),
-    cardholderName: VaultPublicState.cardholderNameStateOf({
-      value: state.cardholderName,
-      accepted: true,
-      touched: state.cardholderMeta.touched,
-      focused: state.cardholderMeta.active,
-      visibleError: None,
-    }),
-    /*
-     * The RAW verdict, not `CardStateReducer.networkError`'s touched-filtered one.
-     *
-     * These are different questions and the wrong one was wired here first. The filtered value asks
-     * "is the customer being shown a network problem?", which is false until they touch the field
-     * or press submit. `localGate` asks `isValid`, which consults the raw `errors.network` with no
-     * such filter. Feeding the filtered value into `canSubmit` made the form report itself
-     * submittable for a complete, well-formed card of a network the merchant does not accept — the
-     * merchant enabled Pay, the customer pressed it, and `tokenize()` answered `invalid_card_data`
-     * for a failure `canSubmit` had promised could not happen.
-     */
-    networkError: errors.network->Option.map((
-      message,
-    ): VaultPublicState.vaultFieldError => {code: #unsupported_network, message}),
-    eligibility: eligibilityStatus,
+    let brand = VaultPublicState.brandOf(networkInForce)
+    {
+      cardNumber: VaultPublicState.fieldChangeOf(
+        {
+          value: state.cardNumber,
+          accepted: errors.cardNumber->Option.isNone,
+          touched: state.numberMeta.touched,
+          visibleError: CardStateReducer.numberError(state, errors),
+          invalidCode: #invalid_card_number,
+        },
+        ~elementType=#cardNumber,
+        ~brand,
+        ~isCoBadged=Some(isCoBadged),
+        ~eligibility=Some(eligibilityStatus),
+      ),
+      cardExpiry: VaultPublicState.fieldChangeOf(
+        {
+          value: state.expiryDisplay,
+          accepted: errors.expiry->Option.isNone,
+          touched: state.expiryMeta.touched,
+          visibleError: CardStateReducer.expiryError(state, errors),
+          invalidCode: #invalid_expiry,
+        },
+        ~elementType=#cardExpiry,
+      ),
+      /* The CVC carries the network in force, as the web relays the detected brand to its CVC field. */
+      cardCvc: VaultPublicState.fieldChangeOf(
+        {
+          value: state.cvc,
+          accepted: errors.cvc->Option.isNone,
+          touched: state.cvcMeta.touched,
+          visibleError: CardStateReducer.cvcError(state, errors),
+          invalidCode: #invalid_cvc,
+        },
+        ~elementType=#cardCvc,
+        ~brand,
+      ),
+      cardholderName: VaultPublicState.cardholderNameChangeOf(
+        ~value=state.cardholderName,
+        ~touched=state.cardholderMeta.touched,
+      ),
+      /*
+       * The RAW verdict, not `CardStateReducer.networkError`'s touched-filtered one: `localGate`
+       * asks `isValid`, which consults the raw `errors.network`, and `canSubmit` must agree with it.
+       */
+      networkError: errors.network->Option.map((
+        message,
+      ): VaultPublicState.vaultFieldError => {code: #unsupported_network, message}),
+      eligibility: eligibilityStatus,
+      /* The web's `cardDetailsChange` payload, by the web's own function. */
+      cardDetails: VaultPublicState.cardDetailsOf(
+        PaymentEventData.buildCardInfo(
+          ~cardNumber=state.cardNumber,
+          ~expiry=state.expiryDisplay,
+          ~cvc=state.cvc,
+          ~brand=networkInForce,
+        ),
+      ),
+    }
   }
 
   {
@@ -228,22 +247,23 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
       expiryDisplay: state.expiryDisplay,
       cvc: state.cvc,
       cardholderName: state.cardholderName,
-      brand: state->CardStateReducer.effectiveNetwork,
+      brand: networkInForce,
       eligibleSchemes,
       /* Offered only when the narrowed set still leaves a real choice. */
-      isCoBadged: state->CardStateReducer.isCoBadged && eligibleSchemes->Array.length > 1,
+      isCoBadged,
+      savedCard: state.savedCard,
     },
     visibleErrors: {
       cardNumber: ?CardStateReducer.numberError(state, errors),
-      expiry: ?CardStateReducer.expiryError(state, errors),
-      cvc: ?CardStateReducer.cvcError(state, errors),
+      cardExpiry: ?CardStateReducer.expiryError(state, errors),
+      cardCvc: ?CardStateReducer.cvcError(state, errors),
       network: ?CardStateReducer.networkError(state, errors),
       eligibility: ?CardStateReducer.eligibilityError(state, errors),
     },
     fieldOk: {
       cardNumber: CardStateReducer.numberFieldOk(state, errors),
-      expiry: CardStateReducer.expiryFieldOk(state, errors),
-      cvc: CardStateReducer.cvcFieldOk(state, errors),
+      cardExpiry: CardStateReducer.expiryFieldOk(state, errors),
+      cardCvc: CardStateReducer.cvcFieldOk(state, errors),
     },
     onNumberChange,
     onExpiryChange,
@@ -273,8 +293,7 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
       let (latest, _) = latestRef.current
       /*
        * `matchedSchemes`, not the merchant-narrowed set: the question is whether this CARD carries
-       * more than one network, which is what makes the value informative. Narrowing decides what
-       * the customer may pick, not whether the pick is worth sending.
+       * more than one network, which is what makes the value informative.
        */
       if latest.matchedSchemes->Array.length > 1 {
         let network = latest->CardStateReducer.effectiveNetwork
@@ -299,7 +318,6 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
             dispatch(ExpiryChanged(CardFieldLogic.onExpiryText(display)))
           }
           focusRef(cvcRef)
-        /* Cancelled, failed, or a scanner that returned nothing: leave what was typed alone. */
         | ScanCardBridge.Failed
         | ScanCardBridge.Cancelled
         | ScanCardBridge.NoResult => ()
@@ -314,7 +332,6 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
       switch latest.eligibility {
       | Allowed => Some(VaultEligibility.Allowed)
       | Denied => Some(VaultEligibility.Denied)
-      /* In flight or never asked — both mean "no answer yet", so the caller must ask. */
       | Pending
       | Unknown => None
       }
@@ -340,11 +357,17 @@ let use = (~validators: CardStateReducer.validators, ~enabledCardSchemes: array<
     onCardholderNameChange: name => dispatch(CardholderNameChanged(name)),
     markSubmitAttempted: () => dispatch(SubmitAttempted),
     reset: () => dispatch(Reset),
+    clearField: field => dispatch(Cleared(field)),
+    setSavedCard: saved => dispatch(SavedCardChanged(saved)),
+    savedCard: () => {
+      let (latest, _) = latestRef.current
+      latest.savedCard
+    },
     focusField: field =>
       switch field {
       | #cardNumber => focusRef(cardRef)
-      | #expiry => focusRef(expiryRef)
-      | #cvc => focusRef(cvcRef)
+      | #cardExpiry => focusRef(expiryRef)
+      | #cardCvc => focusRef(cvcRef)
       | #cardholderName => focusRef(cardholderRef)
       },
     register,

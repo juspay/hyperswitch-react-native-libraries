@@ -15,7 +15,7 @@
  * unchanged, including its concurrency and unknown-outcome handling.
  */
 
-type vaultEnvironment = [#production | #sandbox | #integration]
+type vaultEnvironment = [#production | #sandbox | #integ]
 
 type cardDetails = {
   cardNumber: string,
@@ -242,7 +242,7 @@ let validateCard = (card: cardDetails): option<confirmOutcome> => {
 let vaultBaseUrl = (environment: vaultEnvironment) =>
   switch environment {
   | #production => "https://checkout.hyperswitch.io/api"
-  | #integration => "https://dev.hyperswitch.io/api"
+  | #integ => "https://dev.hyperswitch.io/api"
   | #sandbox => "https://beta.hyperswitch.io/api"
   }
 

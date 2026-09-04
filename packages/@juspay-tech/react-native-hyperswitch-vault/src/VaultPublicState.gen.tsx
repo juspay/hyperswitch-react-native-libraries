@@ -3,23 +3,26 @@
 /* eslint-disable */
 /* tslint:disable */
 
-export type cardBrand = 
-    "visa"
-  | "mastercard"
-  | "americanExpress"
-  | "dinersClub"
-  | "discover"
-  | "jcb"
-  | "cartesBancaires"
-  | "interac"
-  | "maestro"
-  | "unionPay"
-  | "rupay"
-  | "sodexo"
-  | "bajaj"
-  | "unknown";
+export type elementType = 
+    "cardNumber"
+  | "cardExpiry"
+  | "cardCvc"
+  | "cardholderName";
 
-export type vaultFieldStatus = "empty" | "incomplete" | "complete";
+export type cardBrand = 
+    "Visa"
+  | "Mastercard"
+  | "AmericanExpress"
+  | "DinersClub"
+  | "Discover"
+  | "JCB"
+  | "CartesBancaires"
+  | "Interac"
+  | "Maestro"
+  | "UnionPay"
+  | "RuPay"
+  | "SODEXO"
+  | "BAJAJ";
 
 export type vaultFieldErrorCode = 
     "required"
@@ -32,66 +35,63 @@ export type vaultFieldError = { readonly code: vaultFieldErrorCode; readonly mes
 
 export type vaultEligibilityStatus = "unknown" | "pending" | "allowed" | "denied";
 
-export type cardNumberState = {
-  readonly field: 
-    "cardNumber"; 
-  readonly status: vaultFieldStatus; 
+export type fieldEvent = { readonly elementType: elementType };
+
+export type fieldChange = {
+  readonly elementType: elementType; 
+  readonly empty: boolean; 
+  readonly complete: boolean; 
   readonly valid: boolean; 
+  readonly brand?: cardBrand; 
+  readonly error?: string; 
+  readonly errorCode?: vaultFieldErrorCode; 
   readonly touched: boolean; 
-  readonly focused: boolean; 
-  readonly brand: cardBrand; 
-  readonly isCoBadged: boolean; 
-  readonly eligibility: vaultEligibilityStatus; 
-  readonly error?: vaultFieldError
+  readonly isCoBadged?: boolean; 
+  readonly eligibility?: vaultEligibilityStatus
 };
 
-export type expiryState = {
-  readonly field: 
-    "expiry"; 
-  readonly status: vaultFieldStatus; 
-  readonly valid: boolean; 
-  readonly touched: boolean; 
-  readonly focused: boolean; 
-  readonly error?: vaultFieldError
-};
-
-export type cvcState = {
-  readonly field: 
-    "cvc"; 
-  readonly status: vaultFieldStatus; 
-  readonly valid: boolean; 
-  readonly touched: boolean; 
-  readonly focused: boolean; 
-  readonly error?: vaultFieldError
-};
-
-export type cardholderNameState = {
-  readonly field: 
-    "cardholderName"; 
-  readonly status: vaultFieldStatus; 
-  readonly valid: boolean; 
-  readonly touched: boolean; 
-  readonly focused: boolean; 
-  readonly error?: vaultFieldError
-};
-
-export type vaultSessionStatus = "valid" | "invalid" | "absent";
+export type vaultSessionStatus = 
+    "valid"
+  | "invalid"
+  | "absent"
+  | "expired"
+  | "consumed";
 
 export type vaultFormFields = {
-  readonly cardNumber: cardNumberState; 
-  readonly expiry: expiryState; 
-  readonly cvc: cvcState; 
-  readonly cardholderName?: cardholderNameState
+  readonly cardNumber: fieldChange; 
+  readonly cardExpiry: fieldChange; 
+  readonly cardCvc: fieldChange; 
+  readonly cardholderName?: fieldChange
 };
 
-export type vaultFormState = {
+export type cardDetails = {
+  readonly bin: (null | undefined | string); 
+  readonly last4: (null | undefined | string); 
+  readonly brand: (null | undefined | string); 
+  readonly expiryMonth: (null | undefined | string); 
+  readonly expiryYear: (null | undefined | string); 
+  readonly formattedExpiry: (null | undefined | string); 
+  readonly isCardNumberComplete: boolean; 
+  readonly isCvcComplete: boolean; 
+  readonly isExpiryComplete: boolean; 
+  readonly isCardNumberValid: boolean; 
+  readonly isExpiryValid: boolean
+};
+
+export type cardFormEvent = { readonly elementType: "cardForm" };
+
+export type cardFormChange = {
+  readonly elementType: 
+    "cardForm"; 
+  readonly eventName: 
+    "cardDetailsChange"; 
+  readonly payload: cardDetails; 
   readonly fieldsReady: boolean; 
   readonly sessionStatus: vaultSessionStatus; 
   readonly complete: boolean; 
   readonly valid: boolean; 
   readonly submitting: boolean; 
   readonly canSubmit: boolean; 
-  readonly brand: cardBrand; 
   readonly isCoBadged: boolean; 
   readonly eligibility: vaultEligibilityStatus; 
   readonly networkError?: vaultFieldError; 

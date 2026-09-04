@@ -1,15 +1,19 @@
-/* TypeScript file generated from CardholderNameWidget.res by genType. */
+/* TypeScript file generated from CardNumberField.res by genType. */
 
 /* eslint-disable */
 /* tslint:disable */
 
 import * as React from 'react';
 
-import * as CardholderNameWidgetJS from './CardholderNameWidget.bs.js';
+import * as CardNumberFieldJS from './CardNumberField.bs.js';
 
-import type {cardholderNameState as VaultPublicState_cardholderNameState} from './VaultPublicState.gen';
+import type {brandIconMode as CardFieldOptions_brandIconMode} from './CardFieldOptions.gen';
 
 import type {errorDisplay as CardFieldOptions_errorDisplay} from './CardFieldOptions.gen';
+
+import type {fieldChange as VaultPublicState_fieldChange} from './VaultPublicState.gen';
+
+import type {fieldEvent as VaultPublicState_fieldEvent} from './VaultPublicState.gen';
 
 import type {fieldStyles as CardFieldStyles_fieldStyles} from './CardFieldStyles.gen';
 
@@ -18,11 +22,14 @@ import type {labelBehavior as CardFieldOptions_labelBehavior} from './CardFieldO
 export type Props = {
   readonly accessibilityHint?: string; 
   readonly accessibilityLabel?: string; 
-  readonly children?: React.ReactNode; 
+  readonly cardBrandIcon?: CardFieldOptions_brandIconMode; 
   readonly errorDisplay?: CardFieldOptions_errorDisplay; 
   readonly label?: string; 
   readonly labelBehavior?: CardFieldOptions_labelBehavior; 
-  readonly onStateChange?: (_1:VaultPublicState_cardholderNameState) => void; 
+  readonly onBlur?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onChange?: (_1:VaultPublicState_fieldChange) => void; 
+  readonly onFocus?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onReady?: (_1:VaultPublicState_fieldEvent) => void; 
   readonly placeholder?: string; 
   readonly styles?: CardFieldStyles_fieldStyles; 
   readonly testID?: string; 
@@ -32,13 +39,16 @@ export type Props = {
 export const make: React.ComponentType<{
   readonly accessibilityHint?: string; 
   readonly accessibilityLabel?: string; 
-  readonly children?: React.ReactNode; 
+  readonly cardBrandIcon?: CardFieldOptions_brandIconMode; 
   readonly errorDisplay?: CardFieldOptions_errorDisplay; 
   readonly label?: string; 
   readonly labelBehavior?: CardFieldOptions_labelBehavior; 
-  readonly onStateChange?: (_1:VaultPublicState_cardholderNameState) => void; 
+  readonly onBlur?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onChange?: (_1:VaultPublicState_fieldChange) => void; 
+  readonly onFocus?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onReady?: (_1:VaultPublicState_fieldEvent) => void; 
   readonly placeholder?: string; 
   readonly styles?: CardFieldStyles_fieldStyles; 
   readonly testID?: string; 
   readonly unstyled?: boolean
-}> = CardholderNameWidgetJS.make as any;
+}> = CardNumberFieldJS.make as any;

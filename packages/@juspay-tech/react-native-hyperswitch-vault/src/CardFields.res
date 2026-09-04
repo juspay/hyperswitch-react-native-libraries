@@ -8,7 +8,12 @@ type common = {
 }
 
 /*
- * `errorDisplay` governs the COLOUR too, not only the message.
+ * `errorDisplay` governs the COLOUR too, not only the message — but the two are now separable.
+ *
+ * `#colorOnly` tints without printing, which is the composable default and the web SDK's
+ * behaviour; `#none` still suppresses both, for a merchant who wants the field left entirely
+ * alone. Only `#none` returns the plain text colour, so the tint is the DEFAULT behaviour and
+ * silence is the opt-in.
  *
  * It used to govern the message alone: a merchant who configured nothing got no error text and a
  * red field anyway, because the tint read `dangerColor` straight off the theme. That made "inline
@@ -25,13 +30,23 @@ let inputColors = (
   ~errorDisplay: CardFieldOptions.errorDisplay,
 ) => {
   let ok = isValid->Option.getOr(error->Option.isNone)
-  (ok, !ok && errorDisplay === #inline ? theme.dangerColor : theme.textColor)
+  (ok, !ok && errorDisplay !== #none ? theme.dangerColor : theme.textColor)
 }
 
 /*
- * Inline error rendering is OPT-IN and separate from the error EVENT. `errorDisplay = #none` (the
- * default) renders nothing at all — not an empty container, not reserved space — while the same
- * safe error still reaches the merchant through the field and form state callbacks.
+ * Inline error rendering is separate from the error EVENT, and the two surfaces default it
+ * differently — see `CardFieldOptions.defaultErrorDisplayComposable`:
+ *
+ *   composable fields  #colorOnly  the box is tinted, no message is drawn
+ *   ready-made forms   #inline     the message is drawn under the field
+ *
+ * `#none` renders nothing at all — not an empty container, not reserved space — while the same
+ * safe error still reaches the merchant through the field and form state callbacks, so a merchant
+ * drawing their own chrome loses no information by it.
+ *
+ * (This comment previously claimed `#none` was "the default", full stop. It was not: the single
+ * default was `#inline` for every surface, which is what made a composed field render our message
+ * underneath the merchant's own.)
  */
 module ErrorSlot = {
   @react.component

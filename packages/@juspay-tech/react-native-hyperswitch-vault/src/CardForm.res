@@ -1,20 +1,27 @@
-
 @genType
 type widgetHandle = {
   focus: unit => unit,
   blur: unit => unit,
+  /* The web's `field.clear()`: this field's value and interaction state, back to mount. */
+  clear: unit => unit,
 }
 
 @genType
 let make = React.forwardRef((
   props: {
     /*
-     * OPTIONAL. It backs `tokenize()` only. A form mounted without one still confirms payments —
+     * OPTIONAL. It backs `tokenize()` only. A form mounted without one still confirms payments:
      * `confirmPayment` reads its session from `cardSource`, and the direct source needs none.
+     * `sdkAuthorization` is the web SDK's spelling of the same credential and is accepted instead.
      */
     "session": option<VaultFormOptions.vaultSession>,
+    "sdkAuthorization": option<string>,
+    /* The web SDK's `vaultDetails` option: `{vaultType, vaultData: {sdkAuthorization}}`. */
+    "vaultDetails": option<VaultDetails.vaultDetails>,
     "environment": VaultFormOptions.vaultEnvironment,
     "appearance": option<VaultFormOptions.appearance>,
+    /* A locale code, as on the web: selects the sdk-utils string bundle. */
+    "locale": option<string>,
     "localisation": option<VaultFormOptions.localisation>,
     "disabled": option<bool>,
     "accessible": option<bool>,
@@ -27,21 +34,19 @@ let make = React.forwardRef((
     "vaultEndpoint": option<VaultEndpoint.vaultEndpointConfig>,
     /*
      * A custom layout renders `<CardholderNameField />` itself, so this does not decide what is on
-     * screen here — it decides whose value the confirmation uses. `#collect` (the default) reads
-     * the field the merchant placed; `#"external"` takes the value from the confirm input and the
-     * merchant should place no field; `#omit` sends none.
+     * screen here: it decides whose value the confirmation uses.
      */
     "cardholderName": option<CardFieldOptions.cardholderNameMode>,
     /*
-     * Called with one snapshot on mount and again whenever the snapshot actually changes, by
-     * structural comparison. Passing an inline arrow function is safe: the callback is held in a
-     * ref, so its identity changing emits nothing.
+     * The web's group events. `ready` fires whenever every required field becomes complete;
+     * `change` fires once after mount and again whenever the snapshot actually changes, by
+     * structural comparison. Passing an inline arrow function is safe.
      */
-    "onFormStateChange": option<VaultPublicState.vaultFormState => unit>,
+    "onReady": option<VaultPublicState.cardFormEvent => unit>,
+    "onChange": option<VaultPublicState.cardFormChange => unit>,
     /*
-     * Strip every field back to a bare `TextInput` — no border, background, fixed height,
-     * placeholder, label, icon or error line. Behaviour and accessibility survive. A field may
-     * override this in either direction with its own `unstyled`.
+     * Strip every field back to a bare `TextInput`. Behaviour and accessibility survive. A field
+     * may override this in either direction with its own `unstyled`.
      */
     "unstyled": option<bool>,
     "children": React.element,
@@ -50,8 +55,11 @@ let make = React.forwardRef((
 ) => {
   let host = VaultFormHost.useHost(
     ~session=props["session"]->Option.map(VaultFormOptions.sessionToJson),
+    ~sdkAuthorization=props["sdkAuthorization"],
+    ~vaultDetails=props["vaultDetails"],
     ~environment=props["environment"],
     ~appearance=props["appearance"],
+    ~locale=props["locale"],
     ~localisation=props["localisation"],
     ~disabled=props["disabled"]->Option.getOr(false),
     ~accessible=props["accessible"],
@@ -59,8 +67,15 @@ let make = React.forwardRef((
     ~eligibility=props["eligibility"],
     ~vaultEndpoint=props["vaultEndpoint"],
     ~cardholderNameMode=props["cardholderName"]->Option.getOr(#collect),
-    ~onFormStateChange=props["onFormStateChange"],
+    ~onReady=props["onReady"],
+    ~onChange=props["onChange"],
     ~unstyled=props["unstyled"]->Option.getOr(CardFieldOptions.defaultUnstyled),
+    /*
+     * The merchant placed these fields and draws their own chrome, so the library tints an invalid
+     * field and reports the message on `change`, printing none itself. A field can still opt in
+     * with `errorDisplay="inline"`.
+     */
+    ~defaultErrorDisplay=CardFieldOptions.defaultErrorDisplayComposable,
   )
 
   React.useImperativeHandle0(ref, () => {

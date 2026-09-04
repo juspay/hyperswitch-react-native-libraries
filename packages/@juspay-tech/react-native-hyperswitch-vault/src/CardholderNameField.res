@@ -1,13 +1,8 @@
-
 @genType
 let make = React.forwardRef((
   props: {
-    "children": option<React.element>,
     "styles": option<CardFieldStyles.fieldStyles>,
-    /*
-     * Flattened field options, like every other field. There is no `brandIconMode` and no
-     * `cvcIcon`: a name field has neither element to turn on.
-     */
+    /* No `cardBrandIcon` and no `cvcIcon`: a name field has neither element to turn on. */
     "placeholder": option<string>,
     "label": option<string>,
     "labelBehavior": option<CardFieldOptions.labelBehavior>,
@@ -15,32 +10,28 @@ let make = React.forwardRef((
     "accessibilityLabel": option<string>,
     "accessibilityHint": option<string>,
     "testID": option<string>,
-    /*
-     * Called with one snapshot on mount and again whenever THIS field's state actually changes, by
-     * structural comparison. Carries no card value — see `VaultPublicState`.
-     */
-    "onStateChange": option<VaultPublicState.cardholderNameState => unit>,
-    /*
-     * Strip this field to a bare `TextInput`. Absent => the provider's `unstyled`, then `false`;
-     * `unstyled={false}` keeps this field's UI inside an unstyled provider.
-     */
     "unstyled": option<bool>,
+    "onReady": option<VaultPublicState.fieldEvent => unit>,
+    "onFocus": option<VaultPublicState.fieldEvent => unit>,
+    "onBlur": option<VaultPublicState.fieldEvent => unit>,
+    "onChange": option<VaultPublicState.fieldChange => unit>,
   },
   ref,
 ) => {
-  let ctx = VaultWidgetContext.useRequired("CardholderNameWidget")
+  let ctx = VaultWidgetContext.useRequired("CardholderNameField")
 
   VaultStateEmitter.use(
     ~build=() => ctx.publicSnapshot().cardholderName,
-    ~equal=VaultPublicState.cardholderNameEq,
-    ~notify=props["onStateChange"],
+    ~equal=VaultPublicState.fieldChangeEq,
+    ~notify=props["onChange"],
   )
+  VaultStateEmitter.useReady(~elementType=#cardholderName, ~notify=props["onReady"])
   let controller = ctx.controller
 
   React.useImperativeHandle0(ref, () => {
-    CardForm.focus: () =>
-      VaultCardController.focusRef(controller.cardholderRef),
+    CardForm.focus: () => VaultCardController.focusRef(controller.cardholderRef),
     blur: () => VaultCardController.blurRef(controller.cardholderRef),
+    clear: () => controller.clearField(#cardholderName),
   })
 
   let options: CardFieldOptions.cardholderNameOptions = {
@@ -54,5 +45,11 @@ let make = React.forwardRef((
     unstyled: ?props["unstyled"],
   }
 
-  <BoundCardFields.CardholderName ctx styles=?{props["styles"]} options />
+  <BoundCardFields.CardholderName
+    ctx
+    styles=?{props["styles"]}
+    options
+    onFocus=?{props["onFocus"]}
+    onBlur=?{props["onBlur"]}
+  />
 })

@@ -2,7 +2,7 @@
  * INTERNAL. The saved-card CVC transport (ADR-0008).
  *
  * Deliberately NOT part of the public surface: no genType annotation, no re-export from `public.ts`, no
- * subpath. It lives inside the root bundle because `HyperswitchVaultSavedCardForm` cannot return a
+ * subpath. It lives inside the root bundle because a `<CardCVCField savedCard>` cannot return a
  * token without it, and it is reachable from nowhere else — the same posture as `VaultConfirm`.
  *
  * ONE request:
@@ -64,8 +64,6 @@ type updateRequest = {
   signal?: VaultConfirm.abortSignal,
 }
 
-let missingTokenMessage = "No saved payment-method token was supplied."
-
 let updateUrl = (~baseUrl, ~sessionId) =>
   `${baseUrl}/v1/payment-method-sessions/${sessionId->VaultConfirm.encodeURIComponent}/update-saved-payment-method`
 
@@ -106,7 +104,7 @@ let updateSavedPaymentMethod = async (
   if !Validation.checkCardCVC(request.cvc, "") {
     VaultResult.tokenizeInvalidCardData()
   } else if request.paymentMethodToken->String.trim->String.length === 0 {
-    VaultResult.tokenizeNotReady(missingTokenMessage)
+    VaultResult.tokenizeValidationError(VaultResult.missingSavedCardTokenMessage)
   } else {
     switch request.sdkAuthorization->VaultConfirm.resolveSessionId {
     | Error(VaultConfirm.Failure({error})) => VaultResult.tokenizeFromPmsFailure(error)

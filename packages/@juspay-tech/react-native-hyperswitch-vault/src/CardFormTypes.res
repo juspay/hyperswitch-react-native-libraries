@@ -50,24 +50,26 @@ type cardFieldValues = {
   expiryDisplay: string,
   cvc: string,
   cardholderName: string,
-  /* The network in force — the customer's co-badge pick if any, the detected brand otherwise. */
+  /* The network in force — the saved card's hint, else the co-badge pick, else the detected brand. */
   brand: string,
   /* The schemes this number matches, filtered to those the merchant accepts. */
   eligibleSchemes: array<string>,
   /* Whether to offer the customer a choice between them. */
   isCoBadged: bool,
+  /* Present while the CVC field is mounted with a saved card. */
+  savedCard: option<CardStateReducer.savedCard>,
 }
 
 type cardFieldErrors = {
   cardNumber?: string,
-  expiry?: string,
-  cvc?: string,
+  cardExpiry?: string,
+  cardCvc?: string,
   network?: string,
   eligibility?: string,
 }
 
 type cardFieldOk = {
   cardNumber: bool,
-  expiry: bool,
-  cvc: bool,
+  cardExpiry: bool,
+  cardCvc: bool,
 }

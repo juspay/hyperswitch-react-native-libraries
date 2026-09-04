@@ -1,6 +1,6 @@
 {
   "name": "@juspay-tech/react-native-hyperswitch-vault",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Hyperswitch card form for React Native. Authored in ReScript, published as JavaScript with genType-generated TypeScript declarations.",
   "license": "Apache-2.0",
   "packageManager": "yarn@3.6.4",
@@ -38,6 +38,7 @@
     "dist/cjs/**",
     "dist/types/**",
     "dist/assets/**",
+    "README.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md",
     "!dist/**/*.map",
@@ -104,5 +105,8 @@
   },
   "hyperswitch": {
     "sdkUtilsCommit": "1669cc28955bf547b7fe35d6401ea47720019ff9"
-  }
+  },
+  "workspaces": [
+    "example"
+  ]
 }

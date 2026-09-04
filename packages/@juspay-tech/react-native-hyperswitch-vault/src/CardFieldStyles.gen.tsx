@@ -32,7 +32,7 @@ export type expiryStyles = {
 
 export type formFieldStyles = {
   readonly cardNumber?: fieldStyles; 
-  readonly expiry?: expiryStyles; 
-  readonly cvc?: fieldStyles; 
+  readonly cardExpiry?: expiryStyles; 
+  readonly cardCvc?: fieldStyles; 
   readonly cardholderName?: fieldStyles
 };

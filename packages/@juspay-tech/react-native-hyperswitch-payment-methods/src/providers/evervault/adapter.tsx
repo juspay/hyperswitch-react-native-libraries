@@ -2,8 +2,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { ComponentProps } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { canonicalBrand } from '../../core/fieldChange';
 import type { ProviderAdapter } from '../../core/ProviderAdapter';
-import type { FieldKind, SubmitError, SubmitResult } from '../../core/types';
+import { errorResult } from '../../core/results';
+import type {
+  CardDetails,
+  ElementType,
+  TokenizeResult,
+} from '../../core/types';
 import type { EvervaultVaultData } from './types';
 
 declare const require: (moduleId: string) => unknown;
@@ -30,11 +36,11 @@ interface EvervaultCollector {
   getPayload: () => any | null;
 }
 
-const ERROR_FIELD: Record<string, FieldKind> = {
-  name: 'card_holder',
-  number: 'card_number',
-  expiry: 'card_expiry',
-  cvc: 'card_cvc',
+const ERROR_FIELD: Record<string, ElementType> = {
+  name: 'cardholderName',
+  number: 'cardNumber',
+  expiry: 'cardExpiry',
+  cvc: 'cardCvc',
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,31 +50,58 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function validateVaultData(raw: unknown): EvervaultVaultData {
   if (
     !isRecord(raw) ||
-    typeof raw.team_id !== 'string' ||
-    !raw.team_id ||
-    typeof raw.app_id !== 'string' ||
-    !raw.app_id
+    typeof raw.teamId !== 'string' ||
+    !raw.teamId ||
+    typeof raw.appId !== 'string' ||
+    !raw.appId
   ) {
     throw new Error(
-      'Evervault vault_data requires non-empty string "team_id" and "app_id". Received: ' +
+      'Evervault vaultData requires non-empty string "teamId" and "appId". Received: ' +
         JSON.stringify(raw)
     );
   }
   return raw as unknown as EvervaultVaultData;
 }
 
+const fourDigitYear = (year: unknown): string | null => {
+  if (typeof year !== 'string' || !year) return null;
+  return year.length === 2 ? `20${year}` : year;
+};
+
+/* Evervault reports the card at the form level, so this is where the web's payload members come from. */
+function cardDetailsOf(payload: any): Partial<CardDetails> {
+  const card = payload?.card ?? {};
+  const expiryMonth =
+    typeof card.expiry?.month === 'string' && card.expiry.month
+      ? card.expiry.month
+      : null;
+  return {
+    bin: typeof card.bin === 'string' && card.bin ? card.bin : null,
+    last4:
+      typeof card.lastFour === 'string' && card.lastFour ? card.lastFour : null,
+    brand: canonicalBrand(card.brand) ?? null,
+    expiryMonth,
+    expiryYear: fourDigitYear(card.expiry?.year),
+  };
+}
+
 const Host: ProviderAdapter['Host'] = ({
   vaultData,
   onReady,
   onError,
+  onCardDetails,
   children,
 }) => {
   const data = vaultData as EvervaultVaultData;
   const payloadRef = useRef<any | null>(null);
 
-  const handleChange = useCallback((payload: any) => {
-    payloadRef.current = payload;
-  }, []);
+  const handleChange = useCallback(
+    (payload: any) => {
+      payloadRef.current = payload;
+      onCardDetails?.(cardDetailsOf(payload));
+    },
+    [onCardDetails]
+  );
 
   const collectorRef = useRef<EvervaultCollector | null>(null);
   if (collectorRef.current === null) {
@@ -81,7 +114,7 @@ const Host: ProviderAdapter['Host'] = ({
   }, [collector, onReady]);
 
   return (
-    <EvervaultProvider teamId={data.team_id} appId={data.app_id}>
+    <EvervaultProvider teamId={data.teamId} appId={data.appId}>
       <Card onChange={handleChange} onError={onError}>
         {children}
       </Card>
@@ -90,58 +123,48 @@ const Host: ProviderAdapter['Host'] = ({
 };
 
 const Field: ProviderAdapter['Field'] = ({
-  kind,
+  elementType,
   placeholder,
-  style,
-  textStyle,
+  styles,
 }) => {
-  const inputStyle = StyleSheet.flatten([style, textStyle]) as InputStyle;
-  switch (kind) {
-    case 'card_number':
+  const inputStyle = StyleSheet.flatten([
+    styles?.container,
+    styles?.input,
+  ]) as InputStyle;
+  switch (elementType) {
+    case 'cardNumber':
       return <CardNumber placeholder={placeholder} style={inputStyle} />;
-    case 'card_expiry':
+    case 'cardExpiry':
       return <CardExpiry placeholder={placeholder} style={inputStyle} />;
-    case 'card_cvc':
+    case 'cardCvc':
       return <CardCvc placeholder={placeholder} style={inputStyle} />;
-    case 'card_holder':
+    case 'cardholderName':
       return <CardHolder placeholder={placeholder} style={inputStyle} />;
   }
 };
 
-const submit: ProviderAdapter['submit'] = async (
+const tokenize: ProviderAdapter['tokenize'] = async (
   collector
-): Promise<SubmitResult> => {
+): Promise<TokenizeResult> => {
   const payload = (collector as EvervaultCollector).getPayload();
 
   if (!payload) {
-    return {
-      status: 'validation_error',
-      vaultType: VAULT_TYPE,
-      errors: [
-        {
-          code: 'empty',
-          message: 'No card details have been entered yet.',
-        },
-      ],
-    };
+    return errorResult(
+      VAULT_TYPE,
+      'validation_error',
+      'No card details have been entered yet.'
+    );
   }
 
   if (!payload.isComplete) {
-    const errors: SubmitError[] = Object.entries(payload.errors ?? {}).map(
-      ([field, message]) => ({
-        code: 'invalid_field',
-        field: ERROR_FIELD[field],
-        message: String(message),
-      })
+    const problems = Object.entries(payload.errors ?? {}).map(
+      ([field, message]) => `${ERROR_FIELD[field] ?? field}: ${String(message)}`
     );
-    return {
-      status: 'validation_error',
-      vaultType: VAULT_TYPE,
-      errors:
-        errors.length > 0
-          ? errors
-          : [{ code: 'incomplete', message: 'Card details are incomplete.' }],
-    };
+    return errorResult(
+      VAULT_TYPE,
+      'validation_error',
+      problems.length > 0 ? problems.join(', ') : 'Card details are incomplete.'
+    );
   }
 
   const card = payload.card;
@@ -165,5 +188,5 @@ export const evervaultAdapter: ProviderAdapter = {
   validateVaultData,
   Host,
   Field,
-  submit,
+  tokenize,
 };

@@ -61,14 +61,32 @@
  * been processed, and there is no idempotency key on it either.
  */
 
+/*
+ * A usable session: its vault credential, and — when the merchant handed over the session response
+ * rather than a bare credential — the backend's `expires_at`, in epoch milliseconds.
+ */
+type readySession = {
+  authorization: string,
+  expiresAt: option<float>,
+}
+
 type sessionState =
-  | Ready(string)
+  | Ready(readySession)
   | Unusable(string)
 
+let parseExpiresAt = (session: Dict.t<JSON.t>): option<float> =>
+  session
+  ->Dict.get("expires_at")
+  ->Option.flatMap(JSON.Decode.string)
+  ->Option.flatMap(text => {
+    let ms = Date.fromString(text)->Date.getTime
+    Float.isNaN(ms) ? None : Some(ms)
+  })
+
 let readSession = (session: JSON.t): sessionState => {
+  let root = session->JSON.Decode.object
   let vaultDetails =
-    session
-    ->JSON.Decode.object
+    root
     ->Option.flatMap(root => root->Dict.get("vault_details"))
     ->Option.flatMap(JSON.Decode.object)
 
@@ -94,18 +112,63 @@ let readSession = (session: JSON.t): sessionState => {
     switch vaultType {
     | "hyperswitch" =>
       authorization->String.trim->String.length > 0
-        ? Ready(authorization)
+        ? Ready({authorization, expiresAt: root->Option.flatMap(parseExpiresAt)})
         : Unusable("This session is missing its vault details.")
     | _ => Unusable("This session uses a card vault this component does not support.")
     }
   }
 }
 
+/*
+ * The web SDK's entry takes the raw `sdkAuthorization` rather than the session response, so this
+ * library accepts it too. The credential is the same string `readSession` extracts; what a bare
+ * credential cannot carry is `expires_at`, so expiry is then the backend's to enforce.
+ */
+let sessionFromAuthorization = (sdkAuthorization: string): sessionState => {
+  let trimmed = sdkAuthorization->String.trim
+  trimmed->String.length > 0
+    ? Ready({authorization: trimmed, expiresAt: None})
+    : Unusable("No card-vault session was supplied.")
+}
+
+/*
+ * The web SDK's `vaultDetails` option. The vault type must be Hyperswitch's (absent counts as
+ * Hyperswitch, as a merchant copying the web snippet would expect); the credential is
+ * `vaultData.sdkAuthorization`, or the top-level `sdkAuthorization` when the details carry none.
+ * Like a bare credential, it cannot carry `expires_at`.
+ */
+let sessionFromVaultDetails = (
+  ~details: VaultDetails.vaultDetails,
+  ~sdkAuthorization: option<string>,
+): sessionState => {
+  let vaultType = details.vaultType->Option.getOr("hyperswitch")->String.trim->String.toLowerCase
+  let authorization =
+    details.vaultData
+    ->Option.flatMap(data => data.sdkAuthorization)
+    ->Option.map(String.trim)
+    ->Option.filter(value => value->String.length > 0)
+    ->Option.orElse(sdkAuthorization->Option.map(String.trim))
+    ->Option.getOr("")
+  switch vaultType {
+  | "" | "hyperswitch" =>
+    authorization->String.length > 0
+      ? Ready({authorization, expiresAt: None})
+      : Unusable("This session is missing its vault details.")
+  | _ => Unusable("This session uses a card vault this component does not support.")
+  }
+}
+
+let isExpired = (session: readySession) =>
+  switch session.expiresAt {
+  | Some(expiresAt) => Date.now() >= expiresAt
+  | None => false
+  }
+
 let environmentKey = (environment: VaultConfirm.vaultEnvironment) =>
   switch environment {
   | #production => "production"
   | #sandbox => "sandbox"
-  | #integration => "integration"
+  | #integ => "integ"
   }
 
 /* ── Public confirm-payment input (Flows 2 and 3) ──────────────────────────── */
@@ -181,11 +244,22 @@ type paymentConfirmInput = {
   vaultEndpoint?: VaultEndpoint.vaultEndpointConfig,
 }
 
+/*
+ * WHICH SUBMISSION the mounted fields describe. Decided by the host from its registry, the way
+ * hyperswitch-web decides it from which fields were created: a card-number field means a new card;
+ * a lone CVC field carrying a saved card means that card's CVC update.
+ */
+type submitFlow =
+  | NewCard
+  | SavedCardCvc(CardStateReducer.savedCard)
+
 type machinery = {
   tokenize: unit => promise<VaultResult.vaultTokenizeResult>,
   confirmPayment: paymentConfirmInput => promise<VaultResult.vaultPaymentResult>,
   reset: unit => unit,
   isSubmitting: bool,
+  /* The component's own session has been tokenized against. `tokenize()` will refuse. */
+  isConsumed: bool,
 }
 
 /* A record is its JS object, so this is how we ask "did the caller pass anything at all?". */
@@ -204,6 +278,13 @@ type mintedToken = {
   metadata: VaultConfirm.vaultCardMetadata,
 }
 
+type mintFailure =
+  | Transport(VaultConfirm.vaultError)
+  /* The session already tokenized a card and nothing cached describes this one. */
+  | Consumed
+  /* The session's `expires_at` has passed and nothing cached describes this card. */
+  | Expired
+
 let useMachinery = (
   ~sessionState: sessionState,
   ~environment: VaultConfirm.vaultEnvironment,
@@ -221,8 +302,11 @@ let useMachinery = (
   ~eligibilityVerdict: unit => option<VaultEligibility.verdict>,
   ~recordEligibility: VaultEligibility.verdict => unit,
   ~markSubmitAttempted: unit => unit,
-  ~presenceGate: unit => option<VaultResult.vaultPaymentResult>,
+  /* Which submission the mounted fields describe, or why none can be made. */
+  ~presenceGate: unit => result<submitFlow, string>,
   ~clearLocal: unit => unit,
+  /* The saved card's token, or "": a different card retires a request opened for the previous one. */
+  ~savedCardKey: string,
 ): machinery => {
   /*
    * Everything an operation reads at run time goes through this ref, never through the closure.
@@ -245,6 +329,31 @@ let useMachinery = (
   let generationRef = React.useRef(0)
   let mintedRef: React.ref<option<mintedToken>> = React.useRef(None)
 
+  /*
+   * ── CONSUMED, THE WAY THE WEB SDK MEANS IT ──────────────────────────────────
+   *
+   * A payment-method session is single-use: once a card has been tokenized against it the web SDK
+   * marks it consumed and refuses a second `tokenize()` with `session_consumed`. The backend would
+   * accept the second confirm — and vault a second card, forgetting the first — which is exactly
+   * why the refusal lives on the client. The consumed key is the credential itself, so a session
+   * the merchant replaces is a fresh conversation.
+   *
+   * State AND ref: the state re-renders the merchant's `sessionStatus`, the ref answers at call time.
+   */
+  let (consumedKey, setConsumedKey) = React.useState(_ => None)
+  let consumedRef: React.ref<option<string>> = React.useRef(None)
+  let markConsumed = (authorization: string) => {
+    consumedRef.current = Some(authorization)
+    if isMountedRef.current {
+      setConsumedKey(_ => Some(authorization))
+    }
+  }
+  let isConsumed = (authorization: string) =>
+    switch consumedRef.current {
+    | Some(key) => key === authorization
+    | None => false
+    }
+
   let abortInFlight = () => {
     abortRef.current->Option.forEach(((_, controller)) => controller->VaultConfirm.abort)
     abortRef.current = None
@@ -264,10 +373,11 @@ let useMachinery = (
   })
 
   let sessionKey = switch sessionState {
-  | Ready(authorization) => authorization
+  | Ready(session) => session.authorization
   | Unusable(_) => ""
   }
-  let requestKey = `${sessionKey}|${environment->environmentKey}`
+  let endpointKey = vaultEndpoint->Option.map(e => e.VaultEndpoint.baseUrl)->Option.getOr("")
+  let requestKey = `${sessionKey}|${environment->environmentKey}|${endpointKey}|${savedCardKey}`
   React.useEffect1(() => {
     /* A different session invalidates any token minted under the previous one. */
     mintedRef.current = None
@@ -287,20 +397,12 @@ let useMachinery = (
   /*
    * ── WHOSE CARDHOLDER NAME, AND WHETHER ONE IS ALLOWED ────────────────────────
    *
-   * One resolver for every request that carries a card, so the three modes cannot mean different
-   * things on the two calls.
-   *
    *   #collect   the library's own field is the source; a supplied value is a contradiction
    *   #"external"  the supplied value is the source; the library has no field to read
    *   #omit      there is no name; a supplied value is a contradiction
    *
-   * A contradiction is REFUSED rather than resolved by precedence. A host that supplies a name to a
-   * form which is collecting its own has two names and no way to know which was sent — and picking
-   * one silently is how a customer's typed name gets replaced by a stale one from a previous
-   * screen. `Error()` becomes `unsupported_configuration`, before any request.
-   *
-   * Whitespace is trimmed HERE, at the point the request is built, and never while the customer is
-   * typing: trimming per keystroke deletes the space between a first and last name as it is typed.
+   * A contradiction is REFUSED rather than resolved by precedence: a host that supplies a name to a
+   * form which is collecting its own has two names and no way to know which was sent.
    */
   let nonBlank = (value: string) => {
     let trimmed = value->String.trim
@@ -317,23 +419,20 @@ let useMachinery = (
   /*
    * ── THE ONE TOKENIZER ────────────────────────────────────────────────────────
    *
-   * Both public operations mint through here. `confirmPayment()` calls this DIRECTLY rather than
-   * calling the public `tokenize()`, which matters for two reasons: the public operation would
-   * wrap the token in a public result — the exact value Flow 2 must not produce — and it would take
-   * the in-flight slot that the payment sequence is already holding.
-   *
-   * Returns the token and the metadata call 2 needs, or the raw transport error for each caller to
-   * map into its own result vocabulary.
+   * Both public operations mint through here. A successful mint is remembered for as long as the
+   * card and the session are unchanged, and it marks the session consumed: a retry of call 2 reuses
+   * the token without a request, and anything that would need a SECOND mint against the same
+   * session is refused as `Consumed`.
    */
   let mintToken = async (
-    ~vaultAuthorization: string,
+    ~session: readySession,
     ~vaultBaseUrl: string,
     ~appId: option<string>,
     ~nickName: option<string>,
-    /* Already resolved against the mode by the caller; this function never reads the field. */
     ~cardholderName: option<string>,
     ~signal: VaultConfirm.abortSignal,
-  ): result<(string, VaultConfirm.vaultCardMetadata), VaultConfirm.vaultError> => {
+  ): result<(string, VaultConfirm.vaultCardMetadata), mintFailure> => {
+    let vaultAuthorization = session.authorization
     let currentVersion = cardVersion()
     let reusable = switch mintedRef.current {
     | Some(minted)
@@ -342,8 +441,15 @@ let useMachinery = (
     | _ => None
     }
 
+    /*
+     * The cache is consulted FIRST. A retry of call 2 after a failed payment confirm must reuse the
+     * token it already minted — that is the whole reason the cache exists — and a consumed session
+     * only refuses a SECOND mint, never the reuse of the first.
+     */
     switch reusable {
     | Some(pair) => Ok(pair)
+    | None if isConsumed(vaultAuthorization) => Error(Consumed)
+    | None if isExpired(session) => Error(Expired)
     | None =>
       let outcome = await VaultConfirm.confirmPaymentMethodSession({
         sdkAuthorization: vaultAuthorization,
@@ -368,28 +474,22 @@ let useMachinery = (
           token: result.token,
           metadata: result.card,
         })
+        markConsumed(vaultAuthorization)
         Ok((result.token, result.card))
-      | VaultConfirm.Failure({error}) => Error(error)
+      | VaultConfirm.Failure({error}) => Error(Transport(error))
       }
     }
   }
 
-  /* Shared local gates. Neither performs a network request. */
-  let localGate = () =>
-    switch presenceGate() {
-    | Some(blocked) => Some(blocked)
-    | None =>
-      if !isValid() {
-        markSubmitAttempted()
-        Some(VaultResult.invalidCardData())
-      } else {
-        None
-      }
-    }
-
   let openRequest = (~vaultAuthorization, ~environment) => {
     let controller = VaultConfirm.makeAbortController()
-    abortRef.current = Some((`${vaultAuthorization}|${environment->environmentKey}`, controller))
+    let (_, _, _, currentEndpoint) = latestRef.current
+    let currentEndpointKey =
+      currentEndpoint->Option.map(e => e.VaultEndpoint.baseUrl)->Option.getOr("")
+    abortRef.current = Some((
+      `${vaultAuthorization}|${environment->environmentKey}|${currentEndpointKey}|${savedCardKey}`,
+      controller,
+    ))
     (controller, controller->VaultConfirm.controllerSignal)
   }
 
@@ -401,54 +501,90 @@ let useMachinery = (
 
   /* ── Flow 1 — tokenize only ─────────────────────────────────────────────── */
 
+  /*
+   * The gates, in the web SDK's order: the session (unusable, consumed, expired), then the field
+   * set, then the values, then the endpoint. Each answers BEFORE anything is sent.
+   */
   let runTokenize = async () => {
-    let (sessionState, environment, cardholderNameMode, vaultEndpoint) = latestRef.current
+    let (sessionState, environment, _, vaultEndpoint) = latestRef.current
 
-    switch localGate() {
-    | Some(blocked) =>
-      /* Re-tagged into the tokenize vocabulary; the same gate, a different result type. */
-      switch blocked.status {
-      | #not_ready =>
-        VaultResult.tokenizeNotReady(
-          blocked.error->Option.mapOr(VaultResult.notReadyMessage, e => e.message),
-        )
-      | _ => VaultResult.tokenizeInvalidCardData()
-      }
-    | None =>
-      switch sessionState {
-      | Unusable(message) => VaultResult.tokenizeFailedWith(#invalid_session, message)
-      | Ready(vaultAuthorization) =>
-        switch vaultEndpoint->VaultEndpoint.resolveVaultBaseUrl(~environment) {
-        | Error() =>
-          VaultResult.tokenizeFailedWith(
-            #unsupported_configuration,
-            VaultResult.unsupportedConfigurationMessage,
-          )
-        | Ok(vaultBaseUrl) =>
-        let (controller, signal) = openRequest(~vaultAuthorization, ~environment)
-        let minted = await mintToken(
-          ~vaultAuthorization,
-          ~vaultBaseUrl,
-          /* Flow 1 has no host input, so there is no app id to attach. */
-          ~appId=None,
-          /* Flow 1 takes no input, so there is no host nickname to attach. */
-          ~nickName=None,
-          /*
-           * …and no host cardholder name either. Only `#collect` has a source `tokenize()` can
-           * read; in the other two modes the field is not rendered and no value was passed, so no
-           * name is sent. `#"external"` is for the confirmation flows, which do have an input.
-           */
-          ~cardholderName=switch cardholderNameMode {
-          | #collect => cardholderName()->nonBlank
-          | #"external" | #omit => None
-          },
-          ~signal,
-        )
-        closeRequest(controller)
-        switch minted {
-        | Ok((token, _metadata)) => VaultResult.tokenizeSuccess(token)
-        | Error(error) => VaultResult.tokenizeFromPmsFailure(error)
-        }
+    switch sessionState {
+    | Unusable(message) => VaultResult.tokenizeFailedWith(#invalid_session, message)
+    | Ready(session) =>
+      if isConsumed(session.authorization) {
+        VaultResult.tokenizeSessionConsumed()
+      } else if isExpired(session) {
+        VaultResult.tokenizeSessionExpired()
+      } else {
+        switch presenceGate() {
+        | Error(message) => VaultResult.tokenizeIncompleteFieldSet(message)
+        | Ok(flow) =>
+          if !isValid() {
+            markSubmitAttempted()
+            VaultResult.tokenizeInvalidCardData()
+          } else {
+            switch vaultEndpoint->VaultEndpoint.resolveVaultBaseUrl(~environment) {
+            | Error() =>
+              VaultResult.tokenizeFailedWith(
+                #unsupported_configuration,
+                VaultResult.unsupportedConfigurationMessage,
+              )
+            | Ok(vaultBaseUrl) =>
+              switch flow {
+              /* ── A saved card: refresh the CVC held under its token. ── */
+              | SavedCardCvc(saved) =>
+                if saved.token->String.length === 0 {
+                  VaultResult.tokenizeValidationError(VaultResult.missingSavedCardTokenMessage)
+                } else {
+                  let (controller, signal) = openRequest(
+                    ~vaultAuthorization=session.authorization,
+                    ~environment,
+                  )
+                  let result = await VaultSavedCard.updateSavedPaymentMethod({
+                    vaultBaseUrl,
+                    sdkAuthorization: session.authorization,
+                    paymentMethodToken: saved.token,
+                    cvc: cardDetails().cvc,
+                    signal,
+                  })
+                  closeRequest(controller)
+                  if result.status === #success {
+                    markConsumed(session.authorization)
+                  }
+                  result
+                }
+              /* ── A new card: mint a token and stop. ── */
+              | NewCard =>
+                let (controller, signal) = openRequest(
+                  ~vaultAuthorization=session.authorization,
+                  ~environment,
+                )
+                let minted = await mintToken(
+                  ~session,
+                  ~vaultBaseUrl,
+                  /* Flow 1 has no host input, so there is no app id or nickname to attach. */
+                  ~appId=None,
+                  ~nickName=None,
+                  /*
+                   * Only `#collect` has a source `tokenize()` can read; in the other two modes the
+                   * field is not rendered and no value was passed, so no name is sent.
+                   */
+                  ~cardholderName=switch currentCardholderNameMode() {
+                  | #collect => cardholderName()->nonBlank
+                  | #"external" | #omit => None
+                  },
+                  ~signal,
+                )
+                closeRequest(controller)
+                switch minted {
+                | Ok((token, _metadata)) => VaultResult.tokenizeSuccess(token)
+                | Error(Consumed) => VaultResult.tokenizeSessionConsumed()
+                | Error(Expired) => VaultResult.tokenizeSessionExpired()
+                | Error(Transport(error)) => VaultResult.tokenizeFromPmsFailure(error)
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -459,8 +595,7 @@ let useMachinery = (
   /*
    * Runs only when the host says this payment has an eligibility step. The live probe usually has a
    * verdict already — it fires as the number completes — and re-asking would put a second request
-   * on the wire for one answer, so a cached verdict for the CURRENT card is reused. The reducer
-   * clears that cache whenever the number changes, so "current" is a fact rather than a hope.
+   * on the wire for one answer, so a cached verdict for the CURRENT card is reused.
    */
   let eligibilityGate = async (~args: paymentConfirmInput, ~credential, ~baseUrl, ~signal) =>
     if !(args.eligibilityRequired->Option.getOr(false)) {
@@ -489,37 +624,31 @@ let useMachinery = (
   /* ── Flows 2 and 3 — confirm the payment ────────────────────────────────── */
 
   let runConfirmPayment = async (args: paymentConfirmInput) => {
-    /*
-     * Read through `latestRef`, not the closure. `sessionState` is consulted below to refuse a
-     * direct confirm on a vaulting form, and that decision must be made against the session the
-     * component holds NOW — not the one it held when this closure happened to be created.
-     */
     let (sessionState, environment, _, propVaultEndpoint) = latestRef.current
 
     /*
-     * A JavaScript caller can reach `confirmPayment()` with no argument at all — TypeScript does not
-     * bind them. Reading a field off `undefined` would throw a TypeError out of a promise the
-     * contract says never throws for a documented outcome, so the missing-input case is answered
-     * like any other missing credential.
+     * A JavaScript caller can reach `confirmPayment()` with no argument at all. Reading a field off
+     * `undefined` would throw a TypeError out of a promise the contract says never throws, so the
+     * missing-input case is answered like any other missing credential.
      */
     if args->argsAsNullable->Nullable.toOption->Option.isNone {
       VaultResult.invalidSession(VaultResult.unusableSessionMessage)
     } else {
-      switch localGate() {
-      | Some(blocked) => blocked
-      | None =>
-        if (
+      switch presenceGate() {
+      | Error(message) => VaultResult.incompleteFieldSet(message)
+      /* The checkout SDK has no consumer for a saved-card CVC token yet; only a new card confirms. */
+      | Ok(SavedCardCvc(_)) => VaultResult.unsupportedConfiguration()
+      | Ok(NewCard) =>
+        if !isValid() {
+          markSubmitAttempted()
+          VaultResult.invalidCardData()
+        } else if (
           args.paymentMethodData->VaultPaymentMethodData.validateHostPaymentMethodData->Result.isError
         ) {
           VaultResult.forbiddenCardData()
         } else if args.paymentId->String.trim->String.length === 0 {
           VaultResult.invalidSession(VaultResult.unusableSessionMessage)
         } else {
-          /*
-           * The payment credential is resolved first, from whichever of the two shapes the host
-           * supplied. Neither shape complete means nothing can authenticate the request, and the
-           * refusal costs zero requests.
-           */
           switch VaultCredential.resolve(
             ~sdkAuthorization=args.sdkAuthorization,
             ~publishableKey=args.publishableKey,
@@ -527,175 +656,148 @@ let useMachinery = (
           ) {
           | None => VaultResult.invalidSession(VaultResult.unusableSessionMessage)
           | Some(credential) =>
-          /*
-           * The source is resolved BEFORE anything is opened or sent. A contradictory or incomplete
-           * source is a configuration error, and answering it here means it costs zero requests.
-           */
-          /*
-           * Resolved with the other configuration gates — before the source, before the endpoint,
-           * before anything is opened. A mode/value contradiction costs zero requests.
-           */
-          switch resolveCardholderName(~supplied=args.cardholderName) {
-          | Error() => VaultResult.unsupportedConfiguration()
-          | Ok(resolvedCardholderName) =>
-          switch args.cardSource->VaultCardSource.resolve {
-          | Error(rejection) =>
-            switch rejection->VaultCardSource.describe {
-            | #invalid_session => VaultResult.invalidSession(VaultResult.unusableSessionMessage)
-            | #unsupported_configuration => VaultResult.unsupportedConfiguration()
-            }
-          | Ok(source) =>
-            switch args.endpoint->VaultEndpoint.resolveBaseUrl(~environment) {
+            switch resolveCardholderName(~supplied=args.cardholderName) {
             | Error() => VaultResult.unsupportedConfiguration()
-            | Ok(baseUrl) =>
-              /*
-               * `resolve` proved the SHAPE of the source; this proves its CONTENT — that a vault
-               * source's session actually carries a supported vault authorization. Both happen
-               * before any request is opened.
-               *
-               * The abort slot is keyed by the credential in play. Direct mode has no vault
-               * credential, so it keys on the payment intent instead: the key exists only so that a
-               * request opened under one configuration is not closed under another.
-               */
-              let prepared = switch source {
-              /*
-               * ── THE MOUNT AND THE OPERATION MUST AGREE ──────────────────────
-               *
-               * A form mounted WITH a usable vault session has declared that this card is to be
-               * tokenized. Confirming it directly instead would send the PAN to the payment
-               * confirm and save nothing — the opposite posture, chosen by nobody, and invisible
-               * on screen because the form looks identical either way.
-               *
-               * So it is refused rather than honoured. This is the mirror of the rule that a
-               * direct `cardSource` may not carry a session: the two together mean a caller can
-               * neither smuggle a vault session into a direct confirm nor quietly downgrade a
-               * vaulting form into one.
-               *
-               * A form mounted with NO session, or with one this build cannot use, is a direct
-               * form and confirms directly — which is exactly how client-core mounts it for a
-               * merchant profile set to Skip.
-               */
-              | VaultCardSource.DirectSource =>
-                switch sessionState {
-                | Ready(_) => Error(VaultResult.unsupportedConfigurationMessage)
-                | Unusable(_) => Ok((None, args.paymentId))
+            | Ok(resolvedCardholderName) =>
+              switch args.cardSource->VaultCardSource.resolve {
+              | Error(rejection) =>
+                switch rejection->VaultCardSource.describe {
+                | #invalid_session => VaultResult.invalidSession(VaultResult.unusableSessionMessage)
+                | #unsupported_configuration => VaultResult.unsupportedConfiguration()
                 }
-              | VaultCardSource.VaultSource({confirmTokenMode, session}) =>
-                switch session->readSession {
-                | Ready(authorization) => Ok((Some(confirmTokenMode), authorization))
-                | Unusable(message) => Error(message)
-                }
-              }
-
-              switch prepared {
-              | Error(message) if message === VaultResult.unsupportedConfigurationMessage =>
-                VaultResult.unsupportedConfiguration()
-              | Error(message) => VaultResult.invalidSession(message)
-              | Ok((tokenMode, identity)) =>
-                /*
-                 * The vault base is resolved only when call 1 will happen, and — like every other
-                 * configuration gate — before anything is opened or sent.
-                 */
-                let vaultBase = switch tokenMode {
-                | None => Ok("")
-                | Some(_) =>
-                  switch args.vaultEndpoint {
-                  | Some(_) => args.vaultEndpoint
-                  | None => propVaultEndpoint
-                  }->VaultEndpoint.resolveVaultBaseUrl(~environment)
-                }
-                switch vaultBase {
+              | Ok(source) =>
+                switch args.endpoint->VaultEndpoint.resolveBaseUrl(~environment) {
                 | Error() => VaultResult.unsupportedConfiguration()
-                | Ok(vaultBaseUrl) =>
-                let (controller, signal) = openRequest(
-                  ~vaultAuthorization=identity,
-                  ~environment,
-                )
+                | Ok(baseUrl) =>
+                  /*
+                   * ── THE MOUNT AND THE OPERATION MUST AGREE ──────────────────────
+                   *
+                   * A form mounted WITH a usable vault session has declared that this card is to
+                   * be tokenized; confirming it directly instead is refused. A form mounted with
+                   * NO session, or with one this build cannot use, is a direct form.
+                   */
+                  let prepared = switch source {
+                  | VaultCardSource.DirectSource =>
+                    switch sessionState {
+                    | Ready(_) => Error(VaultResult.unsupportedConfiguration())
+                    | Unusable(_) => Ok((None, args.paymentId))
+                    }
+                  | VaultCardSource.VaultSource({confirmTokenMode, session}) =>
+                    switch session->readSession {
+                    | Ready(ready) => Ok((Some((confirmTokenMode, ready)), ready.authorization))
+                    | Unusable(message) => Error(VaultResult.invalidSession(message))
+                    }
+                  }
 
-                let outcome = switch await eligibilityGate(~args, ~credential, ~baseUrl, ~signal) {
-                | Error() => VaultResult.cardNotEligible()
-                | Ok() =>
-                  switch tokenMode {
-                  /* ── Flow 3 — no tokenization, no token, one request. ── */
-                  | None =>
-                    let body = VaultConfirmBody.build(
-                      ~cardPayload=DirectPayload({
-                        card: cardDetails(),
-                        cardholderName: resolvedCardholderName,
-                        cardNetwork: cardNetwork(),
-                        nickName: VaultPaymentMethodData.nickNameOf(args.paymentMethodData),
-                      }),
-                      ~paymentMethodType=args.paymentMethodType,
-                      ~paymentMethodData=args.paymentMethodData,
-                      ~customerAcceptance=args.customerAcceptance,
-                      ~browserInfo=args.browserInfo,
-                      ~returnUrl=args.returnUrl,
-                      ~paymentType=args.paymentType,
-                      ~email=args.email,
-                      ~clientSecret=credential->VaultCredential.clientSecretForBody,
-                    )
-
-                    let navOutcome = await VaultFinalConfirm.confirmPayment({
-                      baseUrl,
-                      paymentId: args.paymentId,
-                      credential,
-                      appId: ?args.appId,
-                      body,
-                      signal,
-                    })
-                    navOutcome->VaultResult.fromNavOutcome
-
-                  /* ── Flow 2 — mint internally, then confirm with the token. ── */
-                  | Some(confirmTokenMode) =>
-                    let minted = await mintToken(
-                      ~vaultAuthorization=identity,
-                      ~vaultBaseUrl,
-                      ~appId=args.appId,
-                      ~nickName=VaultPaymentMethodData.nickNameOf(args.paymentMethodData),
-                      /* Attached to the PMS-confirm card object, so a vaulted card records it. */
-                      ~cardholderName=resolvedCardholderName,
-                      ~signal,
-                    )
-
-                    switch minted {
-                    | Error(error) => VaultResult.fromPmsFailure(error)
-                    | Ok((token, metadata)) =>
-                      let body = VaultConfirmBody.build(
-                        ~cardPayload=TokenPayload({
-                          mode: confirmTokenMode,
-                          token,
-                          metadata,
-                        }),
-                        ~paymentMethodType=args.paymentMethodType,
-                        ~paymentMethodData=args.paymentMethodData,
-                        ~customerAcceptance=args.customerAcceptance,
-                        ~browserInfo=args.browserInfo,
-                        ~returnUrl=args.returnUrl,
-                        ~paymentType=args.paymentType,
-                        ~email=args.email,
-                        ~clientSecret=credential->VaultCredential.clientSecretForBody,
+                  switch prepared {
+                  | Error(refused) => refused
+                  | Ok((tokenMode, identity)) =>
+                    let vaultBase = switch tokenMode {
+                    | None => Ok("")
+                    | Some(_) =>
+                      switch args.vaultEndpoint {
+                      | Some(_) => args.vaultEndpoint
+                      | None => propVaultEndpoint
+                      }->VaultEndpoint.resolveVaultBaseUrl(~environment)
+                    }
+                    switch vaultBase {
+                    | Error() => VaultResult.unsupportedConfiguration()
+                    | Ok(vaultBaseUrl) =>
+                      let (controller, signal) = openRequest(
+                        ~vaultAuthorization=identity,
+                        ~environment,
                       )
 
-                      let navOutcome = await VaultFinalConfirm.confirmPayment({
-                        baseUrl,
-                        paymentId: args.paymentId,
-                        credential,
-                        appId: ?args.appId,
-                        body,
-                        signal,
-                      })
-                      navOutcome->VaultResult.fromNavOutcome
+                      let outcome = switch await eligibilityGate(
+                        ~args,
+                        ~credential,
+                        ~baseUrl,
+                        ~signal,
+                      ) {
+                      | Error() => VaultResult.cardNotEligible()
+                      | Ok() =>
+                        switch tokenMode {
+                        /* ── Flow 3 — no tokenization, no token, one request. ── */
+                        | None =>
+                          let body = VaultConfirmBody.build(
+                            ~cardPayload=DirectPayload({
+                              card: cardDetails(),
+                              cardholderName: resolvedCardholderName,
+                              cardNetwork: cardNetwork(),
+                              nickName: VaultPaymentMethodData.nickNameOf(args.paymentMethodData),
+                            }),
+                            ~paymentMethodType=args.paymentMethodType,
+                            ~paymentMethodData=args.paymentMethodData,
+                            ~customerAcceptance=args.customerAcceptance,
+                            ~browserInfo=args.browserInfo,
+                            ~returnUrl=args.returnUrl,
+                            ~paymentType=args.paymentType,
+                            ~email=args.email,
+                            ~clientSecret=credential->VaultCredential.clientSecretForBody,
+                          )
+
+                          let navOutcome = await VaultFinalConfirm.confirmPayment({
+                            baseUrl,
+                            paymentId: args.paymentId,
+                            credential,
+                            appId: ?args.appId,
+                            body,
+                            signal,
+                          })
+                          navOutcome->VaultResult.fromNavOutcome
+
+                        /* ── Flow 2 — mint internally, then confirm with the token. ── */
+                        | Some((confirmTokenMode, vaultSession)) =>
+                          let minted = await mintToken(
+                            ~session=vaultSession,
+                            ~vaultBaseUrl,
+                            ~appId=args.appId,
+                            ~nickName=VaultPaymentMethodData.nickNameOf(args.paymentMethodData),
+                            ~cardholderName=resolvedCardholderName,
+                            ~signal,
+                          )
+
+                          switch minted {
+                          | Error(Consumed) => VaultResult.sessionConsumed()
+                          | Error(Expired) => VaultResult.sessionExpired()
+                          | Error(Transport(error)) => VaultResult.fromPmsFailure(error)
+                          | Ok((token, metadata)) =>
+                            let body = VaultConfirmBody.build(
+                              ~cardPayload=TokenPayload({
+                                mode: confirmTokenMode,
+                                token,
+                                metadata,
+                              }),
+                              ~paymentMethodType=args.paymentMethodType,
+                              ~paymentMethodData=args.paymentMethodData,
+                              ~customerAcceptance=args.customerAcceptance,
+                              ~browserInfo=args.browserInfo,
+                              ~returnUrl=args.returnUrl,
+                              ~paymentType=args.paymentType,
+                              ~email=args.email,
+                              ~clientSecret=credential->VaultCredential.clientSecretForBody,
+                            )
+
+                            let navOutcome = await VaultFinalConfirm.confirmPayment({
+                              baseUrl,
+                              paymentId: args.paymentId,
+                              credential,
+                              appId: ?args.appId,
+                              body,
+                              signal,
+                            })
+                            navOutcome->VaultResult.fromNavOutcome
+                          }
+                        }
+                      }
+
+                      closeRequest(controller)
+                      outcome
                     }
                   }
                 }
-
-                closeRequest(controller)
-                outcome
-                }
               }
             }
-          }
-          }
           }
         }
       }
@@ -705,20 +807,12 @@ let useMachinery = (
   /*
    * ── ONE IN-FLIGHT OPERATION, REMEMBERED BY KIND ──────────────────────────────
    *
-   * The two operations share a single slot rather than one each: they drive the same card state and
-   * the same session, so letting a tokenize and a payment confirm run concurrently would mint
-   * against one card while the customer edits it.
-   *
-   * The slot remembers WHICH operation is running, and that is not bookkeeping for its own sake. A
-   * single untyped slot forces a cast on the way out, and a cast is wrong precisely when the two
-   * operations overlap: `tokenize()` during a pending `confirmPayment()` would hand back a payment
-   * result relabelled as a tokenize result — `.token` undefined, `status` a value the tokenize union
-   * does not even contain. Repeating the SAME operation returns the same promise, which is what
-   * makes double-submission harmless; requesting the OTHER one is refused as `not_ready` without a
-   * request, because there is no honest answer to give it while the first is still running.
+   * Repeating the SAME operation returns the same promise, which is what makes double-submission
+   * harmless — the web SDK answers a second concurrent call with `tokenization_in_progress`; this
+   * library keeps the friendlier behaviour deliberately. Requesting the OTHER operation is refused
+   * with the web's in-progress code, because there is no honest answer to give it while the first
+   * is still running.
    */
-  let busyTokenizeMessage = "Another card operation is already in progress."
-
   let trackTokenize = (pending: promise<VaultResult.vaultTokenizeResult>) => {
     let generation = generationRef.current
     setIsSubmitting(_ => true)
@@ -754,16 +848,14 @@ let useMachinery = (
   let tokenize = () =>
     switch inFlightRef.current {
     | Some(TokenizeInFlight(pending)) => pending
-    | Some(ConfirmInFlight(_)) =>
-      Promise.resolve(VaultResult.tokenizeNotReady(busyTokenizeMessage))
+    | Some(ConfirmInFlight(_)) => Promise.resolve(VaultResult.tokenizeConfirmInProgress())
     | None => trackTokenize(runTokenize())
     }
 
   let confirmPayment = (args: paymentConfirmInput) =>
     switch inFlightRef.current {
     | Some(ConfirmInFlight(pending)) => pending
-    | Some(TokenizeInFlight(_)) =>
-      Promise.resolve(VaultResult.notReadyWithMessage(busyTokenizeMessage))
+    | Some(TokenizeInFlight(_)) => Promise.resolve(VaultResult.tokenizationInProgress())
     | None => trackConfirm(runConfirmPayment(args))
     }
 
@@ -775,5 +867,14 @@ let useMachinery = (
       clearLocal()
     }
 
-  {tokenize, confirmPayment, reset, isSubmitting}
+  {
+    tokenize,
+    confirmPayment,
+    reset,
+    isSubmitting,
+    isConsumed: switch (sessionState, consumedKey) {
+    | (Ready(session), Some(key)) => key === session.authorization
+    | _ => false
+    },
+  }
 }

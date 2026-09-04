@@ -1,51 +1,80 @@
 /*
- * The two public results, one per operation (ADR-0003).
+ * The two public results, one per operation (ADR-0003), spelled the way hyperswitch-web spells them.
  *
  * ── WHY TWO RESULTS AND NOT ONE ────────────────────────────────────────────────
  *
- * There are two genuinely different jobs, and an earlier revision collapsed them into a single
- * `submit()` returning one union. That was wrong in the direction that matters: a caller could not
- * tell from the type whether a token might come back, so "does a payment credential cross this
- * boundary?" became a question about which arguments were passed rather than which function was
- * called.
- *
  *   `tokenize()`       — the merchant wants a payment-method token and will do the rest themselves.
- *                        `vaultTokenizeResult` is the ONLY public type with a `token`, and it is
- *                        deliberately permitted here.
+ *                        `vaultTokenizeResult` is the ONLY public type with a `token`.
  *
  *   `confirmPayment()` — the library performs the tokenization AND the final payment confirmation.
  *                        The intermediate token never leaves the library, so `vaultPaymentResult`
  *                        has no `token` member and no way to grow one.
  *
- * The separation is the safety property: choosing the operation chooses the exposure, and the two
- * results have disjoint shapes so neither can be mistaken for the other.
+ * ── THE WEB'S ERROR ENVELOPE ───────────────────────────────────────────────────
+ *
+ * A failure carries `error: {code, message, type}` — the members and the codes the web SDK's
+ * `tokenize()` resolves with (`session_expired`, `session_consumed`, `tokenization_in_progress`,
+ * `incomplete_field_set`, `validation_error`, `tokenization_failed`), plus the codes only this
+ * library can produce, and `type` classifies the code exactly as the web does. `if (result.error)`
+ * therefore works on both SDKs unchanged. The `status` discriminant is this library's addition, so
+ * a TypeScript caller gets narrowing the web's untyped object cannot give.
  *
  * ── EVERY MESSAGE IS OURS ──────────────────────────────────────────────────────
  *
  * A backend error string can echo request context and is written for an operator, not a customer.
- * No mapper below forwards one: each maps a code to a fixed string declared in this module, and an
- * unrecognised code becomes `#server_error` with the generic message.
+ * No mapper below forwards one: the transport maps a backend code to a fixed string of its own,
+ * and that string — never the backend's — is what arrives here.
  */
 
 @genType
 type safeVaultErrorCode = [
+  /* web vocabulary */
+  | #validation_error
+  | #incomplete_field_set
+  | #session_expired
+  | #session_consumed
+  | #tokenization_in_progress
+  | #confirm_in_progress
+  | #tokenization_failed
+  /* this library's additions */
   | #invalid_session
-  | #invalid_card_data
-  | #not_ready
-  | #forbidden_card_data
   | #unsupported_configuration
+  | #unknown_outcome
+  | #payment_failed
+  | #forbidden_card_data
   /* The backend's eligibility step declined this card. Nothing was charged. */
   | #card_not_eligible
-  | #server_error
-  | #unknown_outcome
 ]
+
+@genType
+type safeVaultErrorType = [#validation_error | #api_error | #card_error]
+
+/* The web's classification of a code, member for member where the codes are shared. */
+let typeOf = (code: safeVaultErrorCode): safeVaultErrorType =>
+  switch code {
+  | #validation_error | #incomplete_field_set | #forbidden_card_data => #validation_error
+  | #card_not_eligible => #card_error
+  | #session_expired
+  | #session_consumed
+  | #tokenization_in_progress
+  | #confirm_in_progress
+  | #tokenization_failed
+  | #invalid_session
+  | #unsupported_configuration
+  | #unknown_outcome
+  | #payment_failed =>
+    #api_error
+  }
 
 @genType
 type safeVaultError = {
   code: safeVaultErrorCode,
   /* Library-owned, customer-safe display text. Never a backend message. */
   message: string,
+  @as("type") type_: safeVaultErrorType,
 }
+
+let errorOf = (code, message): safeVaultError => {code, message, type_: typeOf(code)}
 
 @genType
 type nextActionType = VaultNavigation.nextActionType
@@ -69,7 +98,6 @@ type vaultPaymentStatus = [
   | #requires_customer_action
   | #failed
   | #validation_error
-  | #not_ready
 ]
 
 /*
@@ -78,28 +106,13 @@ type vaultPaymentStatus = [
  * from one flow into the other gets a compile error instead of a branch that silently never runs.
  */
 @genType
-type vaultTokenizeStatus = [#success | #validation_error | #not_ready | #error]
+type vaultTokenizeStatus = [#success | #validation_error | #error]
 
 /*
- * ── WHY THIS IS A RECORD AND NOT A `@tag` VARIANT ──────────────────────────────
- *
- * The obvious spelling is a tagged variant: `@tag("status") | @as("succeeded") Succeeded | ...`.
- * It was written that way first, and it is WRONG here, because ReScript compiles a variant
- * constructor with NO payload to a bare string. `Succeeded` came out as the string `"succeeded"`,
- * not `{status: "succeeded"}` — so `result.status` was `undefined` for the single most common
- * outcome, while the payload-carrying branches were objects. Consumers would have had to write
- * `typeof result === 'string'` before they could read a status at all, and the obvious
- * `result.status === 'succeeded'` would have silently never matched.
- *
- * A record makes every branch an object with a `status`, which is the shape the documentation, the
- * host binding and every consumer expect. The closed status unions keep the sets exhaustive.
- *
- * The cost is that `error`, `nextAction` and `token` are optional on the records, so ReScript no
- * longer proves "failed implies error". That invariant is enforced two other ways instead: every
- * value is built by the constructors below, and `scripts/verify-result-mapping.mjs` asserts the
- * exact member set for each status at runtime. `public.ts` republishes the same runtime shapes as
- * hand-written TypeScript discriminated unions, so merchants still get narrowing — and the same
- * gate fails if the two ever drift.
+ * Records rather than `@tag` variants: ReScript compiles a payload-less variant constructor to a
+ * bare string, so `Succeeded` came out as `"succeeded"` and `result.status` was `undefined` for the
+ * most common outcome. `public.ts` republishes the same runtime shapes as hand-written TypeScript
+ * discriminated unions, so merchants still get narrowing.
  */
 @genType
 type vaultPaymentResult = {
@@ -108,11 +121,7 @@ type vaultPaymentResult = {
   nextAction?: safeNextAction,
 }
 
-/*
- * The ONLY public type carrying a token. `vaultPaymentResult` above has no `token` member, which is
- * what makes "the intermediate token never leaves the library" a property of the type rather than a
- * promise in prose.
- */
+/* The ONLY public type carrying a token. */
 @genType
 type vaultTokenizeResult = {
   status: vaultTokenizeStatus,
@@ -123,45 +132,49 @@ type vaultTokenizeResult = {
 /* ── Fixed messages ────────────────────────────────────────────────────────── */
 
 let invalidCardMessage = "Please check your card details and try again."
-let notReadyMessage = "The card form is not ready yet."
+let incompleteFieldSetMessage = "Mount a card-number, expiry and CVC field, or one CVC field with a saved card, before submitting."
 let unusableSessionMessage = "This session can no longer be used."
+let sessionExpiredMessage = "This payment method session has expired."
+let sessionConsumedMessage = "This payment method session has already been used."
+let tokenizationInProgressMessage = "A tokenization is already in progress for this session."
+let confirmInProgressMessage = "A payment confirmation is already in progress for this session."
 let unknownOutcomeMessage = "We could not confirm the payment. Please check before trying again."
-let serverErrorMessage = "The payment could not be completed."
+let tokenizationFailedMessage = "The card could not be tokenized."
+let paymentFailedMessage = "The payment could not be completed."
 let unauthorizedMessage = "The payment session could not be authorized."
 let rejectedMessage = "The payment details were rejected."
 let sessionAlreadyUsedMessage = "This payment session has already been used."
-let sessionExpiredMessage = "This payment session has expired."
 let malformedResponseMessage = "The payment response could not be read."
 let forbiddenCardDataMessage = "Card data must not be supplied by the host; the library owns the card fields."
 let unsupportedConfigurationMessage = "This payment cannot be completed with the current configuration."
 let cardNotEligibleMessage = "This card is not accepted for this payment."
+let missingSavedCardTokenMessage = "The saved-card CVC flow requires a payment token: mount the CVC field with savedCard: {paymentToken, paymentMethodData: {card: {cardNetwork}}}."
 
-/* ── Constructors ──────────────────────────────────────────────────────────── */
+/* ── Payment constructors (Flows 2 and 3) ─────────────────────────────────── */
 
 let failedWith = (code, message): vaultPaymentResult => {
   status: #failed,
-  error: {code, message},
+  error: errorOf(code, message),
 }
 
-let invalidCardData = (): vaultPaymentResult => {
+let validationError = (message): vaultPaymentResult => {
   status: #validation_error,
-  error: {code: #invalid_card_data, message: invalidCardMessage},
+  error: errorOf(#validation_error, message),
 }
 
-let notReady = (): vaultPaymentResult => {
-  status: #not_ready,
-  error: {code: #not_ready, message: notReadyMessage},
-}
+let invalidCardData = () => validationError(invalidCardMessage)
 
-let notReadyWithMessage = (message): vaultPaymentResult => {
-  status: #not_ready,
-  error: {code: #not_ready, message},
+let incompleteFieldSet = (message): vaultPaymentResult => {
+  status: #validation_error,
+  error: errorOf(#incomplete_field_set, message),
 }
 
 let invalidSession = message => failedWith(#invalid_session, message)
-
+let sessionExpired = () => failedWith(#session_expired, sessionExpiredMessage)
+let sessionConsumed = () => failedWith(#session_consumed, sessionConsumedMessage)
+let tokenizationInProgress = () =>
+  failedWith(#tokenization_in_progress, tokenizationInProgressMessage)
 let forbiddenCardData = () => failedWith(#forbidden_card_data, forbiddenCardDataMessage)
-
 let unsupportedConfiguration = () =>
   failedWith(#unsupported_configuration, unsupportedConfigurationMessage)
 
@@ -170,9 +183,6 @@ let unsupportedConfiguration = () =>
  * reaching this constructor means the backend explicitly said no — and nothing was charged.
  */
 let cardNotEligible = () => failedWith(#card_not_eligible, cardNotEligibleMessage)
-
-let serverError = () => failedWith(#server_error, serverErrorMessage)
-
 let unknownOutcome = () => failedWith(#unknown_outcome, unknownOutcomeMessage)
 
 /* ── Tokenize constructors (Flow 1) ────────────────────────────────────────── */
@@ -181,23 +191,31 @@ let tokenizeSuccess = (token): vaultTokenizeResult => {status: #success, token}
 
 let tokenizeFailedWith = (code, message): vaultTokenizeResult => {
   status: #error,
-  error: {code, message},
+  error: errorOf(code, message),
 }
 
-let tokenizeInvalidCardData = (): vaultTokenizeResult => {
+let tokenizeValidationError = (message): vaultTokenizeResult => {
   status: #validation_error,
-  error: {code: #invalid_card_data, message: invalidCardMessage},
+  error: errorOf(#validation_error, message),
 }
 
-let tokenizeNotReady = (message): vaultTokenizeResult => {
-  status: #not_ready,
-  error: {code: #not_ready, message},
+let tokenizeInvalidCardData = () => tokenizeValidationError(invalidCardMessage)
+
+let tokenizeIncompleteFieldSet = (message): vaultTokenizeResult => {
+  status: #validation_error,
+  error: errorOf(#incomplete_field_set, message),
 }
+
+let tokenizeSessionExpired = () => tokenizeFailedWith(#session_expired, sessionExpiredMessage)
+let tokenizeSessionConsumed = () => tokenizeFailedWith(#session_consumed, sessionConsumedMessage)
+let tokenizeConfirmInProgress = () =>
+  tokenizeFailedWith(#confirm_in_progress, confirmInProgressMessage)
 
 /*
  * The SAME transport failure taxonomy as the payment flow, re-tagged for this result's statuses.
- * There is one mapping of `VaultConfirm.vaultErrorCode` per public result, and both are enumerated
- * by the gate, so a new transport code cannot be handled in one flow and forgotten in the other.
+ * The transport's message is forwarded: every one of them is a string the transport itself wrote
+ * — including the specific "already used" / "expired" wording it derives from a backend CODE —
+ * never a backend message.
  */
 let tokenizeFromPmsFailure = (error: VaultConfirm.vaultError): vaultTokenizeResult =>
   switch error.code {
@@ -209,7 +227,7 @@ let tokenizeFromPmsFailure = (error: VaultConfirm.vaultError): vaultTokenizeResu
   | #http_error
   | #malformed_response
   | #missing_token =>
-    tokenizeFailedWith(#server_error, serverErrorMessage)
+    tokenizeFailedWith(#tokenization_failed, error.message)
   }
 
 /* ── Payment mappers (Flow 2) ──────────────────────────────────────────────── */
@@ -225,7 +243,7 @@ let fromPmsFailure = (error: VaultConfirm.vaultError): vaultPaymentResult =>
   | #http_error
   | #malformed_response
   | #missing_token =>
-    serverError()
+    failedWith(#tokenization_failed, error.message)
   }
 
 /* Call 2 (final confirm) returned. Only navigation crosses the boundary. */
@@ -249,12 +267,12 @@ let fromNavOutcome = (outcome: VaultFinalConfirm.navOutcome): vaultPaymentResult
    */
   | VaultFinalConfirm.Failed({reason}) =>
     switch reason {
-    | VaultFinalConfirm.Unauthorized => failedWith(#server_error, unauthorizedMessage)
-    | VaultFinalConfirm.Rejected => failedWith(#server_error, rejectedMessage)
-    | VaultFinalConfirm.SessionAlreadyUsed => failedWith(#server_error, sessionAlreadyUsedMessage)
-    | VaultFinalConfirm.SessionExpired => failedWith(#server_error, sessionExpiredMessage)
-    | VaultFinalConfirm.MalformedResponse => failedWith(#server_error, malformedResponseMessage)
-    | VaultFinalConfirm.GenericFailure => failedWith(#server_error, serverErrorMessage)
+    | VaultFinalConfirm.Unauthorized => failedWith(#payment_failed, unauthorizedMessage)
+    | VaultFinalConfirm.Rejected => failedWith(#payment_failed, rejectedMessage)
+    | VaultFinalConfirm.SessionAlreadyUsed => failedWith(#session_consumed, sessionAlreadyUsedMessage)
+    | VaultFinalConfirm.SessionExpired => failedWith(#session_expired, sessionExpiredMessage)
+    | VaultFinalConfirm.MalformedResponse => failedWith(#payment_failed, malformedResponseMessage)
+    | VaultFinalConfirm.GenericFailure => failedWith(#payment_failed, paymentFailedMessage)
     }
   | VaultFinalConfirm.UnknownOutcome => failedWith(#unknown_outcome, unknownOutcomeMessage)
   }

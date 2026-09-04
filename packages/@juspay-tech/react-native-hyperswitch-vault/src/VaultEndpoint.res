@@ -36,7 +36,7 @@ let loopbackHosts = ["localhost", "127.0.0.1", "10.0.2.2"]
 
 let allowsCleartext = (environment: VaultConfirm.vaultEnvironment) =>
   switch environment {
-  | #sandbox | #integration => true
+  | #sandbox | #integ => true
   | #production => false
   }
 
@@ -86,7 +86,7 @@ let validateEndpoint = (
 let defaultBaseUrl = (environment: VaultConfirm.vaultEnvironment) =>
   switch environment {
   | #production => "https://checkout.hyperswitch.io/api"
-  | #integration => "https://dev.hyperswitch.io/api"
+  | #integ => "https://dev.hyperswitch.io/api"
   | #sandbox => "https://beta.hyperswitch.io/api"
   }
 

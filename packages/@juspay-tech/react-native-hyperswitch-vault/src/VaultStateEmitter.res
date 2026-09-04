@@ -146,3 +146,20 @@ let use = (~build: unit => 'a, ~equal: ('a, 'a) => bool, ~notify: option<'a => u
     None
   })
 }
+
+/*
+ * The web's per-field `ready`: fired once, after the field has registered with the form. A field
+ * registers in a child effect and this runs in the field component's own effect, so the form's
+ * registry already counts it when the merchant hears about it.
+ */
+let useReady = (~elementType: VaultPublicState.elementType, ~notify: option<VaultPublicState.fieldEvent => unit>) => {
+  let notifyRef = React.useRef(notify)
+  notifyRef.current = notify
+  React.useEffect0(() => {
+    switch notifyRef.current {
+    | Some(fn) => notifySafely(fn, {VaultPublicState.elementType: elementType})
+    | None => ()
+    }
+    None
+  })
+}

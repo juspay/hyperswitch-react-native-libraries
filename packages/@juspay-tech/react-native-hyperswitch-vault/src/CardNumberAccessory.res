@@ -9,12 +9,12 @@ open Style
  *
  *   - the co-badge CHOOSER, when the typed number matches more than one network the merchant
  *     accepts. It replaces the plain artwork, because the artwork is then a control;
- *   - the plain brand ARTWORK otherwise, subject to the merchant's `brandIconMode`;
+ *   - the plain brand ARTWORK otherwise, subject to the merchant's `cardBrandIcon`;
  *   - the SCAN button, while the field is still empty and the optional scanner package is
  *     installed. It disappears once there is a number to scan over — the same rule client-core
  *     used, and the reason a customer never sees a scan button covering their own input.
  *
- * A merchant who has turned artwork off (`brandIconMode: 'hidden'`) still gets the chooser when one
+ * A merchant who has turned artwork off (`cardBrandIcon: 'hidden'`) still gets the chooser when one
  * is warranted: hiding decoration is a styling choice, and silently removing the customer's network
  * choice with it would be a routing change dressed up as a theme.
  *

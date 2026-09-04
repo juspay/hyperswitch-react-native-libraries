@@ -1,6 +1,7 @@
 import { createDeferred } from './deferred';
 import type { ProviderAdapter } from './ProviderAdapter';
-import type { FormStatus, SubmitResult, VaultType } from './types';
+import { errorResult, messageOf } from './results';
+import type { FormStatus, TokenizeResult } from './types';
 
 const DEFAULT_READY_TIMEOUT_MS = 10_000;
 
@@ -14,19 +15,7 @@ export interface FormSession {
   attachCollector(collector: unknown): void;
 
   fail(error: unknown): void;
-  submit(providerData?: unknown): Promise<SubmitResult>;
-}
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function errorResult(
-  vaultType: VaultType,
-  code: string,
-  message: string
-): SubmitResult {
-  return { status: 'error', vaultType, errors: [{ code, message }] };
+  tokenize(providerData?: unknown): Promise<TokenizeResult>;
 }
 
 export function createFormSession(
@@ -39,6 +28,7 @@ export function createFormSession(
   let collector: unknown | undefined;
   let failure: { error: unknown } | undefined;
   let status: FormStatus = 'initializing';
+  let inFlight: Promise<TokenizeResult> | undefined;
 
   async function waitForReady(): Promise<void> {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -49,6 +39,42 @@ export function createFormSession(
       await Promise.race([ready.promise, timeout]);
     } finally {
       if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function run(providerData?: unknown): Promise<TokenizeResult> {
+    if (collector === undefined && !failure) {
+      await waitForReady();
+    }
+
+    if (failure) {
+      return errorResult(
+        adapter.vaultType,
+        'tokenization_failed',
+        messageOf(failure.error)
+      );
+    }
+
+    if (collector === undefined) {
+      return errorResult(
+        adapter.vaultType,
+        'sdk_not_ready',
+        `The ${adapter.vaultType} card fields are not ready yet. Try again once the form has finished initializing.`
+      );
+    }
+
+    status = 'tokenizing';
+    try {
+      const result = await adapter.tokenize(collector, providerData);
+      status = 'ready';
+      return result;
+    } catch (error) {
+      status = 'ready';
+      return errorResult(
+        adapter.vaultType,
+        'tokenization_failed',
+        messageOf(error)
+      );
     }
   }
 
@@ -70,45 +96,14 @@ export function createFormSession(
       ready.resolve();
     },
 
-    async submit(providerData?: unknown): Promise<SubmitResult> {
-      if (collector === undefined && !failure) {
-        await waitForReady();
-      }
-
-      if (failure) {
-        return errorResult(
-          adapter.vaultType,
-          'host_error',
-          messageOf(failure.error)
-        );
-      }
-
-      if (collector === undefined) {
-        return {
-          status: 'not_ready',
-          vaultType: adapter.vaultType,
-          errors: [
-            {
-              code: 'not_ready',
-              message: `The ${adapter.vaultType} card fields are not ready yet. Try again once the form has finished initializing.`,
-            },
-          ],
-        };
-      }
-
-      status = 'submitting';
-      try {
-        const result = await adapter.submit(collector, providerData);
-        status = 'ready';
-        return result;
-      } catch (error) {
-        status = 'ready';
-        return errorResult(
-          adapter.vaultType,
-          'submit_failed',
-          messageOf(error)
-        );
-      }
+    /* Two calls at once share one request, as the Hyperswitch vault form does. */
+    tokenize(providerData?: unknown): Promise<TokenizeResult> {
+      if (inFlight) return inFlight;
+      const pending = run(providerData).finally(() => {
+        if (inFlight === pending) inFlight = undefined;
+      });
+      inFlight = pending;
+      return pending;
     },
   };
 }

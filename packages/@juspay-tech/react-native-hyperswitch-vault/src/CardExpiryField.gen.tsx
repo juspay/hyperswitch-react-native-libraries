@@ -1,28 +1,32 @@
-/* TypeScript file generated from CardExpiryWidget.res by genType. */
+/* TypeScript file generated from CardExpiryField.res by genType. */
 
 /* eslint-disable */
 /* tslint:disable */
 
 import * as React from 'react';
 
-import * as CardExpiryWidgetJS from './CardExpiryWidget.bs.js';
+import * as CardExpiryFieldJS from './CardExpiryField.bs.js';
 
 import type {errorDisplay as CardFieldOptions_errorDisplay} from './CardFieldOptions.gen';
 
-import type {expiryState as VaultPublicState_expiryState} from './VaultPublicState.gen';
-
 import type {expiryStyles as CardFieldStyles_expiryStyles} from './CardFieldStyles.gen';
+
+import type {fieldChange as VaultPublicState_fieldChange} from './VaultPublicState.gen';
+
+import type {fieldEvent as VaultPublicState_fieldEvent} from './VaultPublicState.gen';
 
 import type {labelBehavior as CardFieldOptions_labelBehavior} from './CardFieldOptions.gen';
 
 export type Props = {
   readonly accessibilityHint?: string; 
   readonly accessibilityLabel?: string; 
-  readonly children?: React.ReactNode; 
   readonly errorDisplay?: CardFieldOptions_errorDisplay; 
   readonly label?: string; 
   readonly labelBehavior?: CardFieldOptions_labelBehavior; 
-  readonly onStateChange?: (_1:VaultPublicState_expiryState) => void; 
+  readonly onBlur?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onChange?: (_1:VaultPublicState_fieldChange) => void; 
+  readonly onFocus?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onReady?: (_1:VaultPublicState_fieldEvent) => void; 
   readonly placeholder?: string; 
   readonly styles?: CardFieldStyles_expiryStyles; 
   readonly testID?: string; 
@@ -32,13 +36,15 @@ export type Props = {
 export const make: React.ComponentType<{
   readonly accessibilityHint?: string; 
   readonly accessibilityLabel?: string; 
-  readonly children?: React.ReactNode; 
   readonly errorDisplay?: CardFieldOptions_errorDisplay; 
   readonly label?: string; 
   readonly labelBehavior?: CardFieldOptions_labelBehavior; 
-  readonly onStateChange?: (_1:VaultPublicState_expiryState) => void; 
+  readonly onBlur?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onChange?: (_1:VaultPublicState_fieldChange) => void; 
+  readonly onFocus?: (_1:VaultPublicState_fieldEvent) => void; 
+  readonly onReady?: (_1:VaultPublicState_fieldEvent) => void; 
   readonly placeholder?: string; 
   readonly styles?: CardFieldStyles_expiryStyles; 
   readonly testID?: string; 
   readonly unstyled?: boolean
-}> = CardExpiryWidgetJS.make as any;
+}> = CardExpiryFieldJS.make as any;

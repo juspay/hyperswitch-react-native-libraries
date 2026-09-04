@@ -94,8 +94,8 @@ type expiryStyles = {
 @genType
 type formFieldStyles = {
   cardNumber?: fieldStyles,
-  expiry?: expiryStyles,
-  cvc?: fieldStyles,
+  cardExpiry?: expiryStyles,
+  cardCvc?: fieldStyles,
   /* Renders no accessory, but keeps the full slot set for symmetry with the other text fields. */
   cardholderName?: fieldStyles,
 }
@@ -174,9 +174,9 @@ let errorOf = (styles: option<fieldStyles>) => styles->Option.flatMap(s => s.err
 let accessoryOf = (styles: option<fieldStyles>) => styles->Option.flatMap(s => s.accessory)
 
 let cardNumberOf = (styles: option<formFieldStyles>) => styles->Option.flatMap(s => s.cardNumber)
-let expiryOf = (styles: option<formFieldStyles>) =>
-  styles->Option.flatMap(s => s.expiry)->Option.map(widenExpiry)
-let cvcOf = (styles: option<formFieldStyles>) => styles->Option.flatMap(s => s.cvc)
+let cardExpiryOf = (styles: option<formFieldStyles>) =>
+  styles->Option.flatMap(s => s.cardExpiry)->Option.map(widenExpiry)
+let cardCvcOf = (styles: option<formFieldStyles>) => styles->Option.flatMap(s => s.cardCvc)
 let cardholderNameOf = (styles: option<formFieldStyles>) =>
   styles->Option.flatMap(s => s.cardholderName)
 

@@ -1,13 +1,10 @@
-
 @genType
 let make = React.forwardRef((
   props: {
-    "children": option<React.element>,
     "styles": option<CardFieldStyles.fieldStyles>,
     /*
-     * Flattened field options. A merchant writes `<CardNumberField placeholder="Card number" />`
-     * rather than nesting a record — the grouped `fieldOptions` shape is for the ready-made form,
-     * where three fields have to be addressed at once.
+     * Flattened field options — the web SDK's `create('cardNumber', options)` keys where the web
+     * has one (`placeholder`, `cardBrandIcon`), plus this library's own.
      */
     "placeholder": option<string>,
     "label": option<string>,
@@ -16,32 +13,34 @@ let make = React.forwardRef((
     "accessibilityLabel": option<string>,
     "accessibilityHint": option<string>,
     "testID": option<string>,
-    "brandIconMode": option<CardFieldOptions.brandIconMode>,
-    /*
-     * Called with one snapshot on mount and again whenever THIS field's state actually changes, by
-     * structural comparison. Carries no card value — see `VaultPublicState`.
-     */
-    "onStateChange": option<VaultPublicState.cardNumberState => unit>,
+    "cardBrandIcon": option<CardFieldOptions.brandIconMode>,
     /*
      * Strip this field to a bare `TextInput`. Absent => the provider's `unstyled`, then `false`;
      * `unstyled={false}` keeps this field's UI inside an unstyled provider.
      */
     "unstyled": option<bool>,
+    /* The web's per-field events. `ready` once after mount; `change` whenever the state differs. */
+    "onReady": option<VaultPublicState.fieldEvent => unit>,
+    "onFocus": option<VaultPublicState.fieldEvent => unit>,
+    "onBlur": option<VaultPublicState.fieldEvent => unit>,
+    "onChange": option<VaultPublicState.fieldChange => unit>,
   },
   ref,
 ) => {
-  let ctx = VaultWidgetContext.useRequired("CardNumberWidget")
+  let ctx = VaultWidgetContext.useRequired("CardNumberField")
 
   VaultStateEmitter.use(
     ~build=() => ctx.publicSnapshot().cardNumber,
-    ~equal=VaultPublicState.cardNumberEq,
-    ~notify=props["onStateChange"],
+    ~equal=VaultPublicState.fieldChangeEq,
+    ~notify=props["onChange"],
   )
+  VaultStateEmitter.useReady(~elementType=#cardNumber, ~notify=props["onReady"])
   let controller = ctx.controller
 
   React.useImperativeHandle0(ref, () => {
     CardForm.focus: () => VaultCardController.focusRef(controller.cardRef),
     blur: () => VaultCardController.blurRef(controller.cardRef),
+    clear: () => controller.clearField(#cardNumber),
   })
 
   let options: CardFieldOptions.cardNumberOptions = {
@@ -53,13 +52,15 @@ let make = React.forwardRef((
     accessibilityHint: ?props["accessibilityHint"],
     testID: ?props["testID"],
     unstyled: ?props["unstyled"],
-    brandIconMode: ?props["brandIconMode"],
+    cardBrandIcon: ?props["cardBrandIcon"],
   }
 
   <BoundCardFields.Number
     ctx
     styles=?{props["styles"]}
     options
+    onFocus=?{props["onFocus"]}
+    onBlur=?{props["onBlur"]}
     /*
      * The accessory decides which slot this is — nothing, decoration, or a control — because a
      * co-badge chooser or a scan button can be warranted even with brand artwork turned off.

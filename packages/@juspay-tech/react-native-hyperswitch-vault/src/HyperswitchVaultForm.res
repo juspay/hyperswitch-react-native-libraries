@@ -73,8 +73,12 @@ let make = React.forwardRef((
      * `confirmPayment` reads its session from `cardSource`, and the direct source needs none.
      */
     "session": option<vaultSession>,
+    "sdkAuthorization": option<string>,
+    /* The web SDK's `vaultDetails` option: `{vaultType, vaultData: {sdkAuthorization}}`. */
+    "vaultDetails": option<VaultDetails.vaultDetails>,
     "environment": vaultEnvironment,
     "appearance": option<appearance>,
+    "locale": option<string>,
     "disabled": option<bool>,
 
     /*
@@ -115,14 +119,18 @@ let make = React.forwardRef((
      * override this in either direction with its own `unstyled`.
      */
     "unstyled": option<bool>,
-    "onFormStateChange": option<VaultPublicState.vaultFormState => unit>,
+    "onReady": option<VaultPublicState.cardFormEvent => unit>,
+    "onChange": option<VaultPublicState.cardFormChange => unit>,
   },
   ref,
 ) => {
   let host = VaultFormHost.useHost(
     ~session=props["session"]->Option.map(VaultFormOptions.sessionToJson),
+    ~sdkAuthorization=props["sdkAuthorization"],
+    ~vaultDetails=props["vaultDetails"],
     ~environment=props["environment"],
     ~appearance=props["appearance"],
+    ~locale=props["locale"],
     ~localisation=props["localisation"],
     ~disabled=props["disabled"]->Option.getOr(false),
     ~accessible=props["accessible"],
@@ -130,8 +138,14 @@ let make = React.forwardRef((
     ~eligibility=props["eligibility"],
     ~vaultEndpoint=props["vaultEndpoint"],
     ~cardholderNameMode=props["cardholderName"]->Option.getOr(#collect),
-    ~onFormStateChange=props["onFormStateChange"],
+    ~onReady=props["onReady"],
+    ~onChange=props["onChange"],
     ~unstyled=props["unstyled"]->Option.getOr(CardFieldOptions.defaultUnstyled),
+    /*
+     * A complete UI: the merchant renders nothing, so this form must show the customer what is
+     * wrong. Unchanged behaviour — the composable surface is the one that changed.
+     */
+    ~defaultErrorDisplay=CardFieldOptions.defaultErrorDisplayReadyMade,
   )
 
   React.useImperativeHandle0(ref, () => {

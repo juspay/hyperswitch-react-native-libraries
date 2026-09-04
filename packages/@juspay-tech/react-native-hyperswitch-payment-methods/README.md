@@ -1,14 +1,16 @@
 # react-native-hyperswitch-payment-methods
 
-Provider-agnostic React Native card collection. Render **one** set of card widgets and
+Provider-agnostic React Native card collection. Render **one** set of card fields and
 let the backend decide which vault/tokenization provider is used — your app code never
-branches on the provider.
+branches on the provider. The names, options, events and results are the ones
+hyperswitch-web's separate card fields and `@juspay-tech/react-native-hyperswitch-vault`
+use, so one integration reads the same across all three.
 
 ```tsx
-<CardNumberWidget />
-<CardExpiryWidget />
-<CardCVCWidget />
-<CardHolderWidget />
+<CardNumberField />
+<CardExpiryField />
+<CardCVCField />
+<CardholderNameField />
 ```
 
 Supported providers: **VGS, Skyflow, Basis Theory, Evervault** (vault/tokenizing).
@@ -22,126 +24,169 @@ npm install react-native-hyperswitch-payment-methods
 Then install **only** the provider SDK(s) you actually use (they are optional peer
 dependencies, so you only pay for — and natively link — what you configure):
 
-| `vault_type`   | Peer dependency to install                          |
+| `vaultType`    | Peer dependency to install                          |
 | -------------- | --------------------------------------------------- |
 | `vgs`          | `@vgs/collect-react-native`                         |
 | `skyflow`      | `skyflow-react-native`                              |
 | `basis_theory` | `@basis-theory/react-native-elements` (v3+)         |
 | `evervault`    | `@evervault/react-native` (+ `react-native-webview`)|
 
-If a `vault_type` is configured without its SDK installed, the form surfaces an
+If a `vaultType` is configured without its SDK installed, the form surfaces an
 actionable "install X" error via `onError`.
 
 ## Usage
 
-The backend returns `{ vault_type, vault_data }`. Pass it to one `<HyperswitchForm>`,
-drop the four widgets inside, and submit through the form ref. The same code works for
-every provider.
+The backend tells you which vault to use; pass it as `vaultDetails` — the web SDK's
+shape, `{vaultType, vaultData}` — to one `<CardForm>`, drop the four fields inside, and
+call `tokenize()` on the form ref. The same code works for every provider.
 
 ```tsx
 import { useRef } from 'react';
 import {
-  HyperswitchForm,
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-  type HyperswitchFormHandle,
+  CardForm,
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+  type CardFormHandle,
 } from 'react-native-hyperswitch-payment-methods';
 
-function Checkout({ config }) {
-  const form = useRef<HyperswitchFormHandle>(null);
+function Checkout({ vaultDetails }) {
+  const form = useRef<CardFormHandle>(null);
 
   const pay = async () => {
-    const result = await form.current?.submit();
-    // result.status: 'success' | 'error' | 'not_ready' | 'validation_error'
-    // result.data?.tokens   -> vault providers
+    const result = await form.current?.tokenize();
+    if (result?.status === 'success') {
+      // result.data.tokens -> the provider's tokens
+    } else if (result?.error) {
+      showMessage(result.error.message); // result.error.code names the cause
+    }
   };
 
   return (
-    <HyperswitchForm ref={form} config={config} onError={console.warn}>
-      <CardNumberWidget />
-      <CardExpiryWidget />
-      <CardCVCWidget />
-      <CardHolderWidget />
-    </HyperswitchForm>
+    <CardForm ref={form} vaultDetails={vaultDetails} onError={console.warn}>
+      <CardNumberField />
+      <CardExpiryField />
+      <CardCVCField />
+      <CardholderNameField />
+    </CardForm>
   );
 }
 ```
 
-### Submitting from outside the tree
+### `vaultDetails`
 
-If a Pay button can't reach the form ref, give the form an `id` and submit by id:
+| `vaultType`    | `vaultData`                                                                 |
+| -------------- | --------------------------------------------------------------------------- |
+| `vgs`          | `{vaultId, environment?, routeId?, cname?}`                                 |
+| `skyflow`      | `{vaultId, vaultUrl, table, bearerToken?, columns?, options?}`              |
+| `basis_theory` | `{apiKey, baseUrl?}`                                                        |
+| `evervault`    | `{teamId, appId}`                                                           |
+
+### Tokenizing from outside the tree
+
+If a Pay button can't reach the form ref, give the form an `id` and tokenize by id:
 
 ```tsx
-<HyperswitchForm id="checkout" config={config}>...</HyperswitchForm>;
+<CardForm id="checkout" vaultDetails={vaultDetails}>...</CardForm>;
 
 import { HyperswitchPaymentMethods } from 'react-native-hyperswitch-payment-methods';
-await HyperswitchPaymentMethods.submit('checkout');
+await HyperswitchPaymentMethods.tokenize('checkout');
 ```
 
-Descendant components can also use the `useHyperswitchForm()` hook.
+Descendant components can also use the `useCardForm()` hook.
 
 ## The result shape
 
 ```ts
-interface SubmitResult {
-  status: 'success' | 'error' | 'not_ready' | 'validation_error';
-  vaultType?: VaultType;
-  data?: {
-    tokens?: Record<string, unknown>; // vault providers
-    raw?: unknown; // provider-native payload
-  };
-  errors?: { field?: FieldKind; code: string; message: string }[];
-}
+type TokenizeResult =
+  | { status: 'success'; vaultType?: VaultType; data?: { tokens?: Record<string, unknown>; raw?: unknown } }
+  | { status: 'validation_error' | 'error'; vaultType?: VaultType; error: { code; message; type } };
 ```
 
-`submit()` never throws: if the provider hasn't finished initializing it returns
-`not_ready`; failures come back as `error`/`validation_error`.
+`tokenize()` never throws. `if (result.error)` reads the same way it does with the web
+SDK; `status` lets TypeScript narrow.
 
-## Field state, validation & focus
+| `error.code`           | `type`             | Meaning                                                              |
+| ---------------------- | ------------------ | -------------------------------------------------------------------- |
+| `validation_error`     | `validation_error` | a field is empty or malformed (the message names it)                 |
+| `incomplete_field_set` | `validation_error` | no `<CardForm id>` is mounted for the id given to `tokenize(id)`     |
+| `sdk_not_ready`        | `api_error`        | the provider's SDK has not finished initialising                     |
+| `tokenization_failed`  | `api_error`        | the provider refused, answered unreadably, or failed to initialise   |
 
-Every widget accepts an `onStateChange` callback that reports live field state
-(`isValid` / `isEmpty` / `isFocused` / `isDirty` / `validationErrors` / `brand`), translated
-from each provider's native events:
+Two `tokenize()` calls at once share one request.
+
+## Events
+
+Every field takes the web's four events. The change carries no card value:
 
 ```tsx
-<CardNumberWidget
-  onStateChange={(s) => setValid(s.isValid)} // s: FieldState
+<CardNumberField
+  onReady={(e) => {/* e.elementType === 'cardNumber' */}}
+  onFocus={(e) => setActive(e.elementType)}
+  onBlur={() => setActive(null)}
+  onChange={(s) => setValid(s.valid)}
+  // s: {elementType, empty, complete, valid, brand?, error?, touched}
 />
 ```
 
-(`onStateChange` is wired for VGS, Skyflow, and Basis Theory; Evervault reports validity at
-the card level via its own form state.)
+`brand` is spelt as the web spells it (`Visa`, `Mastercard`, `AmericanExpress`, …).
+Focus and blur are reported where the provider reports them (VGS, Skyflow); change is
+wired for VGS, Skyflow and Basis Theory (Evervault reports validity at the card level).
 
-Widgets also expose an imperative `focus()/blur()` handle (a no-op where the provider's secure
-input doesn't support programmatic focus):
+The form emits the web's `cardDetailsChange` on every change, always on:
 
 ```tsx
-const field = useRef<WidgetHandle>(null);
-<CardNumberWidget ref={field} />;
+<CardForm
+  vaultDetails={vaultDetails}
+  onReady={(e) => {/* e.elementType === 'cardForm' */}}
+  onChange={(e) => {
+    // e.eventName === 'cardDetailsChange'
+    setCanPay(e.complete && e.valid);
+    e.payload; // {bin, last4, brand, expiryMonth, expiryYear, formattedExpiry, is*Complete, is*Valid}
+    e.fields;  // the latest change per mounted field
+  }}
+>
+```
+
+A provider's secure input keeps the digits to itself, so `bin`, `last4` and the expiry
+parts are `null` unless the provider reports them (Evervault does); the flags are derived
+from the fields.
+
+## Handles
+
+- Form ref (`CardFormHandle`): `tokenize(providerData?)`, `status`
+  (`initializing | ready | tokenizing | error`).
+- Field ref (`FieldHandle`): `focus()`, `blur()`, `clear()` — no-ops where the provider's
+  secure input does not support them.
+
+```tsx
+const field = useRef<FieldHandle>(null);
+<CardNumberField ref={field} />;
 field.current?.focus();
 ```
 
 ## Styling
 
-Every widget takes two style props so it matches your app's theme:
+Every field takes `styles`, with the same slot names as the Hyperswitch vault fields:
 
-- `style` — the field's **container box** (border, background, radius, height, padding).
-- `textStyle` — the secure input's **text** (color, fontSize, fontFamily).
+- `styles.container` — the field's **box** (border, background, radius, height, padding).
+- `styles.input` — the secure input's **text** (color, fontSize, fontFamily).
 - `placeholder` — placeholder text.
 
 ```tsx
-<CardNumberWidget
-  style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, height: 44, paddingHorizontal: 12 }}
-  textStyle={{ color: '#111', fontSize: 16 }}
+<CardNumberField
+  styles={{
+    container: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, height: 44, paddingHorizontal: 12 },
+    input: { color: '#111', fontSize: 16 },
+  }}
   placeholder="1234 5678 9012 3456"
 />
 ```
 
-`textStyle` is forwarded to the provider's underlying secure input where supported (e.g. VGS
-`textStyle`, Basis Theory / Evervault field style); providers that don't support text styling
-ignore it.
+`styles.input` is forwarded to the provider's underlying secure input where supported
+(VGS `textStyle`, Basis Theory / Evervault field style); providers that don't support
+text styling ignore it.
 
 ## Custom providers
 
@@ -151,6 +196,10 @@ Register your own adapter (also handy in tests):
 import { registerAdapter } from 'react-native-hyperswitch-payment-methods';
 const off = registerAdapter(myAdapter); // off() to unregister
 ```
+
+An adapter provides `vaultType`, `validateVaultData`, a `Host`, a `Field` (which
+receives `elementType`, `styles`, `placeholder`, `onChange`, `onFocus`, `onBlur`) and
+`tokenize(collector, providerData?)`.
 
 ## Notes
 

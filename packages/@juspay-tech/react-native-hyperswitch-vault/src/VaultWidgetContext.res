@@ -18,6 +18,15 @@ type contextValue = {
    */
   unstyled: bool,
   /*
+   * The surface's error-display default: `#colorOnly` when the merchant composed the fields
+   * themselves, `#inline` for the ready-made form. It rides the context for the same reason `unstyled` does —
+   * a field widget is mounted by the merchant and has no other way to learn which surface it is in.
+   * See `CardFieldOptions.defaultErrorDisplayComposable` for why the two differ.
+   */
+  defaultErrorDisplay: CardFieldOptions.errorDisplay,
+  /* `appearance.labels`, already defaulted: the web's one form-level label mode, for every field. */
+  defaultLabelBehavior: CardFieldOptions.labelBehavior,
+  /*
    * The merchant-facing snapshot, carried so a field widget can emit its OWN state.
    *
    * A THUNK, not a record: it is invoked only inside an emitter's `build`, which runs only when a

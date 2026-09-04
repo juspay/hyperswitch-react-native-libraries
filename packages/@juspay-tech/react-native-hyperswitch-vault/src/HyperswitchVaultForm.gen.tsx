@@ -11,6 +11,10 @@ import type {appearance as VaultFormOptions_appearance} from './VaultFormOptions
 
 import type {brandIconMode as VaultFormOptions_brandIconMode} from './VaultFormOptions.gen';
 
+import type {cardFormChange as VaultPublicState_cardFormChange} from './VaultPublicState.gen';
+
+import type {cardFormEvent as VaultPublicState_cardFormEvent} from './VaultPublicState.gen';
+
 import type {cardSourceType as VaultCardSource_cardSourceType} from './VaultCardSource.gen';
 
 import type {cardholderNameMode as CardFieldOptions_cardholderNameMode} from './CardFieldOptions.gen';
@@ -41,13 +45,13 @@ import type {safeVaultErrorCode as VaultResult_safeVaultErrorCode} from './Vault
 
 import type {safeVaultError as VaultResult_safeVaultError} from './VaultResult.gen';
 
+import type {vaultDetails as VaultDetails_vaultDetails} from './VaultDetails.gen';
+
 import type {vaultEndpointConfig as VaultEndpoint_vaultEndpointConfig} from './VaultEndpoint.gen';
 
 import type {vaultEnvironment as VaultFormOptions_vaultEnvironment} from './VaultFormOptions.gen';
 
 import type {vaultFormHandle as VaultFormOptions_vaultFormHandle} from './VaultFormOptions.gen';
-
-import type {vaultFormState as VaultPublicState_vaultFormState} from './VaultPublicState.gen';
 
 import type {vaultPaymentResult as VaultResult_vaultPaymentResult} from './VaultResult.gen';
 
@@ -111,10 +115,14 @@ export type Props = {
   readonly fieldOptions?: formFieldOptions; 
   readonly fieldStyles?: formFieldStyles; 
   readonly layout?: formLayout; 
+  readonly locale?: string; 
   readonly localisation?: localisation; 
-  readonly onFormStateChange?: (_1:VaultPublicState_vaultFormState) => void; 
+  readonly onChange?: (_1:VaultPublicState_cardFormChange) => void; 
+  readonly onReady?: (_1:VaultPublicState_cardFormEvent) => void; 
+  readonly sdkAuthorization?: string; 
   readonly session?: vaultSession; 
   readonly unstyled?: boolean; 
+  readonly vaultDetails?: VaultDetails_vaultDetails; 
   readonly vaultEndpoint?: VaultEndpoint_vaultEndpointConfig
 };
 
@@ -130,9 +138,13 @@ export const make: React.ComponentType<{
   readonly fieldOptions?: formFieldOptions; 
   readonly fieldStyles?: formFieldStyles; 
   readonly layout?: formLayout; 
+  readonly locale?: string; 
   readonly localisation?: localisation; 
-  readonly onFormStateChange?: (_1:VaultPublicState_vaultFormState) => void; 
+  readonly onChange?: (_1:VaultPublicState_cardFormChange) => void; 
+  readonly onReady?: (_1:VaultPublicState_cardFormEvent) => void; 
+  readonly sdkAuthorization?: string; 
   readonly session?: vaultSession; 
   readonly unstyled?: boolean; 
+  readonly vaultDetails?: VaultDetails_vaultDetails; 
   readonly vaultEndpoint?: VaultEndpoint_vaultEndpointConfig
 }> = HyperswitchVaultFormJS.make as any;

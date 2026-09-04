@@ -22,7 +22,7 @@ let make = (
   ~fieldId: CardFormTypes.cardFieldId,
   ~state,
   ~setState,
-  /* Which visual elements exist. Every default here is "off" — see CardFieldOptions.res. */
+  /* Which visual elements exist, already resolved — see CardFieldOptions.res. */
   ~options: CardFieldOptions.resolved,
   ~keyboardType,
   ~maxLength=None,
@@ -61,10 +61,10 @@ let make = (
   let showFloating = floating && (floatingResting->Option.isSome || floatingLifted->Option.isSome)
 
   /* A static label is an ordinary text element above the input, with no animation. */
-  let staticLabel = options.labelBehavior === #static ? options.label : None
+  let staticLabel = options.labelBehavior === #above ? options.label : None
 
   /*
-   * The placeholder in `none` and `static` is a library-rendered overlay `Text`, NOT React Native's
+   * The placeholder in `never` and `above` is a library-rendered overlay `Text`, NOT React Native's
    * native `placeholder` prop.
    *
    * The published contract is `styles.placeholder?: StyleProp<TextStyle>`. A native placeholder
@@ -121,7 +121,7 @@ let make = (
 
   /*
    * `animatedValue` is read in exactly one place: the `showFloating` branch below. With the default
-   * `labelBehavior="none"` that branch is `React.null`, so driving the value animates nothing —
+   * `labelBehavior="never"` that branch is `React.null`, so driving the value animates nothing —
    * but a JS-driven `Animated.timing` still spins a requestAnimationFrame loop for 200 ms, three
    * times per form, on mount and again on every focus change and every keystroke. Both effects are
    * therefore gated on the element existing.
@@ -202,7 +202,7 @@ let make = (
               padding: 0.->dp,
               /*
                * Floating mode keeps the 70% box: the label needs the remaining 30% at the top.
-               * Plain and static fill the container instead, so a single line is centred by the
+               * `never` and `above` fill the container instead, so a single line is centred by the
                * platform inside the full height — and the touch target is the whole field rather
                * than the lower two thirds of it.
                */
@@ -283,13 +283,18 @@ let make = (
             height: theme.inputHeight->dp,
             flexDirection: #row,
             /*
-             * The error BORDER is opt-in on the same switch as the error message. With
-             * `errorDisplay = #none` (the default) an invalid field is bordered exactly like a valid
-             * one — focused or not — and the merchant hears about the problem through the state
-             * event instead, to draw however they like. Only `#inline` paints, and it paints in the
-             * merchant's own `errorColor`.
+             * The error BORDER follows the error STATE, not the message.
+             *
+             * `#colorOnly` — the composable default — and `#inline` both paint it, in the
+             * merchant's own `errorColor`. Only `#none` leaves an invalid field bordered exactly
+             * like a valid one, focused or not, for a merchant who wants to draw every cue
+             * themselves off the state event.
+             *
+             * This is the same split hyperswitch-web's separate card fields make: the message block
+             * is suppressed with `isErrorHidden`, while `isValid` still drives the `Input--invalid`
+             * class that colours the box.
              */
-            borderColor: isValid || options.errorDisplay !== #inline
+            borderColor: isValid || options.errorDisplay === #none
               ? isFocused ? theme.primaryColor : theme.normalBorderColor
               : theme.errorBorderColor,
             width: 100.->pct,
@@ -307,7 +312,7 @@ let make = (
             /*
              * `flex-end` ONLY in floating mode. The floating label is absolutely positioned at
              * `top: 0` and interpolates its height, so the input has to sit at the bottom to leave
-             * it room. In `none` and `static` there is no such element, and pushing the input down
+             * it room. In `never` and `above` there is no such element, and pushing the input down
              * left the free space asymmetric — all of it above, none below — which is what put the
              * placeholder and the typed text visibly below the centre of the box.
              */

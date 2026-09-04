@@ -37,23 +37,24 @@ jest.mock(
   { virtual: true }
 );
 
-import { HyperswitchForm } from '../../../core/HyperswitchForm';
+import { CardForm } from '../../../core/CardForm';
 import {
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-} from '../../../widgets';
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+} from '../../../fields';
 import { evervaultAdapter } from '../adapter';
 import type {
-  HyperswitchFormHandle,
-  ProviderConfig,
-  SubmitResult,
+  CardFormChange,
+  CardFormHandle,
+  TokenizeResult,
+  VaultDetails,
 } from '../../../core/types';
 
-const evervaultConfig: ProviderConfig = {
-  vault_type: 'evervault',
-  vault_data: { team_id: 'team_1', app_id: 'app_1' },
+const evervaultDetails: VaultDetails = {
+  vaultType: 'evervault',
+  vaultData: { teamId: 'team_1', appId: 'app_1' },
 };
 
 const completePayload = {
@@ -72,6 +73,9 @@ const completePayload = {
   errors: {},
 };
 
+const errorOf = (result: TokenizeResult) =>
+  result.status === 'success' ? undefined : result.error;
+
 function fakeCollector(payload: unknown): unknown {
   return { getPayload: () => payload };
 }
@@ -81,15 +85,15 @@ afterEach(() => {
 });
 
 describe('evervaultAdapter', () => {
-  it('renders an Evervault field per widget and returns the encrypted payload', async () => {
-    const ref = createRef<HyperswitchFormHandle>();
+  it('renders an Evervault field per card field and returns the encrypted payload', async () => {
+    const ref = createRef<CardFormHandle>();
     render(
-      <HyperswitchForm ref={ref} config={evervaultConfig}>
-        <CardNumberWidget />
-        <CardExpiryWidget />
-        <CardCVCWidget />
-        <CardHolderWidget />
-      </HyperswitchForm>
+      <CardForm ref={ref} vaultDetails={evervaultDetails}>
+        <CardNumberField />
+        <CardExpiryField />
+        <CardCVCField />
+        <CardholderNameField />
+      </CardForm>
     );
 
     await waitFor(() => expect(screen.getByTestId('ev-number')).toBeTruthy());
@@ -98,41 +102,74 @@ describe('evervaultAdapter', () => {
     expect(screen.getByTestId('ev-holder')).toBeTruthy();
 
     const mod = require('@evervault/react-native');
-    let result: SubmitResult | undefined;
+    let result: TokenizeResult | undefined;
     await act(async () => {
       mod.__emit(completePayload);
-      result = await ref.current!.submit();
+      result = await ref.current!.tokenize();
     });
     expect(result?.status).toBe('success');
     expect(result?.vaultType).toBe('evervault');
-    expect(result?.data?.raw).toEqual(completePayload.card);
+    expect(result?.status === 'success' && result.data?.raw).toEqual(
+      completePayload.card
+    );
+  });
+
+  it('reports the card-level details Evervault knows into cardDetailsChange', async () => {
+    const changes: CardFormChange[] = [];
+    render(
+      <CardForm
+        vaultDetails={evervaultDetails}
+        onChange={(e) => changes.push(e)}
+      >
+        <CardNumberField />
+      </CardForm>
+    );
+    await waitFor(() => expect(screen.getByTestId('ev-number')).toBeTruthy());
+
+    const mod = require('@evervault/react-native');
+    act(() => {
+      mod.__emit(completePayload);
+    });
+
+    const last = changes.at(-1)!;
+    expect(last.eventName).toBe('cardDetailsChange');
+    expect(last.payload.bin).toBe('424242');
+    expect(last.payload.last4).toBe('4242');
+    expect(last.payload.brand).toBe('Visa');
+    expect(last.payload.expiryMonth).toBe('12');
+    expect(last.payload.expiryYear).toBe('2030');
+    expect(last.payload.formattedExpiry).toBe('12 / 30');
+    /* The encrypted values never ride along. */
+    expect(JSON.stringify(changes)).not.toMatch(/enc_/);
   });
 
   describe('validateVaultData', () => {
-    it('accepts a config with team_id and app_id', () => {
+    it('accepts vaultData with teamId and appId', () => {
       expect(() =>
-        evervaultAdapter.validateVaultData({ team_id: 't', app_id: 'a' })
+        evervaultAdapter.validateVaultData({ teamId: 't', appId: 'a' })
       ).not.toThrow();
     });
 
-    it('throws when app_id is missing', () => {
-      expect(() =>
-        evervaultAdapter.validateVaultData({ team_id: 't' })
-      ).toThrow(/app_id/i);
+    it('throws when appId is missing', () => {
+      expect(() => evervaultAdapter.validateVaultData({ teamId: 't' })).toThrow(
+        /appId/i
+      );
     });
   });
 
-  describe('submit', () => {
+  describe('tokenize', () => {
     it('returns success with encrypted card data when complete', async () => {
-      const result = await evervaultAdapter.submit(
+      const result = await evervaultAdapter.tokenize(
         fakeCollector(completePayload)
       );
       expect(result.status).toBe('success');
-      expect(result.data?.tokens?.number).toBe('enc_number');
+      expect(result.status === 'success' && result.data?.tokens?.number).toBe(
+        'enc_number'
+      );
     });
 
-    it('returns a validation_error with field errors when incomplete', async () => {
-      const result = await evervaultAdapter.submit(
+    it('returns a validation_error naming the field when incomplete', async () => {
+      const result = await evervaultAdapter.tokenize(
         fakeCollector({
           card: {},
           isValid: false,
@@ -141,12 +178,17 @@ describe('evervaultAdapter', () => {
         })
       );
       expect(result.status).toBe('validation_error');
-      expect(result.errors?.[0]?.field).toBe('card_number');
+      expect(errorOf(result)).toEqual({
+        code: 'validation_error',
+        message: 'cardNumber: Invalid card number',
+        type: 'validation_error',
+      });
     });
 
     it('returns a validation_error when no payload has arrived', async () => {
-      const result = await evervaultAdapter.submit(fakeCollector(null));
+      const result = await evervaultAdapter.tokenize(fakeCollector(null));
       expect(result.status).toBe('validation_error');
+      expect(errorOf(result)?.code).toBe('validation_error');
     });
   });
 });

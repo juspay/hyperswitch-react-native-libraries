@@ -5,13 +5,13 @@
 
 import type {brandIconMode as CardIcons_brandIconMode} from './CardIcons.gen';
 
-export type labelBehavior = "none" | "static" | "floating";
+export type labelBehavior = "above" | "floating" | "never";
 
-export type errorDisplay = "none" | "inline";
+export type errorDisplay = "none" | "colorOnly" | "inline";
 
 export type brandIconMode = CardIcons_brandIconMode;
 
-export type cvcIconDisplay = "none" | "default";
+export type cvcIconDisplay = "hidden" | "default";
 
 export type fieldOptions = {
   readonly placeholder?: string; 
@@ -33,7 +33,7 @@ export type cardNumberOptions = {
   readonly accessibilityHint?: string; 
   readonly testID?: string; 
   readonly unstyled?: boolean; 
-  readonly brandIconMode?: brandIconMode
+  readonly cardBrandIcon?: brandIconMode
 };
 
 export type expiryOptions = fieldOptions;
@@ -54,10 +54,16 @@ export type cvcOptions = {
 
 export type formFieldOptions = {
   readonly cardNumber?: cardNumberOptions; 
-  readonly expiry?: expiryOptions; 
-  readonly cvc?: cvcOptions; 
+  readonly cardExpiry?: expiryOptions; 
+  readonly cardCvc?: cvcOptions; 
   readonly cardholderName?: cardholderNameOptions
 };
+
+export type savedCardData = { readonly cardNetwork?: string };
+
+export type savedCardPaymentMethodData = { readonly card?: savedCardData };
+
+export type savedCard = { readonly paymentToken?: string; readonly paymentMethodData?: savedCardPaymentMethodData };
 
 export type cardholderNameMode = "collect" | "external" | "omit";
 
