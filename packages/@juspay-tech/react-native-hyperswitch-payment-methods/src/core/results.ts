@@ -1,6 +1,8 @@
 import type {
+  CardDetails,
   TokenizeErrorCode,
   TokenizeErrorType,
+  TokenizedCard,
   TokenizeResult,
   VaultType,
 } from './types';
@@ -23,6 +25,23 @@ export function errorResult(
     vaultType,
     error: { code, message, type },
   };
+}
+
+/**
+ * The card metadata to hang on a successful result, or `undefined` when the provider described no
+ * card. Written key by key so a member the provider did not report is an absent key rather than
+ * `undefined`.
+ */
+export function tokenizedCardOf(
+  details: Partial<CardDetails>
+): TokenizedCard | undefined {
+  const card: TokenizedCard = {};
+  if (details.bin) card.bin = details.bin;
+  if (details.last4) card.last4 = details.last4;
+  if (details.brand) card.brand = details.brand;
+  if (details.expiryMonth) card.expiryMonth = details.expiryMonth;
+  if (details.expiryYear) card.expiryYear = details.expiryYear;
+  return Object.keys(card).length > 0 ? card : undefined;
 }
 
 export function messageOf(error: unknown): string {

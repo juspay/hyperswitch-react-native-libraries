@@ -100,12 +100,27 @@ Descendant components can also use the `useCardForm()` hook.
 
 ```ts
 type TokenizeResult =
-  | { status: 'success'; vaultType?: VaultType; data?: { tokens?: Record<string, unknown>; raw?: unknown } }
+  | {
+      status: 'success';
+      vaultType?: VaultType;
+      data?: { tokens?: Record<string, unknown>; raw?: unknown };
+      card?: TokenizedCard;
+    }
   | { status: 'validation_error' | 'error'; vaultType?: VaultType; error: { code; message; type } };
+
+/* The card the provider reported, in the members `onChange` publishes — so `result.card.last4`
+   and `event.payload.last4` read alike. Never a PAN, never a CVC. */
+type TokenizedCard = {
+  bin?: string; last4?: string; brand?: string; expiryMonth?: string; expiryYear?: string;
+};
 ```
 
 `tokenize()` never throws. `if (result.error)` reads the same way it does with the web
 SDK; `status` lets TypeScript narrow.
+
+`card` carries whatever the provider told the form about the card. A provider whose secure input
+keeps every digit reports nothing, and then there is no `card` key at all; Evervault reports the
+BIN, last four, brand and expiry. An absent member is an absent key, never `undefined`.
 
 | `error.code`           | `type`             | Meaning                                                              |
 | ---------------------- | ------------------ | -------------------------------------------------------------------- |
