@@ -7,7 +7,7 @@ import type {
   ProviderFieldProps,
   ProviderHostProps,
 } from '../core/ProviderAdapter';
-import type { TokenizeResult, VaultType } from '../core/types';
+import type { CardDetails, TokenizeResult, VaultType } from '../core/types';
 
 export interface MockAdapterOptions {
   vaultType?: VaultType;
@@ -22,6 +22,9 @@ export interface MockAdapterOptions {
 
   /** What every mock field reports on mount, through `onChange`. */
   fieldState?: FieldChangeInput;
+
+  /** What the mock host reports about the card, as Evervault's host does. */
+  cardDetails?: Partial<CardDetails>;
 }
 
 export function createMockAdapter(
@@ -29,7 +32,12 @@ export function createMockAdapter(
 ): ProviderAdapter {
   const vaultType: VaultType = options.vaultType ?? 'vgs';
 
-  function Host({ onReady, onError, children }: ProviderHostProps) {
+  function Host({
+    onReady,
+    onError,
+    onCardDetails,
+    children,
+  }: ProviderHostProps) {
     useEffect(() => {
       if (options.failOnInit !== undefined) {
         onError(options.failOnInit);
@@ -38,9 +46,12 @@ export function createMockAdapter(
       if (options.neverReady) return;
 
       const delay = options.readyDelayMs ?? 0;
-      const timer = setTimeout(() => onReady({ mock: true }), delay);
+      const timer = setTimeout(() => {
+        onReady({ mock: true });
+        if (options.cardDetails) onCardDetails?.(options.cardDetails);
+      }, delay);
       return () => clearTimeout(timer);
-    }, [onReady, onError]);
+    }, [onReady, onError, onCardDetails]);
 
     return <Fragment>{children}</Fragment>;
   }

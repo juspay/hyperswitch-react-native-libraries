@@ -29,6 +29,7 @@ export type {
   TokenizeErrorCode,
   TokenizeError,
   TokenizeData,
+  TokenizedCard,
   TokenizeResult,
   FormStatus,
   CardFormHandle,

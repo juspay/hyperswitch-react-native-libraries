@@ -94,6 +94,20 @@ export interface TokenizeError {
   type: TokenizeErrorType;
 }
 
+/**
+ * The card the provider reported, in the members `onChange` publishes, so `result.card.last4` and
+ * `event.payload.last4` read alike. Every member is optional: a provider's secure input keeps the
+ * digits to itself, and one that reports nothing yields no `card` at all. An absent member is an
+ * absent key, never `undefined`. Never a PAN, never a CVC.
+ */
+export interface TokenizedCard {
+  bin?: string;
+  last4?: string;
+  brand?: string;
+  expiryMonth?: string;
+  expiryYear?: string;
+}
+
 export interface TokenizeData {
   /** Provider tokens, keyed the way the provider keys them. */
   tokens?: Record<string, unknown>;
@@ -103,7 +117,12 @@ export interface TokenizeData {
 }
 
 export type TokenizeResult =
-  | { status: 'success'; vaultType?: VaultType; data?: TokenizeData }
+  | {
+      status: 'success';
+      vaultType?: VaultType;
+      data?: TokenizeData;
+      card?: TokenizedCard;
+    }
   | {
       status: 'validation_error' | 'error';
       vaultType?: VaultType;

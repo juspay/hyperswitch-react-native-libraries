@@ -16,7 +16,7 @@ import type { CreateFormSessionOptions } from './formSession';
 import { registerForm } from './formRegistry';
 import { resolveAdapter } from '../providers/registry';
 import type { ProviderAdapter } from './ProviderAdapter';
-import { errorResult } from './results';
+import { errorResult, tokenizedCardOf } from './results';
 import type {
   CardDetails,
   CardFormChange,
@@ -210,7 +210,11 @@ export const CardForm = forwardRef<CardFormHandle, CardFormProps>(
       async (providerData?: unknown): Promise<TokenizeResult> => {
         const result = await session.tokenize(providerData);
         setStatus(session.status);
-        return result;
+        if (result.status !== 'success') return result;
+        /* The same values the form has been publishing on `cardDetailsChange`, echoed back on the
+         * result so a caller that never subscribed still gets them. */
+        const card = tokenizedCardOf(detailsRef.current);
+        return card ? { ...result, card } : result;
       },
       [session]
     );

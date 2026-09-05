@@ -115,6 +115,62 @@ describe('CardForm', () => {
     ).toBe('tok_mock');
   });
 
+  it('echoes the card the provider reported onto the successful result', async () => {
+    useMock({
+      vaultType: 'evervault',
+      cardDetails: {
+        bin: '424242',
+        last4: '4242',
+        brand: 'Visa',
+        expiryMonth: '12',
+        expiryYear: '2030',
+      },
+    });
+    const ref = createRef<CardFormHandle>();
+    render(
+      <CardForm ref={ref} vaultDetails={details('evervault')}>
+        <Fields />
+      </CardForm>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-field-cardNumber')).toBeTruthy()
+    );
+
+    let result: TokenizeResult | undefined;
+    await act(async () => {
+      result = await ref.current!.tokenize();
+    });
+
+    expect(result?.status === 'success' && result.card).toEqual({
+      bin: '424242',
+      last4: '4242',
+      brand: 'Visa',
+      expiryMonth: '12',
+      expiryYear: '2030',
+    });
+  });
+
+  it('omits card entirely when the provider described none', async () => {
+    useMock({ vaultType: 'vgs' });
+    const ref = createRef<CardFormHandle>();
+    render(
+      <CardForm ref={ref} vaultDetails={details('vgs')}>
+        <Fields />
+      </CardForm>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-field-cardNumber')).toBeTruthy()
+    );
+
+    let result: TokenizeResult | undefined;
+    await act(async () => {
+      result = await ref.current!.tokenize();
+    });
+
+    expect(result?.status).toBe('success');
+    expect(result && 'card' in result).toBe(false);
+  });
+
   it('tokenize called before ready waits for the collector then succeeds', async () => {
     useMock({ vaultType: 'vgs', readyDelayMs: 40 });
     const ref = createRef<CardFormHandle>();
