@@ -109,9 +109,22 @@ export type SafeVaultError = {
   readonly type: SafeVaultErrorType;
 };
 
+/**
+ * The card the vault stored, spelled the way `onChange` spells it, so `result.card.last4` and
+ * `event.payload.last4` read the same. Present when a new card was tokenized; absent on the
+ * saved-card CVC refresh, which returns nothing but the token. Never a PAN, never a CVC.
+ */
+export type VaultTokenizedCard = {
+  readonly bin?: string;
+  readonly last4: string;
+  readonly brand?: string;
+  readonly expiryMonth: string;
+  readonly expiryYear: string;
+};
+
 /** The ONLY published type with a `token`. Deliberately permitted here, and nowhere else. */
 export type VaultTokenizeResult =
-  | { readonly status: 'success'; readonly token: string }
+  | { readonly status: 'success'; readonly token: string; readonly card?: VaultTokenizedCard }
   | { readonly status: 'validation_error'; readonly error: SafeVaultError }
   | { readonly status: 'error'; readonly error: SafeVaultError };
 

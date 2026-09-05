@@ -577,7 +577,8 @@ let useMachinery = (
                 )
                 closeRequest(controller)
                 switch minted {
-                | Ok((token, _metadata)) => VaultResult.tokenizeSuccess(token)
+                | Ok((token, metadata)) =>
+                  VaultResult.tokenizeSuccess(~card=?VaultResult.tokenizedCardOf(metadata), token)
                 | Error(Consumed) => VaultResult.tokenizeSessionConsumed()
                 | Error(Expired) => VaultResult.tokenizeSessionExpired()
                 | Error(Transport(error)) => VaultResult.tokenizeFromPmsFailure(error)

@@ -30,9 +30,12 @@
  * ── WHY A BLANK TOKEN IS REFUSED HERE TOO ─────────────────────────────────────
  *
  * The backend treats an ABSENT `payment_method_token` with a CVC as a different operation: it mints
- * a brand-new token and stores the CVC under that. The component gates the token before calling
- * this module; this module refuses a blank one again, so no future caller can turn a missing
- * merchant token into a request that comes back with a token the merchant never listed.
+ * a brand-new token and stores the CVC under that — a `TemporaryCardToken`, which carries a CVC and
+ * no payment method, and which the payment confirm then refuses (measured against sandbox on
+ * 2026-09-05: the update answers 200, the confirm that follows fails with `HE_00`). The component
+ * gates the token before calling this module; this module refuses a blank one again, so no future
+ * caller can turn a missing merchant token into a request that comes back with a token the merchant
+ * never listed and cannot charge.
  *
  * ── WHAT IS REUSED, VERBATIM ───────────────────────────────────────────────────
  *

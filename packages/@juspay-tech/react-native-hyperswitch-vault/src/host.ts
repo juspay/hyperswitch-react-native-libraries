@@ -179,6 +179,7 @@ export type {
 export type {
   VaultField,
   VaultTokenizeResult,
+  VaultTokenizedCard,
   VaultTokenizeStatus,
   VaultFieldHandle,
   VaultFieldEvent,

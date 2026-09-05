@@ -121,12 +121,55 @@ type vaultPaymentResult = {
   nextAction?: safeNextAction,
 }
 
+/*
+ * The card the vault stored, as it answered. The same members `onChange` already publishes, spelled
+ * the same way, so a merchant reads `result.card.last4` and `event.payload.last4` identically. The
+ * PAN and the CVC are not here and cannot be: the response never carries them either.
+ *
+ * Present when the response described a card — a new card minted through `tokenize()`. The
+ * saved-card CVC refresh returns nothing but the token, so `card` is absent there.
+ */
+@genType
+type vaultTokenizedCard = {
+  bin?: string,
+  last4: string,
+  brand?: string,
+  expiryMonth: string,
+  expiryYear: string,
+}
+
 /* The ONLY public type carrying a token. */
 @genType
 type vaultTokenizeResult = {
   status: vaultTokenizeStatus,
   token?: string,
+  card?: vaultTokenizedCard,
   error?: safeVaultError,
+}
+
+/*
+ * `None` when the response carried no card block: every member would be blank, and an object of
+ * empty strings reads as "the vault said the last four digits are ''" rather than "it said nothing".
+ */
+let tokenizedCardOf = (metadata: VaultConfirm.vaultCardMetadata): option<vaultTokenizedCard> => {
+  let described =
+    metadata.last4Digits->String.length > 0 ||
+    metadata.binNumber->Option.isSome ||
+    metadata.expiryMonth->String.length > 0
+  let last4 = metadata.last4Digits
+  let expiryMonth = metadata.expiryMonth
+  let expiryYear = metadata.expiryYear
+  /* Spelled out rather than `?`-spread so an absent member is an ABSENT KEY, not `undefined`. */
+  described
+    ? Some(
+        switch (metadata.binNumber, metadata.network) {
+        | (Some(bin), Some(brand)) => {bin, last4, brand, expiryMonth, expiryYear}
+        | (Some(bin), None) => {bin, last4, expiryMonth, expiryYear}
+        | (None, Some(brand)) => {last4, brand, expiryMonth, expiryYear}
+        | (None, None) => {last4, expiryMonth, expiryYear}
+        },
+      )
+    : None
 }
 
 /* ── Fixed messages ────────────────────────────────────────────────────────── */
@@ -187,7 +230,16 @@ let unknownOutcome = () => failedWith(#unknown_outcome, unknownOutcomeMessage)
 
 /* ── Tokenize constructors (Flow 1) ────────────────────────────────────────── */
 
-let tokenizeSuccess = (token): vaultTokenizeResult => {status: #success, token}
+/*
+ * The key is not written at all when there is no card, rather than written as `undefined`: a
+ * merchant reading `Object.keys(result)` — or an assertion on the whole object — should see the
+ * members that exist and no others.
+ */
+let tokenizeSuccess = (~card=?, token): vaultTokenizeResult =>
+  switch card {
+  | Some(card) => {status: #success, token, card}
+  | None => {status: #success, token}
+  }
 
 let tokenizeFailedWith = (code, message): vaultTokenizeResult => {
   status: #error,
