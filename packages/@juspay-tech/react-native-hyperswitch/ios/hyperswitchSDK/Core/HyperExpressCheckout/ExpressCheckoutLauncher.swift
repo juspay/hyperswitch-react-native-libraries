@@ -40,6 +40,7 @@ public class ExpressCheckoutLauncher {
 
         let props: [String: Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
+            "profileId": APIClient.shared.profileId as Any,
             "sdkAuthorization": sdkAuthorization,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",
@@ -54,12 +55,13 @@ public class ExpressCheckoutLauncher {
 
             RNViewManager.sharedInstance.responseHandler = self
 
-            let hyperParams = HyperParams.getHyperParams()
+            let hyperParams = SDKParams.getSDKParams()
 
             let props: [String: Any] = [
                 "type": "widgetPayment",
                 "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
                 "publishableKey": APIClient.shared.publishableKey as Any,
+                "profileId": APIClient.shared.profileId as Any,
                 "hyperParams": hyperParams,
                 "customBackendUrl": APIClient.shared.customBackendUrl as Any,
                 "customLogUrl": APIClient.shared.customLogUrl as Any,
@@ -103,6 +105,7 @@ extension ExpressCheckoutLauncher {
 
         var props: [String: Any] = [
             "publishableKey": APIClient.shared.publishableKey as Any,
+            "profileId": APIClient.shared.profileId as Any,
             "sdkAuthorization": ExpressCheckoutLauncher.sdkAuthorization as Any,
             "paymentMethodType": "expressCheckout",
             "paymentMethodData": "",

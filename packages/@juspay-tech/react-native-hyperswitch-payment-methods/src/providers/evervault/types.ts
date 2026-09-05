@@ -1,4 +1,5 @@
+/** `vaultDetails.vaultData` for Evervault, in the web's camelCase. */
 export interface EvervaultVaultData {
-  team_id: string;
-  app_id: string;
+  teamId: string;
+  appId: string;
 }

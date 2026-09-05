@@ -6,7 +6,11 @@ import {
   useEffect,
 } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import {
+  WebView,
+  type WebViewMessageEvent,
+  type WebViewProps,
+} from 'react-native-webview';
 import { clickToPayWebViewHTML } from './clickToPayWebView.html.ts';
 
 export type ClickToPayComponentProps = {
@@ -23,7 +27,7 @@ const ClickToPayComponent = forwardRef<
   ClickToPayComponentRef,
   ClickToPayComponentProps
 >(({ onMessage, onCookiesExtracted, initialCookies }, ref) => {
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<WebView<WebViewProps>>(null);
   const [isCheckoutActive, setIsCheckoutActive] = useState(false);
 
   useEffect(() => {

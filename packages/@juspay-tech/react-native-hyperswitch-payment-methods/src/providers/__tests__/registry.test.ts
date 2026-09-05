@@ -9,7 +9,7 @@ function fakeAdapter(vaultType: VaultType): ProviderAdapter {
     validateVaultData: (raw) => raw,
     Host: () => null,
     Field: () => null,
-    submit: async () => ({ status: 'success', vaultType }),
+    tokenize: async () => ({ status: 'success', vaultType }),
   };
 }
 

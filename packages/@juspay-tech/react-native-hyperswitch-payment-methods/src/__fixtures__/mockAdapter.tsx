@@ -1,11 +1,13 @@
 import { Fragment, useEffect } from 'react';
 import { Text } from 'react-native';
+import { fieldChange } from '../core/fieldChange';
+import type { FieldChangeInput } from '../core/fieldChange';
 import type {
   ProviderAdapter,
   ProviderFieldProps,
   ProviderHostProps,
 } from '../core/ProviderAdapter';
-import type { SubmitResult, VaultType } from '../core/types';
+import type { CardDetails, TokenizeResult, VaultType } from '../core/types';
 
 export interface MockAdapterOptions {
   vaultType?: VaultType;
@@ -16,7 +18,13 @@ export interface MockAdapterOptions {
 
   failOnInit?: unknown;
 
-  submitResult?: SubmitResult;
+  tokenizeResult?: TokenizeResult;
+
+  /** What every mock field reports on mount, through `onChange`. */
+  fieldState?: FieldChangeInput;
+
+  /** What the mock host reports about the card, as Evervault's host does. */
+  cardDetails?: Partial<CardDetails>;
 }
 
 export function createMockAdapter(
@@ -24,7 +32,12 @@ export function createMockAdapter(
 ): ProviderAdapter {
   const vaultType: VaultType = options.vaultType ?? 'vgs';
 
-  function Host({ onReady, onError, children }: ProviderHostProps) {
+  function Host({
+    onReady,
+    onError,
+    onCardDetails,
+    children,
+  }: ProviderHostProps) {
     useEffect(() => {
       if (options.failOnInit !== undefined) {
         onError(options.failOnInit);
@@ -33,15 +46,24 @@ export function createMockAdapter(
       if (options.neverReady) return;
 
       const delay = options.readyDelayMs ?? 0;
-      const timer = setTimeout(() => onReady({ mock: true }), delay);
+      const timer = setTimeout(() => {
+        onReady({ mock: true });
+        if (options.cardDetails) onCardDetails?.(options.cardDetails);
+      }, delay);
       return () => clearTimeout(timer);
-    }, [onReady, onError]);
+    }, [onReady, onError, onCardDetails]);
 
     return <Fragment>{children}</Fragment>;
   }
 
-  function Field({ kind }: ProviderFieldProps) {
-    return <Text testID={`mock-field-${kind}`}>{`mock:${kind}`}</Text>;
+  function Field({ elementType, onChange }: ProviderFieldProps) {
+    const state = options.fieldState;
+    useEffect(() => {
+      if (state) onChange?.(fieldChange(elementType, state));
+    }, [elementType, onChange, state]);
+    return (
+      <Text testID={`mock-field-${elementType}`}>{`mock:${elementType}`}</Text>
+    );
   }
 
   return {
@@ -49,8 +71,8 @@ export function createMockAdapter(
     validateVaultData: (raw) => raw,
     Host,
     Field,
-    submit: async () =>
-      options.submitResult ?? {
+    tokenize: async () =>
+      options.tokenizeResult ?? {
         status: 'success',
         vaultType,
         data: { tokens: { card_number: 'tok_mock' } },

@@ -1,4 +1,5 @@
+/** `vaultDetails.vaultData` for Basis Theory, in the web's camelCase. */
 export interface BasisTheoryVaultData {
-  api_key: string;
-  base_url?: string;
+  apiKey: string;
+  baseUrl?: string;
 }

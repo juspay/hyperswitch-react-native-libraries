@@ -37,7 +37,7 @@ jest.mock(
             isValid: true,
             isEmpty: false,
             isDirty: true,
-            isFocused: false,
+            isFocused: true,
             validationErrors: [],
             cardBrand: 'visa',
           });
@@ -62,24 +62,28 @@ jest.mock(
   { virtual: true }
 );
 
-import { HyperswitchForm } from '../../../core/HyperswitchForm';
+import { CardForm } from '../../../core/CardForm';
 import {
-  CardNumberWidget,
-  CardExpiryWidget,
-  CardCVCWidget,
-  CardHolderWidget,
-} from '../../../widgets';
+  CardNumberField,
+  CardExpiryField,
+  CardCVCField,
+  CardholderNameField,
+} from '../../../fields';
 import { vgsAdapter } from '../adapter';
 import type {
-  HyperswitchFormHandle,
-  ProviderConfig,
-  SubmitResult,
+  CardFormHandle,
+  FieldChange,
+  TokenizeResult,
+  VaultDetails,
 } from '../../../core/types';
 
-const vgsConfig: ProviderConfig = {
-  vault_type: 'vgs',
-  vault_data: { vault_id: 'tntabc123', environment: 'sandbox' },
+const vgsDetails: VaultDetails = {
+  vaultType: 'vgs',
+  vaultData: { vaultId: 'tntabc123', environment: 'sandbox' },
 };
+
+const errorOf = (result: TokenizeResult) =>
+  result.status === 'success' ? undefined : result.error;
 
 type FakeCollector = { submit: jest.Mock };
 function fakeCollector(
@@ -94,15 +98,15 @@ afterEach(() => {
 });
 
 describe('vgsAdapter', () => {
-  it('renders a VGS field for each card widget and submits successfully', async () => {
-    const ref = createRef<HyperswitchFormHandle>();
+  it('renders a VGS field for each card field and tokenizes successfully', async () => {
+    const ref = createRef<CardFormHandle>();
     render(
-      <HyperswitchForm ref={ref} config={vgsConfig}>
-        <CardNumberWidget />
-        <CardExpiryWidget />
-        <CardCVCWidget />
-        <CardHolderWidget />
-      </HyperswitchForm>
+      <CardForm ref={ref} vaultDetails={vgsDetails}>
+        <CardNumberField />
+        <CardExpiryField />
+        <CardCVCField />
+        <CardholderNameField />
+      </CardForm>
     );
 
     await waitFor(() =>
@@ -123,79 +127,88 @@ describe('vgsAdapter', () => {
       'text-input'
     );
 
-    let result: SubmitResult | undefined;
+    let result: TokenizeResult | undefined;
     await act(async () => {
-      result = await ref.current!.submit();
+      result = await ref.current!.tokenize();
     });
     expect(result?.status).toBe('success');
     expect(result?.vaultType).toBe('vgs');
   });
 
-  it('maps VGS field state to the widget onStateChange', async () => {
-    const onStateChange = jest.fn();
+  it('maps VGS field state to the web change, and its focus flag to onFocus', async () => {
+    const onChange = jest.fn();
+    const onFocus = jest.fn();
     render(
-      <HyperswitchForm config={vgsConfig}>
-        <CardNumberWidget onStateChange={onStateChange} />
-      </HyperswitchForm>
+      <CardForm vaultDetails={vgsDetails}>
+        <CardNumberField onChange={onChange} onFocus={onFocus} />
+      </CardForm>
     );
     await waitFor(() =>
       expect(screen.getByTestId('vgs-card_number')).toBeTruthy()
     );
 
-    const state = onStateChange.mock.calls.at(-1)?.[0] as {
-      kind: string;
-      isValid: boolean;
-      brand?: string;
-    };
-    expect(state.kind).toBe('card_number');
-    expect(state.isValid).toBe(true);
-    expect(state.brand).toBe('visa');
+    const change = onChange.mock.calls.at(-1)?.[0] as FieldChange;
+    expect(change).toEqual({
+      elementType: 'cardNumber',
+      empty: false,
+      complete: true,
+      valid: true,
+      brand: 'Visa',
+      touched: true,
+    });
+    expect(onFocus).toHaveBeenCalledWith({ elementType: 'cardNumber' });
   });
 
   describe('validateVaultData', () => {
-    it('accepts a config with a string vault_id', () => {
+    it('accepts vaultData with a string vaultId', () => {
       expect(() =>
-        vgsAdapter.validateVaultData({ vault_id: 'tnt', environment: 'live' })
+        vgsAdapter.validateVaultData({ vaultId: 'tnt', environment: 'live' })
       ).not.toThrow();
     });
 
-    it('throws when vault_id is missing', () => {
+    it('throws when vaultId is missing', () => {
       expect(() =>
         vgsAdapter.validateVaultData({ environment: 'live' })
-      ).toThrow(/vault_id/i);
+      ).toThrow(/vaultId/i);
     });
   });
 
-  describe('submit', () => {
+  describe('tokenize', () => {
     it('maps a 2xx VGS response to a success result with raw payload', async () => {
       const { collector, submit } = fakeCollector(async () => ({
         status: 200,
         response: { card_number: 'tok_1' },
       }));
-      const result = await vgsAdapter.submit(collector);
+      const result = await vgsAdapter.tokenize(collector);
       expect(submit).toHaveBeenCalledWith('/post', 'POST', undefined);
       expect(result.status).toBe('success');
-      expect(result.data?.raw).toEqual({ card_number: 'tok_1' });
-      expect(result.data?.tokens).toEqual({ card_number: 'tok_1' });
+      expect(result.status === 'success' && result.data?.raw).toEqual({
+        card_number: 'tok_1',
+      });
+      expect(result.status === 'success' && result.data?.tokens).toEqual({
+        card_number: 'tok_1',
+      });
     });
 
-    it('maps a non-2xx VGS response to an error result', async () => {
+    it('maps a non-2xx VGS response to tokenization_failed', async () => {
       const { collector } = fakeCollector(async () => ({
         status: 422,
         response: { error: 'bad' },
       }));
-      const result = await vgsAdapter.submit(collector);
+      const result = await vgsAdapter.tokenize(collector);
       expect(result.status).toBe('error');
-      expect(result.errors?.[0]?.code).toMatch(/422/);
+      expect(errorOf(result)?.code).toBe('tokenization_failed');
+      expect(errorOf(result)?.type).toBe('api_error');
+      expect(errorOf(result)?.message).toMatch(/422/);
     });
 
-    it('maps a rejected VGS submit to an error result', async () => {
+    it('maps a rejected VGS submit to tokenization_failed', async () => {
       const { collector } = fakeCollector(async () => {
         throw new Error('validation failed');
       });
-      const result = await vgsAdapter.submit(collector);
+      const result = await vgsAdapter.tokenize(collector);
       expect(result.status).toBe('error');
-      expect(result.errors?.[0]?.message).toMatch(/validation failed/);
+      expect(errorOf(result)?.message).toMatch(/validation failed/);
     });
 
     it('forwards path, method and extraData from providerData', async () => {
@@ -203,7 +216,7 @@ describe('vgsAdapter', () => {
         status: 200,
         response: {},
       }));
-      await vgsAdapter.submit(collector, {
+      await vgsAdapter.tokenize(collector, {
         path: '/cards',
         method: 'PUT',
         extraData: { merchant: 'acme' },

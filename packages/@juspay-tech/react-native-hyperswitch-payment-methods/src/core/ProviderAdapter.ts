@@ -1,31 +1,35 @@
 import type { ComponentType, ReactNode, Ref } from 'react';
-import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { FieldStyles } from '../fields/types';
 import type {
-  FieldKind,
-  FieldState,
-  SubmitResult,
+  CardDetails,
+  ElementType,
+  FieldChange,
+  FieldEvent,
+  FieldHandle,
+  TokenizeResult,
   VaultType,
-  WidgetHandle,
 } from './types';
 
 export interface ProviderHostProps<Collector = unknown, Data = unknown> {
   vaultData: Data;
   onReady: (collector: Collector) => void;
   onError: (error: unknown) => void;
+  /** Card-level details a provider reports (BIN, last four, expiry parts), for `cardDetailsChange`. */
+  onCardDetails?: (details: Partial<CardDetails>) => void;
   children: ReactNode;
 }
 
 export interface ProviderFieldProps<Collector = unknown> {
-  kind: FieldKind;
+  elementType: ElementType;
   collector: Collector;
-  style?: StyleProp<ViewStyle>;
-
-  textStyle?: StyleProp<TextStyle>;
+  styles?: FieldStyles;
   placeholder?: string;
   testID?: string;
-  onStateChange?: (state: FieldState) => void;
+  onChange?: (change: FieldChange) => void;
+  onFocus?: (event: FieldEvent) => void;
+  onBlur?: (event: FieldEvent) => void;
 
-  fieldRef?: Ref<WidgetHandle>;
+  fieldRef?: Ref<FieldHandle>;
 }
 
 export interface ProviderAdapter<Collector = unknown, Data = unknown> {
@@ -37,5 +41,8 @@ export interface ProviderAdapter<Collector = unknown, Data = unknown> {
 
   Field: ComponentType<ProviderFieldProps<Collector>>;
 
-  submit(collector: Collector, providerData?: unknown): Promise<SubmitResult>;
+  tokenize(
+    collector: Collector,
+    providerData?: unknown
+  ): Promise<TokenizeResult>;
 }

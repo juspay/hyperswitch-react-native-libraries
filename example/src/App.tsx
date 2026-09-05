@@ -1,151 +1,197 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { HyperInit } from '@juspay-tech/react-native-hyperswitch';
-import HeadlessScreen from './HeadlessScreen';
-import PaymentScreenWithHook from './PaymentScreen';
-import CVCScreen from './CVCScreen';
+import { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  Hyperswitch,
+  type HyperswitchSession,
+  type PaymentSession,
+} from "@juspay-tech/react-native-hyperswitch";
+import {
+  initialBaseUrl,
+  intentData,
+  profileId,
+  publishableKey,
+  secretKey,
+  serverURL,
+} from "./utils";
+import DemoPopup from "./pages/DemoPopup";
+let hyperSingleton: Promise<HyperswitchSession> | null = null;
 
-type TabType = 'ui' | 'cvc' | 'headless';
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('ui');
-
-  const publishableKey = process.env.HYPERSWITCH_PUBLISHABLE_KEY;
-  const profileId = process.env.PROFILE_ID;
-
-  const hyperPromise =
-    publishableKey && profileId ? HyperInit(publishableKey, profileId, {}) : null;
-
-  if (!publishableKey || !profileId) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Configure env and restart Metro server</Text>
-      </View>
-    );
+function getHyperSingleton(): Promise<HyperswitchSession> {
+  if (!hyperSingleton) {
+    hyperSingleton = Hyperswitch.init({
+      publishableKey,
+      profileId,
+    }) as Promise<HyperswitchSession>;
   }
-
-  if (!hyperPromise) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text>Initializing...</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'ui' && styles.activeTab]}
-          onPress={() => setActiveTab('ui')}
-        >
-          <Text
-            style={[styles.tabText, activeTab === 'ui' && styles.activeTabText]}
-          >
-            UI Mode
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'cvc' && styles.activeTab]}
-          onPress={() => setActiveTab('cvc')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'cvc' && styles.activeTabText,
-            ]}
-          >
-            CVC Widget
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'headless' && styles.activeTab]}
-          onPress={() => setActiveTab('headless')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'headless' && styles.activeTabText,
-            ]}
-          >
-            Headless Mode
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.content}>
-        {activeTab === 'ui' && (
-          <PaymentScreenWithHook hyperPromise={hyperPromise} />
-        )}
-        {activeTab === 'cvc' && <CVCScreen hyperPromise={hyperPromise} />}
-        {activeTab === 'headless' && (
-          <HeadlessScreen hyperPromise={hyperPromise} />
-        )}
-      </View>
-    </View>
-  );
+  return hyperSingleton;
 }
 
-// Midnight Glow Color Palette - Lumina Glass Design System
-// const MIDNIGHT_ABYSS = '#020C1B';
-// const DEEP_COBALT = '#0F3460';
-// const LUMINOUS_INDIGO = '#5E5CE6';
-// const CYBER_GLOW = '#5E5CE6';
-// const GLASS_SURFACE = 'rgba(255, 255, 255, 0.07)';
-// const TEXT_PRIMARY = '#FFFFFF';
-// const TEXT_SECONDARY = 'rgba(255, 255, 255, 0.7)';
+export default function App() {
+  const [status, setStatus] = useState<string | null>(null);
+  const [session, setSession] = useState<PaymentSession | null>(null);
+  const hyperPromise = getHyperSingleton();
+  const [openEmbeddedSheet, setOpenEmbeddedSheet] = useState(false);
+  const [sdkAuthorization, setSdkAuthorization] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const initDemo = async (openDemo: boolean) => {
+    if (!hyperPromise) {
+      setStatus("HYPERSWITCH_PUBLISHABLE_KEY is not set");
+      return;
+    }
+    setStatus("Initializing demo...");
+
+    const serverUrl = serverURL;
+    const url = initialBaseUrl
+      ? `${initialBaseUrl}/create-payment-intent`
+      : undefined;
+    fetch(`${serverUrl !== "" ? serverUrl : url}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Api-Key": secretKey,
+      },
+      body: JSON.stringify(intentData),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.sdk_authorization || data.sdkAuthorization) {
+          setSdkAuthorization(data.sdk_authorization || data.sdkAuthorization);
+          setPaymentId(data.payment_id || data.paymentId);
+          hyperPromise?.then(async (hyper) => {
+            let session = await hyper.initPaymentSession({
+              sdkAuthorization: data.sdk_authorization || data.sdkAuthorization,
+            });
+            setSession(session);
+          });
+          setOpenEmbeddedSheet(openDemo);
+          setStatus("SDK initialized successfully");
+        } else {
+          setStatus("Failed to get sdkAuthorization from server");
+        }
+      })
+      .catch((err) => {
+        setStatus(`Failed: ${err.message}`);
+      });
+  };
+
+  const openSDK = async () => {
+    if (!session) {
+      setStatus("Session not initialized. Please init demo first.");
+      return;
+    }
+    let result = await session.presentPaymentSheet({
+      merchantDisplayName: "Hyperswitch Demo",
+      appearance: {
+        theme: "Glass",
+      },
+      paymentMethodLayout:{
+        separatorText: "or pay with",
+      },
+      hideCardNicknameField : true
+    });
+    console.log("Payment result", result);
+    if (result.status === "completed") {
+      setStatus("Payment completed successfully");
+    } else if (result.status === "canceled") {
+      setStatus("Payment canceled by user");
+    } else {
+      setStatus(`Payment ${result.type}: ${result.message}`);
+    }
+  };
+
+  if (!publishableKey) {
+    return (
+      <View style={styles.center}>
+        <Text>Set HYPERSWITCH_PUBLISHABLE_KEY to enable payments.</Text>
+      </View>
+    );
+  }
+  const props = {
+    hyperPromise,
+    sdkAuthorization: sdkAuthorization ?? null,
+    paymentId,
+    setPaymentId,
+    loadError,
+    setLoadError,
+    setSdkAuthorization,
+    onClose: () => setOpenEmbeddedSheet(false),
+  };
+
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <View style={styles.container}>
+        {status && (
+          <View style={styles.statusBar}>
+            <Text style={styles.statusText}>
+              Status: {status.toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity style={styles.button} onPress={() => initDemo(false)}>
+          <Text style={styles.buttonText}>Init session</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 16 }]}
+          onPress={() => openSDK()}
+        >
+          <Text style={styles.buttonText}>Open Sheet</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 16 }]}
+          onPress={() => {
+            initDemo(true);
+          }}
+        >
+          <Text style={styles.buttonText}>Open Custom Sheet</Text>
+        </TouchableOpacity>
+        {openEmbeddedSheet && <DemoPopup {...props} />}
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: MIDNIGHT_ABYSS,
+    justifyContent: "center",
+    backgroundColor: "#fafafa",
+    padding: 16,
   },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // backgroundColor: MIDNIGHT_ABYSS,
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
   },
-  tabContainer: {
-    flexDirection: 'row',
-    // backgroundColor: GLASS_SURFACE,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    // borderBottomColor: DEEP_COBALT,
-    borderBottomColor: '#ddd',
+  statusBar: {
+    marginBottom: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: "#e5e7eb",
+    borderRadius: 999,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
+  statusText: {
+    fontSize: 14,
+    color: "#111827",
   },
-  activeTab: {
-    // backgroundColor: DEEP_COBALT,
-    // borderBottomWidth: 2,
-    // borderBottomColor: LUMINOUS_INDIGO,
-    backgroundColor: '#fff',
-    borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+  button: {
+    height: 48,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: "#111827",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
   },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-    // color: TEXT_SECONDARY,
-    // fontWeight: '500',
-    // fontFamily: 'Manrope',
-  },
-  activeTabText: {
-    color: '#007AFF',
-    fontWeight: '600',
-    // color: LUMINOUS_INDIGO,
-    // fontWeight: '600',
-    // fontFamily: 'Manrope',
-  },
-  content: {
-    flex: 1,
-    marginTop: 8,
-    // backgroundColor: MIDNIGHT_ABYSS,
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

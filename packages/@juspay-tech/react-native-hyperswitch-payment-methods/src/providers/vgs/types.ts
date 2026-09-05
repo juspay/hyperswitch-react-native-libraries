@@ -1,11 +1,13 @@
+/** `vaultDetails.vaultData` for VGS, in the web's camelCase. */
 export interface VgsVaultData {
-  vault_id: string;
+  vaultId: string;
   environment?: string;
-  route_id?: string;
+  routeId?: string;
   cname?: string;
 }
 
-export interface VgsSubmitOptions {
+/** `tokenize(providerData)` for VGS. */
+export interface VgsTokenizeOptions {
   path?: string;
   method?: string;
   extraData?: Record<string, unknown>;

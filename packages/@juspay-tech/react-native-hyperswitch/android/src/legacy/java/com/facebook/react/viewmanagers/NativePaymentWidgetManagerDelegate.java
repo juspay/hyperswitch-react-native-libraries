@@ -22,9 +22,6 @@ public class NativePaymentWidgetManagerDelegate<T extends View, U extends BaseVi
   @Override
   public void setProperty(T view, String propName, @Nullable Object value) {
     switch (propName) {
-      case "widgetId":
-        mViewManager.setWidgetId(view, value == null ? null : (String) value);
-        break;
       case "widgetType":
         mViewManager.setWidgetType(view, value == null ? null : (String) value);
         break;
