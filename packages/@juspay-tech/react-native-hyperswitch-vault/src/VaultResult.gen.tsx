@@ -64,8 +64,17 @@ export type vaultPaymentResult = {
   readonly nextAction?: safeNextAction
 };
 
+export type vaultTokenizedCard = {
+  readonly bin?: string; 
+  readonly last4: string; 
+  readonly brand?: string; 
+  readonly expiryMonth: string; 
+  readonly expiryYear: string
+};
+
 export type vaultTokenizeResult = {
   readonly status: vaultTokenizeStatus; 
   readonly token?: string; 
+  readonly card?: vaultTokenizedCard; 
   readonly error?: safeVaultError
 };

@@ -65,6 +65,8 @@ type vaultCardMetadata = {
   binNumber?: string,
   expiryMonth: string,
   expiryYear: string,
+  /* The network the vault stored, which for a co-badged card is the one the customer chose. */
+  network?: string,
 }
 
 type vaultConfirmResult = {
@@ -351,6 +353,7 @@ let decodeConfirmResponse = (json: JSON.t, ~httpStatus: int): confirmOutcome =>
             binNumber: ?card->optionalStringAt("card_isin"),
             expiryMonth: card->stringAt("expiry_month"),
             expiryYear: card->stringAt("expiry_year"),
+            network: ?card->optionalStringAt("card_network"),
           },
         },
       })

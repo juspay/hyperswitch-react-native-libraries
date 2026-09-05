@@ -3,90 +3,43 @@
 Collect a card in React Native. The card details never touch your app code.
 
 Authored in ReScript, published as JavaScript with genType-generated TypeScript declarations — you
-need neither.
+need neither. No native step: no native module, no `pod install`, no Codegen, no autolinking. Peers
+are `react` (>=19 <20) and `react-native` (>=0.79 <0.88); no runtime dependencies.
 
 ---
 
 ## One vocabulary with the web SDK
 
-A merchant who integrates hyperswitch-web's separate card fields and this library meets the same
-names. Where the web has a name, this library uses it; what this library adds is additive and named
-so it cannot collide.
+Where hyperswitch-web's separate card fields have a name, this library uses it; what it adds is
+additive and cannot collide.
 
 | Web SDK | This library |
 |---|---|
-| `cardForm.create('cardNumber' \| 'cardExpiry' \| 'cardCvc', options)` | `<CardNumberField />` `<CardExpiryField />` `<CardCVCField />` with the same options as props |
+| `cardForm.create('cardNumber' \| 'cardExpiry' \| 'cardCvc', options)` | `<CardNumberField />` `<CardExpiryField />` `<CardCVCField />`, options as props |
 | `cardForm.tokenize()` | `tokenize()` on the `CardForm` ref, or `createCardForm().tokenize()` |
-| `field.on('ready' \| 'focus' \| 'blur' \| 'change', cb)` | `onReady` `onFocus` `onBlur` `onChange` props on the field |
-| `cardForm.on('ready' \| 'change', cb)` | `onReady` `onChange` props on `CardForm`, or `createCardForm().on(event, cb)` |
-| `change` payload `{elementType, empty, complete, valid, brand?, error?}` | the same keys, plus `touched`, `errorCode`, `isCoBadged` |
-| group `change` = `{elementType: 'cardForm', eventName: 'cardDetailsChange', payload}` | the same envelope, plus `fieldsReady`, `sessionStatus`, `canSubmit`, `fields`… |
-| `placeholder`, `cardBrandIcon`, `cvcIcon`, `savedCard` | the same props |
-| `appearance.variables.colorPrimary` … `appearance.labels` | the same shape |
-| `locale: 'fr'` | the same option, the same sdk-utils string bundles |
-| `field.focus()` `field.blur()` `field.clear()` | the same methods on the field ref |
-| `{error: {code, message, type}}` with `session_expired`, `session_consumed`, `incomplete_field_set`… | the same envelope and codes, plus a `status` discriminant |
+| `field.on(…)`, `cardForm.on(…)` | `onReady` `onFocus` `onBlur` `onChange` props, or `createCardForm().on()` |
+| `change` payload, `cardDetailsChange` envelope | the same keys, plus `touched`, `errorCode`, `isCoBadged`, `canSubmit`, `fields` |
+| `{error: {code, message, type}}`, `placeholder`, `savedCard`, `appearance`, `locale` | the same envelope, codes and names, plus a `status` discriminant |
+
+The root entry is the merchant's: `tokenize()`, and nothing that moves money. The Hyperswitch
+checkout SDK drives payment confirmation through `…/host` with the same components; merchants never
+import it.
 
 ---
 
-## The three flows
-
-The library supports exactly three flows. **All three render the library's own card fields** — the
-PAN, expiry, CVC and cardholder name are the library's in every one of them. What differs is what
-the library then does with them, and therefore what crosses the public boundary.
-
-| | Requests the library makes | What the caller receives | Operation |
-|---|---|---|---|
-| **Flow 1 — standalone merchant tokenization** | tokenize | a payment-method token | `tokenize()` |
-| **Flow 2 — checkout-SDK payment confirmation** | tokenize, then confirm | a navigation decision, no token | `confirmPayment({cardSource: {type_: 'vault', session}})` — `./host` entry |
-| **Flow 3 — vault disabled** | confirm only | a navigation decision, no token | `confirmPayment({cardSource: {type_: 'direct'}})` — `./host` entry |
-| **Saved card — CVC only** | update a card you already saved | `{status: 'success', token}` — the same union as Flow 1 | one `<CardCVCField savedCard={…} />` inside `<CardForm>` + `tokenize()` |
-
-Most standalone integrations want **Flow 1**. Start there.
-
-The package publishes one entry per audience. The root is the merchant's: Flow 1, and nothing that
-confirms a payment. Flows 2 and 3 are driven by the Hyperswitch checkout SDK through
-`@juspay-tech/react-native-hyperswitch-vault/host` — the same components, typed with the wider
-`HostFormHandle`. Merchants never import `./host`.
-
----
-
-## Quick start (Flow 1)
-
-**1. Install**
+## Quick start
 
 ```sh
 yarn add @juspay-tech/react-native-hyperswitch-vault
 ```
 
-No native step: no native module, no `pod install`, no Codegen, no autolinking. Peers are `react`
-(>=19 <20) and `react-native` (>=0.79 <0.88), and there are no runtime dependencies.
-
-**2. Get a session from your backend**
-
-Your server creates the payment-method session with your secret key and returns the response as-is.
-
-```ts
-const session = await fetch('https://your-backend.example/vault-session').then(r => r.json());
-```
-
-Pass it through untouched. The web SDK takes `vaultDetails` instead; this library accepts it too,
-in the web's own spelling, at the cost of not knowing the session's `expires_at`:
-
-```tsx
-<CardForm
-  vaultDetails={{vaultType: 'hyperswitch', vaultData: {sdkAuthorization}}}
-  environment="sandbox">
-```
-
-**3. Render the fields**
+Your server creates the payment-method session with your secret key; pass the response through
+untouched. (`vaultDetails={{vaultType: 'hyperswitch', vaultData: {sdkAuthorization}}}`, the web
+SDK's spelling, is accepted in place of `session` — at the cost of not knowing its `expires_at`.)
 
 ```tsx
 import {
-  CardForm,
-  CardNumberField,
-  CardExpiryField,
-  CardCVCField,
+  CardForm, CardNumberField, CardExpiryField, CardCVCField,
   type VaultFormHandle,
 } from '@juspay-tech/react-native-hyperswitch-vault';
 
@@ -107,12 +60,7 @@ const [canSave, setCanSave] = useState(false);
 </CardForm>;
 ```
 
-With no configuration a field renders a complete input: the library's placeholder, a floating
-label, the brand mark on the card number, the CVC glyph, and an error tint on a field the customer
-left invalid. The composed fields print no error text of their own — the message arrives on
-`onChange` as `error`, for you to place — while the ready-made `HyperswitchVaultForm` prints it.
-
-**4. Tokenize when your button is pressed**
+Then, on your button:
 
 ```ts
 const result = await formRef.current?.tokenize();
@@ -120,20 +68,23 @@ const result = await formRef.current?.tokenize();
 if (result?.status === 'success') {
   await sendTokenToYourBackend(result.token); // never store or display the token in the app
 } else if (result?.error) {
-  showMessage(result.error.message);         // result.error.code names the cause
+  showMessage(result.error.message);          // result.error.code names the cause
 }
 ```
 
-`tokenize()` takes no arguments and moves no money. It exchanges the card for a token and stops.
-A premature press returns `validation_error` or `incomplete_field_set` **without any network
-request**. `onChange` tells you `canSubmit` as the customer types, so a Pay button never has to guess.
+Unconfigured, a field renders a complete input: placeholder, floating label, brand mark, CVC glyph,
+error tint. Composed fields print no error text — it arrives on `onChange` as `error`, for you to
+place; the ready-made `HyperswitchVaultForm` prints it.
+
+`tokenize()` takes no arguments and moves no money. A premature press answers `validation_error` or
+`incomplete_field_set` with **no network request**; `onChange` gives you `canSubmit` as they type.
 
 ---
 
 ## Saved card — CVC only
 
-The same shape as the web SDK: mount **only** `CardCVCField`, pass the stored card's token and
-network, and settle with the same `tokenize()`.
+Mount **only** `CardCVCField`, pass the stored card's token and network, settle with the same
+`tokenize()`.
 
 ```tsx
 <CardForm ref={formRef} session={session} environment="sandbox" onChange={e => setReady(e.canSubmit)}>
@@ -145,99 +96,73 @@ network, and settle with the same `tokenize()`.
   />
 </CardForm>;
 
-const result = await formRef.current?.tokenize(); // success: use result.token, not the one you passed
+const result = await formRef.current?.tokenize(); // use result.token, not the one you passed
 ```
 
-Your backend lists the customer's cards with `GET /v1/payment-method-sessions/{id}/list-payment-methods`
-using the **same** session, and reads `requires_cvv` off each entry. `false`: charge the listed
-token directly and mount nothing. `true`: mount the field with that entry's token. The CVC is held
-under the returned token for 15 minutes; confirm from your backend inside that window.
+Your backend lists the cards with `GET /v1/payment-method-sessions/{id}/list-payment-methods` on the
+**same** session and reads `requires_cvv`: `false` charges the listed token with nothing mounted,
+`true` mounts this field with that entry's token. The CVC is held under the returned token for 15
+minutes — confirm inside that window.
 
-`cardNetwork` selects the CVC length rule. Pass the listing's `card_network` (case and common
-aliases such as `amex` are understood); without it `valid` turns true at three digits even on an
-Amex card. A CVC field mounted with `savedCard` must be the only field in the form; the token must
-be present, or `tokenize()` answers `validation_error` naming the fix.
+`cardNetwork` sets the CVC length rule (`'amex'` and similar aliases are understood); without it
+`valid` turns true at three digits even on an Amex. The field must be the only one in the form, and
+`paymentToken` must be present — blank, `tokenize()` answers `validation_error` naming the fix.
 
 ---
 
 ## Custom layout
 
-Place the fields yourself; everything else is identical.
+Place the fields yourself; everything else is identical. Exactly one card-number, one expiry and one
+CVC field per form (or one CVC field with `savedCard`). `CardholderNameField` is the one field the
+web SDK lacks; blank, it is omitted from the request.
 
 ```tsx
 <CardForm ref={formRef} session={session} environment="sandbox" appearance={{labels: 'above'}}>
   <CardholderNameField label="Name on card" />
   <CardNumberField placeholder="Card number" cardBrandIcon="standard" />
-  <View style={{flexDirection: 'row', gap: 12}}>
-    <CardExpiryField placeholder="MM / YY" />
-    <CardCVCField placeholder="CVC" cvcIcon="default" />
-  </View>
+  <CardExpiryField placeholder="MM / YY" />
+  <CardCVCField placeholder="CVC" cvcIcon="default" />
 </CardForm>;
 ```
-
-Exactly one card-number, one expiry and one CVC field per form (or one CVC field with `savedCard`).
-`CardholderNameField` is the one field the web SDK does not have; it is optional, and blank it is
-omitted from the request.
 
 ---
 
 ## Events
 
-### On a field
+Callbacks fire once after mount, then only when the snapshot changes — an inline arrow is safe.
+Pass none and nothing is derived. No field event carries a card value.
 
-```tsx
-<CardNumberField
-  onReady={e => {}}   // e: {elementType: 'cardNumber'} — once, after mount
-  onFocus={e => {}}   // e: {elementType}
-  onBlur={e => {}}    // e: {elementType}
-  onChange={e => {
-    e.empty;      // nothing typed
-    e.complete;   // passes validation (identical to `valid`, as on the web)
-    e.valid;
-    e.brand;      // 'Visa' | 'Mastercard' | 'AmericanExpress' | … — absent until detected
-    e.error;      // the message currently on screen, if any (a string, as on the web)
-    e.errorCode;  // 'required' | 'invalid_card_number' | 'invalid_expiry' | 'invalid_cvc'
-    e.touched;    // has the customer left this field yet — should your chrome complain?
-    e.isCoBadged; // card number only: a genuine choice of network is being offered
-  }}
-/>
-```
+**On a field.** `onReady`, `onFocus` and `onBlur` give `{elementType}`. `onChange` gives:
 
-`error` follows one rule on every field: it is present once the customer has left the field with a
-problem in it, and absent while the cursor is back inside it. No field event carries a card value.
+| Key | Meaning |
+|---|---|
+| `empty`, `complete`, `valid` | `complete` is identical to `valid`, as on the web |
+| `brand` | `'Visa' \| 'Mastercard' \| 'AmericanExpress' \| …`, absent until detected |
+| `error`, `errorCode` | the message on screen and its code (`required`, `invalid_card_number`, `invalid_expiry`, `invalid_cvc`) — present once the customer leaves a bad field, gone while the cursor is back inside |
+| `touched` | has the customer left this field yet? |
+| `isCoBadged` | card number only: a genuine choice of network is being offered |
 
-### On the form
+**On the form.** `onReady` gives `{elementType: 'cardForm'}` whenever all required fields become
+complete. `onChange` gives the web's `cardDetailsChange` envelope plus this library's summary:
 
-```tsx
-<CardForm
-  onReady={e => {}}   // e: {elementType: 'cardForm'} — every time all required fields become complete
-  onChange={e => {
-    e.eventName;      // 'cardDetailsChange'
-    e.payload;        // the web's payload: bin, last4, brand, expiryMonth, expiryYear,
-                      // formattedExpiry, isCardNumberComplete, isCvcComplete, isExpiryComplete,
-                      // isCardNumberValid, isExpiryValid — null until known
-    e.canSubmit;      // fieldsReady && session usable && valid && !submitting
-    e.sessionStatus;  // 'valid' | 'invalid' | 'absent' | 'expired' | 'consumed'
-    e.fieldsReady; e.complete; e.valid; e.submitting; e.isCoBadged;
-    e.networkError;   // present when the network is not one you accept
-    e.fields;         // {cardNumber, cardExpiry, cardCvc, cardholderName?} — each a field `change`
-  }}
-/>
-```
+| Key | Meaning |
+|---|---|
+| `payload` | `bin`, `last4`, `brand`, `expiryMonth`, `expiryYear`, `formattedExpiry`, `isCardNumberComplete`, `isCvcComplete`, `isExpiryComplete`, `isCardNumberValid`, `isExpiryValid` — `null` until known |
+| `canSubmit` | `fieldsReady && session usable && valid && !submitting` |
+| `sessionStatus` | `'valid' \| 'invalid' \| 'absent' \| 'expired' \| 'consumed'` |
+| `fieldsReady`, `complete`, `valid`, `submitting`, `isCoBadged` | form-wide state |
+| `networkError` | present when the network is not one you accept |
+| `fields` | `{cardNumber, cardExpiry, cardCvc, cardholderName?}` — each a field `change` |
 
-`payload` is built by the same sdk-utils function the web SDK uses, so `bin` appears once six digits
-are typed and `last4` once the number is complete, exactly as on the web. It is the only place a
-card-derived digit reaches your code; the PAN, the CVC and the token never do.
+`payload` comes from the same sdk-utils function the web SDK uses: `bin` at six digits, `last4` when
+the number completes. It is the only place a card-derived digit reaches your code — never the PAN,
+the CVC or the token.
 
-Every callback fires once after mount and again only when the snapshot actually changes, so an
-inline arrow function is safe. Pass no callback and nothing is derived at all.
-
-### The imperative spelling
+For a form held outside React state:
 
 ```ts
 const cardForm = createCardForm({session, environment: 'sandbox'});
 cardForm.on('change', e => setEnabled(e.canSubmit));
-cardForm.on('ready', () => {});
 
 <cardForm.Form>
   <CardNumberField /> <CardExpiryField /> <CardCVCField />
@@ -268,34 +193,40 @@ type HostFormHandle = VaultFormHandle & {
 };
 ```
 
-- Repeating the **same** operation while it is pending returns the same promise — double presses are
-  harmless. The web SDK answers a second concurrent call with `tokenization_in_progress`; this
-  library keeps the friendlier behaviour deliberately.
-- Requesting the **other** operation mid-flight (on `./host`) returns `confirm_in_progress` /
+- Repeating the **same** operation while it is pending returns the same promise, so double presses
+  are harmless. (The web answers a second call `tokenization_in_progress`; this is deliberate.)
+- Requesting the **other** operation mid-flight (on `./host`) answers `confirm_in_progress` /
   `tokenization_in_progress` with no request.
-- `reset()` clears values, validation state and errors, and is ignored while an operation is in
-  flight. `clear()` on a field ref clears that one field.
+- `reset()` clears values, validation and errors, and is ignored mid-flight. `clear()` on a field
+  ref clears that field.
 
 ---
 
 ## Results
 
 ```ts
-/* Flow 1 — the ONLY published type carrying a token. */
+/* The ONLY published type carrying a token. */
 type VaultTokenizeResult =
-  | {status: 'success';          token: string}
+  | {status: 'success';          token: string; card?: VaultTokenizedCard}
   | {status: 'validation_error'; error: SafeVaultError}
   | {status: 'error';            error: SafeVaultError};
 
+/* The vault's echo of the card it stored — the members `onChange` publishes, and no more.
+   Present for a new card, absent on the saved-card CVC refresh. An absent member is an
+   absent key, never `undefined`. */
+type VaultTokenizedCard = {
+  bin?: string; last4: string; brand?: string; expiryMonth: string; expiryYear: string;
+};
+
 type SafeVaultError = {
   code: SafeVaultErrorCode;
-  message: string;                                          // library-owned, customer-safe
+  message: string;                                         // library-owned, customer-safe
   type: 'validation_error' | 'api_error' | 'card_error';   // the web's classification
 };
 ```
 
-`if (result.error)` works exactly as it does with the web SDK. The `status` discriminant is this
-library's addition so TypeScript can narrow.
+`if (result.error)` works as it does on the web; `status` is this library's addition so TypeScript
+can narrow.
 
 | `error.code` | Meaning | Request sent? |
 |---|---|---|
@@ -316,29 +247,22 @@ library's addition so TypeScript can narrow.
 ```tsx
 <CardForm
   appearance={{
-    variables: {
-      colorPrimary: '#0570DE',      // the web's variable names…
-      colorText: '#1A1A1A',
-      colorDanger: '#DF1B41',
-      colorTextPlaceholder: '#6B7280',
-      colorBackground: '#FFFFFF',
-      borderColor: '#E6E6E6',
-      borderRadius: 8,
-      fontFamily: 'System',
-      inputFieldHeight: 48,
-      gap: 12,                      // …plus this library's: borderWidth, gap, fontScale,
-      cardBrandIcon: 'standard',    // placeholderTextSizeAdjust, errorTextSizeAdjust,
-    },                              // errorMessageSpacing, cardBrandIcon
-    labels: 'floating',             // 'above' | 'floating' | 'never', for every field
+    variables: {colorPrimary: '#0570DE', colorText: '#1A1A1A', borderRadius: 8, inputFieldHeight: 48},
+    labels: 'floating',   // 'above' | 'floating' | 'never', for every field
   }}
-  locale="fr"                       // any code the web SDK accepts; the same sdk-utils bundles
-  localisation={{validationMessages: {cardNumberInvalid: 'Vérifiez le numéro'}}} // overrides on top
+  locale="fr"             // any code the web SDK accepts; the same sdk-utils bundles
+  localisation={{validationMessages: {cardNumberInvalid: 'Vérifiez le numéro'}}}
 />
 ```
 
-The web's `theme`, `rules` (CSS selectors), `innerLayout` and `fonts` are CSS concepts with no React
-Native analogue. Per-field looks use `styles` slots (`root`, `container`, `input`, `placeholder`,
-`label`, `error`, `accessory`) which patch the theme rather than replacing it.
+`variables` takes the web's names — `colorPrimary`, `colorText`, `colorDanger`,
+`colorTextPlaceholder`, `colorBackground`, `borderColor`, `borderRadius`, `fontFamily`,
+`inputFieldHeight` — plus this library's `borderWidth`, `gap`, `fontScale`,
+`placeholderTextSizeAdjust`, `errorTextSizeAdjust`, `errorMessageSpacing` and `cardBrandIcon`.
+
+The web's `theme`, `rules`, `innerLayout` and `fonts` are CSS concepts with no React Native
+analogue. Per-field looks use `styles` slots (`root`, `container`, `input`, `placeholder`, `label`,
+`error`, `accessory`), which patch the theme rather than replace it.
 
 ## Field options
 
@@ -354,58 +278,52 @@ Native analogue. Per-field looks use `styles` slots (`root`, `container`, `input
 | `unstyled` | all | boolean | the form's `unstyled` |
 | `accessibilityLabel`, `accessibilityHint`, `testID` | all | string | library defaults |
 
-`enabledCardSchemes` on the form restricts the networks you accept. Spellings are canonicalised
-(`'visa'`, `'amex'`, `'American Express'` all work); an unrecognised entry is ignored and, in a
-development build, warned about.
+`enabledCardSchemes` on the form restricts the networks you accept; spellings are canonicalised
+(`'visa'`, `'amex'`, `'American Express'`), and an unrecognised entry is ignored with a
+development-only warning.
 
 ---
 
 ## Self-hosted deployments
 
-`environment` selects a public Hyperswitch host. A self-hosted deployment overrides it with
-`vaultEndpoint`, which is where `tokenize()` posts the payment-method-session confirm:
+`environment` selects a public Hyperswitch host; `vaultEndpoint` overrides it with your own, and is
+where `tokenize()` posts:
 
 ```tsx
 <CardForm session={session} environment="sandbox" vaultEndpoint={{baseUrl: 'https://payments.your-company.example/api'}} />
 ```
 
-The base is validated: `https` required (`http` only on a loopback host and never in production),
-no credentials, no query string, no fragment. A base that fails validation returns
-`unsupported_configuration` with nothing sent.
+The base is validated — `https` required (`http` only on loopback, never in production), no
+credentials, query string or fragment. A base that fails returns `unsupported_configuration` with
+nothing sent.
 
 ---
 
 ## Lifecycle
 
-- **A session is single-use.** After a successful `tokenize()` it is `consumed`: `sessionStatus`
-  says so, `canSubmit` turns false, and a second call answers `session_consumed` — the same rule the
-  web SDK applies. Fetch a fresh session per card.
-- **`expires_at` is honoured** when the session response is passed through; `sessionStatus` reports
+- **A session is single-use.** After a successful `tokenize()` it is `consumed`: `canSubmit` turns
+  false and a second call answers `session_consumed`, as on the web. Fetch one session per card.
+- **`expires_at` is honoured** when the session response is passed through — `sessionStatus` reports
   `expired` and `tokenize()` answers `session_expired` without a request.
-- **Replacing the `session` prop** aborts in-flight work and starts a fresh conversation.
-- **A minted token is never re-minted.** On `./host`, if tokenization succeeds and the payment
-  confirm then fails, a retry re-runs only the confirm.
+- **Replacing the `session` prop** aborts in-flight work and starts fresh.
+- **A minted token is never re-minted.** On `./host`, a failed payment confirm retries only the
+  confirm.
 
 ---
 
 ## Security
 
 - Secret API key: **server only.** Never in the app, an app `.env`, or version control.
-- Never log or display the session, the `sdk_authorization`, or anything decoded from it. This
-  library contains no logging at all, deliberately, beyond a development-only warning for an
-  unrecognised `enabledCardSchemes` entry.
+- Never log or display the session or the `sdk_authorization`. This library logs nothing at all,
+  beyond a development-only warning for an unrecognised `enabledCardSchemes` entry.
 - The payment-method token belongs on your backend, not in your app and not in your logs.
 
-The boundary, stated exactly:
+> PAN, expiry and CVC never cross the library's supported public API. They stay in library-owned
+> state and are sent only by the library's own tokenization transport. You receive the card-details
+> payload (BIN, last four, expiry parts), safe UI state, and the token.
 
-> PAN, expiry and CVC never cross the library's supported public API. They remain in library-owned
-> state and are transmitted only by the library's internal tokenization transport. The merchant
-> receives the web SDK's card-details payload (BIN, last four, expiry parts), safe UI state, and the
-> resulting token.
-
-That is an API and data-flow guarantee — **not** native-process isolation, **not** memory
-zeroization, **not** a claim of PCI DSS compliance, and **not** protection from malicious code
-executing inside your own application process. Only your own assessor can determine your scope.
+An API and data-flow guarantee — **not** process isolation, memory zeroization, a PCI DSS claim, or
+protection from malicious code inside your own app. Only your assessor can determine your scope.
 
 ---
 
@@ -426,7 +344,7 @@ executing inside your own application process. Only your own assessor can determ
 
 | 0.8 | 0.9 |
 |---|---|
-| `CardCVCField`, `CardCVCWidget`, `CardNumberWidget`, `CardExpiryWidget`, `CardholderNameWidget`, `HyperswitchVault.*` | `CardCVCField`, `CardNumberField`, `CardExpiryField`, `CardholderNameField` |
+| `CardCVCWidget`, `CardNumberWidget`, `CardExpiryWidget`, `CardholderNameWidget`, `HyperswitchVault.*` | `CardCVCField`, `CardNumberField`, `CardExpiryField`, `CardholderNameField` |
 | `'expiry'`, `'cvc'` (in `focus()`, `state.field`, `fields.*`, `fieldOptions.*`, `fieldStyles.*`) | `'cardExpiry'`, `'cardCvc'` |
 | `onStateChange` / `onFormStateChange` | `onChange` (+ `onReady`, `onFocus`, `onBlur`) |
 | `state.status`, `state.focused`, `state.error.code` | `empty`/`complete`, focus/blur events, `errorCode` |
